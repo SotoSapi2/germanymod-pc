@@ -1,0 +1,10 @@
+file(
+	GLOB_RECURSE 
+	GLOB
+	CONFIGURE_DEPENDS 
+	"${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp" 
+	"${CMAKE_CURRENT_SOURCE_DIR}/src/*.c"
+)
+
+add_library(imgui STATIC ${GLOB})
+target_include_directories(imgui PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")

@@ -25,6 +25,7 @@ foreach(item ${dependencies})
 endforeach()
 
 include_directories("header-dependencies")
+link_directories("${CMAKE_CURRENT_SOURCE_DIR}/static-libs/")
 add_compile_definitions(RUNTIME_DLL_FILENAME="${RUNTIME_NAME}.dll" PROJECT_NAME="${PROJECT_NAME}")
 
 file(
@@ -50,5 +51,5 @@ file(
 
 add_library(${RUNTIME_NAME} SHARED ${RUNTIME_GLOB})
 target_link_libraries(${RUNTIME_NAME} PRIVATE
-	logger imgui fileutils
+	logger imgui fileutils detours-x64
 )

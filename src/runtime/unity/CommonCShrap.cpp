@@ -18,10 +18,38 @@ namespace CSharpType
 	Il2CppClass* Array = nullptr;
 }
 
+namespace CommonLibImages
+{
+	const Il2CppImage* Corlib;
+	const Il2CppImage* System;
+	const Il2CppImage* UnityCoreModule;
+	const Il2CppImage* UnityPhysicsModule;
+	const Il2CppImage* AssemblyCSharp;
+	const Il2CppImage* InputLegacyModule;
+	const Il2CppImage* Photon3Unity3D;
+	const Il2CppImage* SteamworksNet;
+	const Il2CppImage* UserSessionManagement;
+}
+
 namespace CommonCShrap
 {
+	const Il2CppImage* ResolveImage(Il2CppDomain* _domain, const char* dll)
+	{
+		const Il2CppAssembly* assembly = nullptr;
+
+		while (assembly == nullptr)
+		{
+			assembly = il2cpp_domain_assembly_open(_domain, dll);
+		}
+
+		auto img = il2cpp_assembly_get_image(assembly);
+		return img;
+	}
+
 	void INIT()
 	{
+		Il2CppDomain* domain = il2cpp_domain_get();
+
 		#define DEFAULTS_INIT(field, ns, n) CSharpType::field = il2cpp_class_from_name(il2cpp_get_corlib(), ns, n);
 
 		DEFAULTS_INIT(Type, "System", "Type");
@@ -39,5 +67,15 @@ namespace CommonCShrap
 		DEFAULTS_INIT(Array, "System", "Array");
 
 		#undef DEFAULTS_INIT
+
+		CommonLibImages::Corlib = il2cpp_get_corlib();
+		CommonLibImages::System = ResolveImage(domain, "System.dll");
+		CommonLibImages::AssemblyCSharp = ResolveImage(domain, "Assembly-CSharp.dll");
+		CommonLibImages::UnityCoreModule = ResolveImage(domain, "UnityEngine.CoreModule.dll");
+		CommonLibImages::UnityPhysicsModule = ResolveImage(domain, "UnityEngine.PhysicsModule.dll");
+		CommonLibImages::InputLegacyModule = ResolveImage(domain, "UnityEngine.InputLegacyModule.dll");
+		CommonLibImages::Photon3Unity3D = ResolveImage(domain, "Photon3Unity3D.dll");
+		CommonLibImages::SteamworksNet = ResolveImage(domain, "com.rlabrecque.steamworks.net.dll");
+		CommonLibImages::UserSessionManagement = ResolveImage(domain, "UserSessionManagement.dll");
 	}
 }

@@ -9,38 +9,24 @@
 namespace UIManager
 {
     bool uiManagerInitlized = false;
-	std::vector<std::function<void()>> uiUpdateFuncs{};
+	std::vector<std::function<void()>> uiUpdateCallbacks{};
 
-	DWORD WINAPI UIThread(LPVOID parameter)
+	void RegisterUIUpdate(std::function<void()> updateCallback)
 	{
-		UIBackend::CreateHWindow("Skidding-tool");
-		UIBackend::CreateDevice();
-		UIBackend::CreateImGui();
-
-		while (UIBackend::BeginRender())
-		{
-			if (ImGui::BeginTabBar("main-tab"), ImGuiTabBarFlags_FittingPolicyResizeDown)
-			{
-				for (std::function<void()> func : uiUpdateFuncs)
-				{
-					func();
-				}
-				ImGui::EndTabBar();
-			}
-			 
-			UIBackend::EndRender();
-		}
-
-		UIBackend::DestroyImGui();
-		UIBackend::DestroyDevice();
-		UIBackend::DestroyHWindow();
-
-		ExitProcess(0);
+		uiUpdateCallbacks.push_back(updateCallback);
 	}
 
-	void RegisterUIUpdate(std::function<void()> func)
+	void UIUpdateManager()
 	{
-		uiUpdateFuncs.push_back(func);
+		if (ImGui::BeginTabBar("main-tab"), ImGuiTabBarFlags_FittingPolicyResizeDown)
+		{
+			for (std::function<void()> func : uiUpdateCallbacks)
+			{
+				func();
+			}
+
+			ImGui::EndTabBar();
+		}
 	}
 
     void INIT()
@@ -50,7 +36,7 @@ namespace UIManager
 			throw std::runtime_error("UI Manager already initialized.");
 		}
 
-		CreateThread(nullptr, 0, UIThread, nullptr, 0, nullptr);
 		LOG_INFO("UI initializated.");
+		UIBackend::INIT(UIUpdateManager);
     }
 }

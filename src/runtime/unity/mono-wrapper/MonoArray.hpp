@@ -24,7 +24,6 @@ struct MonoArray : Il2CppArray
 		return func(this);
 	}
 
-	template<typename T>
 	size_t GetLength() const
 	{
 		return this->max_length;

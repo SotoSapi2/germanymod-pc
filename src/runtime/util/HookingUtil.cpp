@@ -2,8 +2,7 @@
 
 #include <Logger.hpp>
 #include <Windows.h>
-
-#include "detours.h"
+#include <detours.h>
 
 void Detour(void* targetPtr, void* replacementFunc)
 {
@@ -19,8 +18,7 @@ void Detour(void* targetPtr, void* replacementFunc)
 	DetourTransactionCommit();
 }
 
-template<typename Func>
-void AttachHook(void* targetPtr, Func* replacementFunc, Func** origFunc)
+void AttachHook(void* targetPtr, void* replacementFunc, void** origFunc)
 {
 	if (targetPtr == nullptr)
 	{
@@ -32,4 +30,6 @@ void AttachHook(void* targetPtr, Func* replacementFunc, Func** origFunc)
 	DetourUpdateThread(GetCurrentThread());
 	DetourAttach(&targetPtr, replacementFunc);
 	DetourTransactionCommit();
+
+	*origFunc = targetPtr;
 }

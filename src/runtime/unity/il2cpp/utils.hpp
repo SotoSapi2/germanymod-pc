@@ -18,7 +18,7 @@ struct SignaturePattern
 
 namespace Il2CppUtils
 {
-    const Il2CppImage* ResolveImage(Il2CppDomain* domain, const char* dll);
+    const Il2CppImage* ResolveImage(const char* dll);
 
     template<typename T>
     T UnboxIl2CppObject(Il2CppObject* obj);
@@ -35,13 +35,11 @@ namespace Il2CppUtils
 
     void SetStaticFieldByIndex(Il2CppClass* klass, int index, void* value);
 
-    bool CheckContentCount(Il2CppClass* klass, std::pair<uint32_t, uint32_t> fieldCountPair, std::pair<uint32_t, uint32_t> methodCountPair);
+    bool CheckFieldPattern(Il2CppClass* klass, size_t fieldCount, size_t methodCount, const FieldPattern& pattern);
 
-    float CheckFieldPattern(Il2CppClass* klass, FieldPattern& pattern);
+    std::string ModifierFlagsToString(uint32_t flags);
 
-    std::string GetMethodModifier(uint32_t flags);
-
-    std::string TraceMethod(const SignaturePattern& pattern);
+    std::string SignaturePatternToString(const SignaturePattern& pattern);
 
     void WaitForMethodsinitialization(Il2CppClass* klass);
 

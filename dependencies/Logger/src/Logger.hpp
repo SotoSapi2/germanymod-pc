@@ -22,3 +22,6 @@ namespace Logger
 #define LOG_WARN(str, ...)  Logger::Print((std::string("[WARN] " str "\n") + std::to_string(std::stacktrace::current()) + "\n\n").c_str(), __VA_ARGS__)
 #define LOG_ERROR(str, ...) Logger::Print((std::string("[PROPLAM] " str "\n") + std::to_string(std::stacktrace::current()) + "\n\n").c_str(), __VA_ARGS__)
 #define LOG_NULLCHECK(ptr)  Logger::Print("%s is null? %s", #ptr, ptr == nullptr ? "true" : "false")
+
+#define LOG_INFO_IF(ifTrue, str, ...) if(ifTrue) LOG_INFO(str, __VA_ARGS__)
+#define LOG_ERROR_IF(ifTrue, str, ...) if(ifTrue) LOG_ERROR(str, __VA_ARGS__)

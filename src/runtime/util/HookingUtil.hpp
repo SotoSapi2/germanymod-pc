@@ -2,8 +2,7 @@
 
 void Detour(void* targetPtr, void* replacementFunc);
 
-template<typename Func>
-void AttachHook(void* targetPtr, Func* replacementFunc, Func** origFunc);
+void AttachHook(void* targetPtr, void* replacementFunc, void** origFunc);
 
 #define $Hook(returnType, name, param) \
 namespace HookOrigs             \
@@ -20,6 +19,4 @@ returnType Hooks::##name param
 HookOrigs::##name (__VA_ARGS__)
 
 #define $RegisterHook(name, ptr) \
-AttachHook(ptr, Hooks::##name, &HookOrigs::##name)
-
-#define OFFSET(x) (void*)(Vars::base + x)
+AttachHook(ptr, (void*)Hooks::##name, (void**)&HookOrigs::##name)

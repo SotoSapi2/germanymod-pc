@@ -2,21 +2,9 @@
 #include <Windows.h>
 #include <Logger.hpp>
 
+
 namespace Il2CppUtils
 {
-	const Il2CppImage* ResolveImage(Il2CppDomain* _domain, const char* dll)
-	{
-		const Il2CppAssembly* assembly = nullptr;
-
-		while (assembly == nullptr)
-		{
-			assembly = il2cpp_domain_assembly_open(_domain, dll);
-		}
-
-		auto img = il2cpp_assembly_get_image(assembly);
-		return img;
-	}
-
 	template<typename T>
 	T UnboxIl2CppObject(Il2CppObject* obj)
 	{
@@ -141,28 +129,21 @@ namespace Il2CppUtils
 		}
 	}
 
-	bool CheckContentCount(Il2CppClass* klass, std::pair<uint32_t, uint32_t> fieldCountPair, std::pair<uint32_t, uint32_t>  methodCountPair)
+	bool CheckFieldPattern(Il2CppClass* klass, size_t fieldCount, size_t methodCount, const FieldPattern& pattern)
 	{
-		if (klass == nullptr)
-		{
-			LOG_ERROR("First arg (Il2CppClass*) is null.");
-			return false;
-		}
-
-		return klass->field_count >= fieldCountPair.first && klass->field_count <= fieldCountPair.second &&
-			klass->method_count >= methodCountPair.first && klass->method_count <= methodCountPair.second; //klass->field_count == fieldCount && klass->method_count == methodCount;
-	}
-
-	float CheckFieldPattern(Il2CppClass* klass, FieldPattern& pattern)
-	{
-		int score = 0;
-
 		if (klass == nullptr)
 		{
 			LOG_INFO("First arg (Il2CppClass*) is null.");
-			return score;
+			return false;
 		}
 
+		if (klass->field_count != fieldCount && klass->method_count != methodCount)
+		{
+			return false;
+		}
+
+		size_t correctFieldCount = 0;
+		size_t scanIndex = 0;
 		void* iter = nullptr;
 		while (auto field = il2cpp_class_get_fields(klass, &iter))
 		{
@@ -173,44 +154,44 @@ namespace Il2CppUtils
 				continue;
 			}
 
-			if (pattern[score] == nullptr)
+			if (pattern[scanIndex] == nullptr)
 			{
-
-				score++;
+				correctFieldCount++;
 			}
-			else if (strcmp(il2cpp_class_get_name(fieldClass), pattern[score]) == 0)
+			else if (strcmp(il2cpp_class_get_name(fieldClass), pattern[scanIndex]) == 0)
 			{
-
-				score++;
+				correctFieldCount++;
 			}
+
+			scanIndex++;
 		}
 
-		return score / pattern.size();
+		return correctFieldCount == pattern.size();
 	}
 
-	std::string GetMethodModifier(uint32_t flags)
+	std::string ModifierFlagsToString(uint32_t flags)
 	{
 		std::stringstream outPut{};
 		auto access = flags & METHOD_ATTRIBUTE_MEMBER_ACCESS_MASK;
 
 		switch (access)
 		{
-		case METHOD_ATTRIBUTE_PRIVATE:
-			outPut << "private ";
-			break;
-		case METHOD_ATTRIBUTE_PUBLIC:
-			outPut << "public ";
-			break;
-		case METHOD_ATTRIBUTE_FAMILY:
-			outPut << "protected ";
-			break;
-		case METHOD_ATTRIBUTE_ASSEM:
-		case METHOD_ATTRIBUTE_FAM_AND_ASSEM:
-			outPut << "internal ";
-			break;
-		case METHOD_ATTRIBUTE_FAM_OR_ASSEM:
-			outPut << "protected internal ";
-			break;
+			case METHOD_ATTRIBUTE_PRIVATE:
+				outPut << "private ";
+				break;
+			case METHOD_ATTRIBUTE_PUBLIC:
+				outPut << "public ";
+				break;
+			case METHOD_ATTRIBUTE_FAMILY:
+				outPut << "protected ";
+				break;
+			case METHOD_ATTRIBUTE_ASSEM:
+			case METHOD_ATTRIBUTE_FAM_AND_ASSEM:
+				outPut << "internal ";
+				break;
+			case METHOD_ATTRIBUTE_FAM_OR_ASSEM:
+				outPut << "protected internal ";
+				break;
 		}
 		if (flags & METHOD_ATTRIBUTE_STATIC)
 		{
@@ -250,7 +231,7 @@ namespace Il2CppUtils
 		return outPut.str();
 	}
 
-	std::string TraceMethod(const SignaturePattern& pattern)
+	std::string SignaturePatternToString(const SignaturePattern& pattern)
 	{
 		#define HANDLE_NULL_STR(str) (std::string(str == nullptr ? "???" : str) + " ")
 		std::string out = HANDLE_NULL_STR(pattern.modifier) + HANDLE_NULL_STR(pattern.typeName) + HANDLE_NULL_STR(pattern.name) + " ";
@@ -298,7 +279,7 @@ namespace Il2CppUtils
 	{
 		if (klass == nullptr)
 		{
-			LOG_ERROR("First arg (Il2CppClass*) is null. Target: %s", TraceMethod(pattern).c_str());
+			LOG_ERROR("First arg (Il2CppClass*) is null. Target: %s", SignaturePatternToString(pattern).c_str());
 			return 0;
 		}
 
@@ -325,7 +306,7 @@ namespace Il2CppUtils
 			uint32_t flags = il2cpp_method_get_flags(method, &iflags);
 
 			std::string methodName = il2cpp_method_get_name(method);
-			std::string methodModif = GetMethodModifier(flags);
+			std::string methodModif = ModifierFlagsToString(flags);
 			std::string methodTypeName = il2cpp_class_from_type(il2cpp_method_get_return_type(method))->name;
 			int methodParamCount = il2cpp_method_get_param_count(method);
 
@@ -437,7 +418,7 @@ namespace Il2CppUtils
 			}
 		}
 
-		LOG_ERROR("Can't find wanted method in %s. Target: %s", klass->name, TraceMethod(pattern).c_str());
+		LOG_ERROR("Can't find wanted method in %s. Target: %s", klass->name, SignaturePatternToString(pattern).c_str());
 		return 0;
 	}
 

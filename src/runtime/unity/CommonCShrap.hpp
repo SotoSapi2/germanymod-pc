@@ -18,6 +18,19 @@ namespace CSharpType
 	extern Il2CppClass* Array;
 }
 
+namespace CommonLibImages
+{
+	extern const Il2CppImage* Corlib;
+	extern const Il2CppImage* System;
+	extern const Il2CppImage* UnityCoreModule;
+	extern const Il2CppImage* UnityPhysicsModule;
+	extern const Il2CppImage* AssemblyCSharp;
+	extern const Il2CppImage* InputLegacyModule;
+	extern const Il2CppImage* Photon3Unity3D;
+	extern const Il2CppImage* SteamworksNet;
+	extern const Il2CppImage* UserSessionManagement;
+}
+
 namespace CommonCShrap
 {
 	void INIT();

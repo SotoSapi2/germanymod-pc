@@ -10,7 +10,7 @@
 #include "framework/FileDialogService.hpp"
 #include "framework/UIManager.hpp"
 #include "unity/Unity.hpp"
-#include "game/GameBootstrapper.hpp"
+#include "game/GameBootstrap.hpp"
 
 std::wstring GetLoaderPath()
 {
@@ -46,7 +46,7 @@ DWORD WINAPI MainThread(LPVOID parameter)
 	Unity::INIT();
 	UIManager::INIT();
 
-	GameBootstrapper::INIT();
+	GameBootstrap::INIT();
 
 	//DumperMenu::INIT();
 	//ReverseToolMenu::INIT();

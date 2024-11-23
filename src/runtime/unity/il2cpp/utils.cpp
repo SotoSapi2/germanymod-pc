@@ -137,7 +137,7 @@ namespace Il2CppUtils
 			return false;
 		}
 
-		if (klass->field_count != fieldCount && klass->method_count != methodCount)
+		if (klass->field_count != fieldCount && klass->field_count != pattern.size() && klass->method_count != methodCount)
 		{
 			return false;
 		}
@@ -152,6 +152,11 @@ namespace Il2CppUtils
 			if (fieldClass == nullptr)
 			{
 				continue;
+			}
+
+			if (scanIndex >= pattern.size())
+			{
+				break;
 			}
 
 			if (pattern[scanIndex] == nullptr)

@@ -57,12 +57,12 @@ class Field
 		}
 	}
 
-	inline bool PointerIsNull()
+	inline bool PointerIsNull() const
 	{
 		return pointer == 0;
 	}
 
-	inline FieldPtr GetPointer()
+	inline FieldPtr GetPointer() const
 	{
 		return pointer;
 	}

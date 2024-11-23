@@ -1,13 +1,13 @@
 #include "UIManager.hpp"
-#include "bool.hpp"
-
 #include <vector>
 #include <imgui.h>
 #include <Logger.hpp>
 
 #include "UIBackend.hpp"
+#include "../game/classes/MouseFix.hpp"
 namespace UIManager
 {
+	bool isMenuShown = false;
     bool uiManagerInitlized = false;
 	std::vector<std::function<void()>> uiUpdateCallbacks{};
 
@@ -16,8 +16,7 @@ namespace UIManager
 		uiUpdateCallbacks.push_back(updateCallback);
 	}
 
-
-	void UIUpdateManager()
+	void ManageTheme()
 	{
 		ImGuiStyle& style = ImGui::GetStyle();
 		style.Alpha = 1.0;
@@ -25,7 +24,6 @@ namespace UIManager
 		style.GrabRounding = 1;
 		style.GrabMinSize = 20;
 		style.FrameRounding = 3;
-
 
 		style.Colors[ImGuiCol_Text] = ImVec4(0.00f, 1.00f, 1.00f, 1.00f);
 		style.Colors[ImGuiCol_TextDisabled] = ImVec4(0.00f, 0.40f, 0.41f, 1.00f);
@@ -60,53 +58,28 @@ namespace UIManager
 		style.Colors[ImGuiCol_PlotHistogram] = ImVec4(0.00f, 1.00f, 1.00f, 1.00f);
 		style.Colors[ImGuiCol_PlotHistogramHovered] = ImVec4(0.00f, 1.00f, 1.00f, 1.00f);
 		style.Colors[ImGuiCol_TextSelectedBg] = ImVec4(0.00f, 1.00f, 1.00f, 0.22f);
+	}
 
+	void UIUpdateManager()
+	{
+		ManageTheme();
 
-          //0x59   //0x59           
-		 //0x59   //0x59  
-		//0x59   //0x59  
-	   //0x59   //0x59            
-		 //0x59   //0x59  
-		//0x59   //0x59  
-	   //0x59   //0x59            
-		 //0x59   //0x59  
-		//0x59   //0x59  
-	   //0x59   //0x59          
-		 //0x59   //0x59  
-		//0x59   //0x59  
-	   //0x59   //0x59           
-		 //0x59   //0x59  
-		//0x59   //0x59  
-	   //0x59   //0x59  
-		 //0x59   //0x59  
-		//0x59   //0x59  
-	   //0x59   //0x59  
-
-
-
-
-
-
-
-		if (ImGui::IsKeyPressed(ImGuiKey_F1)) {
-			bools::isMouseShown = !bools::isMouseShown;
-			bools::ViewMenu = !bools::ViewMenu;
-		}
-
-		if (bools::ViewMenu)
+		if (ImGui::IsKeyPressed(ImGuiKey_F1)) 
 		{
-			if (ImGui::BeginTabBar("Proplam-Pg"), ImGuiTabBarFlags_FittingPolicyResizeDown)
-			{
-
-				for (std::function<void()> func : uiUpdateCallbacks)
-				{
-					func();
-				}
-
-				ImGui::EndTabBar();
-			}
+			isMenuShown = !isMenuShown;
+			MouseFix::ShowMouse(isMenuShown);
 		}
 
+		if (isMenuShown && ImGui::Begin("ProplamPG"))
+		{
+			for (std::function<void()> func : uiUpdateCallbacks)
+			{
+				func();
+			}
+
+
+			ImGui::End();
+		}
 
 	}
 

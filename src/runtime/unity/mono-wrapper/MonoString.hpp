@@ -101,4 +101,34 @@ struct MonoString : Il2CppObject
 	{
 		return std::string(this->ToUtf8());
 	}
+
+	static MonoString* FromMonoArray(MonoArray<char>* obj)
+	{
+		auto GetUtf8 = (void* (*)()) Il2CppUtils::GetMethodPointerByName(
+			il2cpp_class_from_name(CommonLibImages::Corlib, "System.Text", "Encoding"),
+			"get_UTF8"
+		);
+
+		auto GetString = (MonoString * (*)(void*, void*)) Il2CppUtils::GetMethodPointer(
+			il2cpp_class_from_name(CommonLibImages::Corlib, "System.Text", "Encoding"),
+			{ "public virtual", "String", "GetString", {"Byte[]"} }
+		);
+
+		return GetString(GetUtf8(), obj);
+	}
+
+	MonoArray<char>* ToMonoArray()
+	{
+		auto GetUtf8 = (void* (*)()) Il2CppUtils::GetMethodPointerByName(
+			il2cpp_class_from_name(CommonLibImages::Corlib, "System.Text", "Encoding"),
+			"get_UTF8"
+		);
+
+		auto GetBytes = (MonoArray<char>*(*)(void*, void*)) Il2CppUtils::GetMethodPointer(
+			il2cpp_class_from_name(CommonLibImages::Corlib, "System.Text", "Encoding"),
+			{ "public virtual", "Byte[]", "GetBytes", {"String"} }
+		);
+
+		return GetBytes(GetUtf8(), this);
+	}
 };

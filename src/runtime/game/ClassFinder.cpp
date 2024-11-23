@@ -121,6 +121,16 @@ namespace ClassFinder
 		{
 			REG_CLASS_PATTERNCHECK(klass, 72, 471, FieldPatterns::ProgressUpdater, "ProgressUpdater");
 		}
+
+		if (NAMESPACE_CHECK(klass, "Rilisoft"))
+		{
+			REG_CLASS_PATTERNCHECK(klass, 1, 3, FieldPatterns::WebsocketSex0, "WebsocketSex0");
+		}
+
+		if (NAMESPACE_CHECK(klass, "Rilisoft.WebSocket"))
+		{
+			REG_CLASS_NAMECHECK(klass, "WebSocketManager");
+		}
 	}
 
 	void INIT()

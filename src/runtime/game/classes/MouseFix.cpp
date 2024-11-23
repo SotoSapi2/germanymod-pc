@@ -1,14 +1,14 @@
 #include <Windows.h>
-#include "../unity/Unity.hpp"
-#include "../util/HookingUtil.hpp"
-#include "../framework/bool.hpp"
-//broken or idk
+#include "../ClassFinder.hpp"
+#include "../../util/HookingUtil.hpp"
+
 namespace MouseFix
 {
-	
+	bool isMouseShown = true;
+
 	$Hook(int, ShowCursorHOOK, (bool toggle))
 	{
-		return $CallOrig(ShowCursorHOOK, bools::isMouseShown);
+		return $CallOrig(ShowCursorHOOK, isMouseShown);
 	}
 
 	$Hook(int, ClipCursorHOOK, (const RECT* lpRect))
@@ -21,7 +21,7 @@ namespace MouseFix
 
 	$Hook(void, ProcessTouch, (Il2CppObject* _this, bool idk0, bool idk1))
 	{
-		if (bools::isMouseShown)
+		if (isMouseShown)
 		{
 			return;
 		}
@@ -31,8 +31,7 @@ namespace MouseFix
 
 	void ShowMouse(bool toggle)
 	{
-
-		bools::isMouseShown = toggle;
+		isMouseShown = toggle;
 	}
 
 	void INIT()

@@ -1,16 +1,171 @@
 #include "Websocket.hpp"
+#include <json.hpp>
+
 #include "../ClassFinder.hpp"
 #include "../../util/HookingUtil.hpp"
 #include "../../unity/Unity.hpp"
+#include "ProgressUpdater.hpp"
+#include "../../framework/UIManager.hpp"
+#include <imgui.h>
+#include "ExperinceController.hpp"
+
+namespace MiniJson
+{
+	Pointer<Il2CppObject* (MonoString* jsonString)> Deserialize(
+		"MiniJson",
+		0x0
+	);
+
+	Pointer<MonoString* (Il2CppObject* jsonObject)> Serialize(
+		"MiniJson",
+		0x1
+	);
+}
+
+namespace MessageBuilder
+{
+	using nlohmann::json;
+	std::string version("24.8.0");
+
+	std::string RandHex(int hexLength = 4)
+	{
+		std::stringstream ss;
+		for (int i = 0; i < hexLength; i++)
+		{
+			ss << std::hex << std::setw(2) << std::setfill('0') << rand() % 255;
+		}
+
+		return ss.str();
+	}
+
+	json BuildBase(const json& body, std::string& hexId)
+	{
+		json outJson = {
+			{"d", body},
+			{"i", hexId}
+		};
+
+		return outJson;
+	}
+
+	json BuildSnapshot(const json& arr)
+	{
+		std::string hexId = RandHex();
+
+		json outJson = {
+			{"i", hexId},
+			{"id", CommandID::Snapshot},
+			{"p", {{"c", arr}}}
+		};
+
+		return BuildBase(outJson, hexId);
+	}
+
+	json BuildCommand(CommandID cmdId, json body, std::vector<int> u = { 140, 6 })
+	{
+		std::string hexId = RandHex();
+
+		return
+		{
+			{"id", cmdId},
+			{"ci", hexId},
+			{"p", body},
+			{"h", json(json::value_t::object)},
+			{"v", version},
+			{"u", u}
+		};
+	}
+
+	Il2CppObject* BakeJson(const json& json_)
+	{
+		std::string jsonStr = json_.dump();
+		MonoString* str = MonoString::Create(jsonStr.c_str());
+
+		return MiniJson::Deserialize(str);
+	}
+}
 
 namespace Websocket
 {
+	using namespace MessageBuilder;
+	using nlohmann::json;
+
+	bool logWebsocket = true;
 	Il2CppObject* WSManagerInstance = nullptr;
 
 	Pointer<int(Il2CppObject* instance, MonoString* msgType, Il2CppObject* jsonMsg)> Send(
 		"WebSocketManager",
 		0x16
 	);
+
+	Pointer<void(Il2CppObject* instance, Il2CppObject* jsonMsg)> SendProgress(
+		"ProgressUpdater",
+		0x74
+	);
+
+	void SaveProgress(const json& json_)
+	{
+		Il2CppObject* instance = ProgressUpdater::GetInstance();
+		Il2CppObject* bakedJson = BakeJson(BuildSnapshot(json_));
+
+		SendProgress(instance, bakedJson);
+	}
+
+	void Reload()
+	{
+		json command = json::object({{"RELOAD", 1}});
+		json out = json::array({BuildCommand((CommandID)rand(), command)});
+		SaveProgress(out);
+	}
+
+	void AddCurrencyTest()
+	{
+		json command = json::object({
+			{"c", "GemsCurrency_1"},
+			{"v", 1000}, 
+			{"ca", 6}
+		});
+
+		json out = json::array({
+			BuildCommand(CommandID::AddCurrency, command),
+		});
+
+		SaveProgress(out);
+	}
+
+	void AddSkinTest()
+	{
+		json command = json::object({
+			{"i", 496014}, 
+			{"ca", 153}
+		});
+
+		json out = json::array({
+			BuildCommand(CommandID::InventoryAddItemSingle, command),
+		});
+
+		SaveProgress(out);
+	}
+
+	void UIUpdate()
+	{
+		ImGui::Checkbox("Log Websocket", &logWebsocket);
+
+		if (ImGui::Button("Add Currency Test"))
+		{
+			AddCurrencyTest();
+		}
+
+		if (ImGui::Button("Test DLC Skins"))
+		{
+			AddSkinTest();
+		}
+
+		if (ImGui::Button("Reload"))
+		{
+			Reload();
+		}
+	}
 
 	$Hook(int, SendSocketMessage, (Il2CppObject* _this, MonoString* messageType, Il2CppObject* jsonObject))
 	{
@@ -29,7 +184,7 @@ namespace Websocket
 
 			if (*buffer->vector == '{')
 			{
-
+				LOG_NOTAG("[%s | %s]\n%s", "Send", command.c_str(), str->ToUtf8());
 			}
 			else
 			{
@@ -53,7 +208,7 @@ namespace Websocket
 
 			if (*buffer->vector == '{')
 			{
-
+				LOG_NOTAG("[%s | %s]\n%s", "Recieve", command.c_str(), str->ToUtf8());
 			}
 			else
 			{
@@ -77,5 +232,7 @@ namespace Websocket
 			GetClass("WebsocketSex0"), 
 			0x1
 		));
+
+		UIManager::RegisterUIUpdate(UIUpdate);
 	}
 }

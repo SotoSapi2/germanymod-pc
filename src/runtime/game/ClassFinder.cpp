@@ -56,6 +56,11 @@ Il2CppClass* GetClass(const char* name)
 	return ClassManager::GetRegisteredClass(name);
 }
 
+static void REG_CLASS(Il2CppClass* klass, const char* name)
+{
+	ClassManager::RegisterClass(klass, name);
+}
+
 static bool NAME_CHECK(Il2CppClass* klass, const char* name)
 {
 	return strcmp(il2cpp_class_get_name(klass), name) == 0;
@@ -114,7 +119,10 @@ namespace ClassFinder
 			REG_CLASS_NAMECHECK(klass, "PixelTime");
 			REG_CLASS_NAMECHECK(klass, "WeaponSounds");
 			REG_CLASS_NAMECHECK(klass, "WeaponManager");
+			REG_CLASS_NAMECHECK(klass, "ExperienceController");
 			REG_CLASS_NAMECHECK(klass, "UICamera");
+
+			REG_CLASS_PATTERNCHECK(klass, 18, 30, FieldPatterns::PlayerListClass, "PlayerListClass");
 		}
 
 		if (NAMESPACE_CHECK(klass, "Progress"))
@@ -131,11 +139,28 @@ namespace ClassFinder
 		{
 			REG_CLASS_NAMECHECK(klass, "WebSocketManager");
 		}
+
+		if (NAMESPACE_CHECK(klass, "PGCompany"))
+		{
+			REG_CLASS_PATTERNCHECK(klass, 3, 1, FieldPatterns::XPNiggaSex, "XPNiggaSex");
+		}
+	}
+
+	void UserSessionManagementLoad(Il2CppClass* klass)
+	{
+		if (NAMESPACE_CHECK(klass, "Rilisoft.MiniJson"))
+		{
+			if (NAME_CHECK(klass, "Json"))
+			{
+				REG_CLASS(klass, "MiniJson");
+			}
+		}
 	}
 
 	void INIT()
 	{
 		ClassManager::ScanImage(CommonLibImages::Corlib, UnityCoreLoad);
 		ClassManager::ScanImage(CommonLibImages::AssemblyCSharp, AssemblyCSharpCheck);
+		ClassManager::ScanImage(CommonLibImages::UserSessionManagement, UserSessionManagementLoad);
 	}
 }

@@ -5,6 +5,8 @@
 #include "classes/MouseFix.hpp"
 #include "classes/WeaponSounds.hpp"
 #include "classes/Websocket.hpp"
+#include "classes/WeaponManager.hpp"
+#include "classes/ProgressUpdater.hpp"
 
 namespace GameBootstrap
 {
@@ -14,7 +16,10 @@ namespace GameBootstrap
 		PointerWrapperManager::INIT();
 
 		MouseFix::INIT();
+		WeaponManager::INIT();
 		WeaponSounds::INIT();
+
+		ProgressUpdater::INIT();
 		Websocket::INIT();
 	}
 }

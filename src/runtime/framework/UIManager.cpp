@@ -2,6 +2,7 @@
 #include <vector>
 #include <imgui.h>
 #include <Logger.hpp>
+#include <Windows.h>
 
 #include "UIBackend.hpp"
 #include "../game/classes/MouseFix.hpp"
@@ -77,10 +78,8 @@ namespace UIManager
 				func();
 			}
 
-
 			ImGui::End();
 		}
-
 	}
 
     void INIT()

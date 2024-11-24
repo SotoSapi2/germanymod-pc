@@ -1,14 +1,16 @@
 #include <Windows.h>
 #include "../ClassFinder.hpp"
 #include "../../util/HookingUtil.hpp"
+#include <imgui.h>
 
 namespace MouseFix
 {
-	bool isMouseShown = true;
+	bool isMouseShown = false;
 
-	$Hook(int, ShowCursorHOOK, (bool toggle))
+	void ShowMouse(bool toggle)
 	{
-		return $CallOrig(ShowCursorHOOK, isMouseShown);
+		ImGui::GetIO().MouseDrawCursor = toggle;
+		isMouseShown = toggle;
 	}
 
 	$Hook(int, ClipCursorHOOK, (const RECT* lpRect))
@@ -29,18 +31,40 @@ namespace MouseFix
 		$CallOrig(ProcessTouch, _this, idk0, idk1);
 	}
 
-	void ShowMouse(bool toggle)
+	$Hook(void, Update, (Il2CppObject* _this))
 	{
-		isMouseShown = toggle;
+		HWND hwnd = FindWindowA(NULL, "Pixel Gun 3D");
+		HWND activeWindow = GetForegroundWindow();
+
+		if (activeWindow == hwnd && !IsIconic(hwnd) && !isMouseShown)
+		{
+			RECT windowRect;
+			GetWindowRect(hwnd, &windowRect);
+
+			if (windowRect.left >= 0 && windowRect.top >= 0) 
+			{
+				POINT center;
+				center.x = (windowRect.left + windowRect.right) / 2;
+				center.y = (windowRect.top + windowRect.bottom) / 2;
+
+				SetCursorPos(center.x, center.y);
+			}
+		}
+
+		$CallOrig(Update, _this);
 	}
 
 	void INIT()
 	{
-		$RegisterHook(ShowCursorHOOK, ShowCursor);
 		$RegisterHook(ClipCursorHOOK, ClipCursor);
 		$RegisterHook(ProcessTouch, Il2CppUtils::GetMethodPointerByName(
 			GetClass("UICamera"),
 			"ProcessTouch"
+		));
+
+		$RegisterHook(Update, Il2CppUtils::GetMethodPointerByName(
+			GetClass("UICamera"),
+			"Update"
 		));
 	}
 }

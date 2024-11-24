@@ -27,12 +27,6 @@ namespace Il2CppUtils
 
     FieldPtr GetFieldPointerByIndex(Il2CppClass* klass, Il2CppObject* instancePtr, int index);
 
-    template <typename T>
-    T GetStaticField(Il2CppClass* klass, const char* fieldName);
-
-    template <typename T>
-    T GetStaticFieldByIndex(Il2CppClass* klass, int index);
-
     void SetStaticFieldByIndex(Il2CppClass* klass, int index, void* value);
 
     bool CheckFieldPattern(Il2CppClass* klass, size_t fieldCount, size_t methodCount, const FieldPattern& pattern);
@@ -48,4 +42,40 @@ namespace Il2CppUtils
     MethodPtr GetMethodPointerByName(Il2CppClass* klass, const char* name, int sameMethodNameSkip = 0, int indexOffset = 0);
 
     MethodPtr GetMethodPointerByIndex(Il2CppClass* klass, int index);
+
+	template<typename T>
+	T GetStaticField(Il2CppClass* klass, const char* fieldName)
+	{
+		void* iter = nullptr;
+		while (auto field = il2cpp_class_get_fields(klass, &iter))
+		{
+
+			if (strcmp(fieldName, il2cpp_field_get_name(field)) == 0)
+			{
+				void* var;
+				il2cpp_field_static_get_value(field, &var);
+				return (T)var;
+			}
+		}
+
+		return nullptr;
+	}
+
+	template<typename T>
+	T GetStaticFieldByIndex(Il2CppClass* klass, int index)
+	{
+		if (klass == nullptr)
+		{
+			return (T)nullptr;
+		}
+
+		if (klass->field_count > 0 && klass->fields)
+		{
+			void* var;
+			il2cpp_field_static_get_value(&klass->fields[index], &var);
+			return (T)var;
+		}
+
+		return (T)nullptr;
+	}
 }

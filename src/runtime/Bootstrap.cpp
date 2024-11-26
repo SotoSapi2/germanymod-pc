@@ -7,7 +7,7 @@
 #include "game/data/PointerFunctions.hpp"
 #include "game/PixelTime.hpp"
 #include "game/MouseFix.hpp"
-#include "game/WeaponManager.hpp"
+#include "game/GameplayMain.hpp"
 #include "game/WeaponSounds.hpp"
 #include "game/Websocket.hpp"
 
@@ -24,7 +24,7 @@ namespace Bootstrap
 
 		MouseFix::INIT();
 		PixelTime::INIT();
-		WeaponManager::INIT();
+		GameplayMain::INIT();
 		WeaponSounds::INIT();
 		Websocket::INIT();
 

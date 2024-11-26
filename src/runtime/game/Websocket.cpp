@@ -72,12 +72,12 @@ namespace MessageBuilder
 	}
 }
 
+using namespace MessageBuilder;
 namespace Websocket
 {
-	using namespace MessageBuilder;
 	using nlohmann::json;
 
-	bool logWebsocket = true;
+	bool logWebsocket = false;
 	Il2CppObject* WSManagerInstance = nullptr;
 
 	void SaveProgress(const json& json_)

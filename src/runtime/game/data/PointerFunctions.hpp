@@ -267,6 +267,13 @@ namespace PlayerMoveC
 	extern Pointer<void(Il2CppObject* plrMoveC, MonoString* message, bool isClan, MonoString* icon)> SendChat;
 }
 
+namespace PlayerDamageable
+{
+	extern Pointer<bool(Il2CppObject* player)> IsDead;
+
+	extern Pointer<bool(Il2CppObject* player, Il2CppObject* target)> IsEnemyTo;
+}
+
 namespace PhotonView
 {
 	extern Pointer<void(Il2CppObject* instance, int eventEnum, int photonTarget, void* param)> RPC;
@@ -476,6 +483,10 @@ namespace PointerFunctions
 		PlayerMoveC::SetXrayShader.Define();
 		PlayerMoveC::ShotPressed.Define();
 		PlayerMoveC::SendChat.Define();
+
+		// PlayerDamageable
+		PlayerDamageable::IsDead.Define();
+		PlayerDamageable::IsEnemyTo.Define();
 
 		// PhotonView
 		PhotonView::RPC.Define();

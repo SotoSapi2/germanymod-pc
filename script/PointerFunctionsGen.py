@@ -30,7 +30,7 @@ def generate_pointer_definator(input_code):
     namespace_pattern = r"namespace\s+(.*?)\s*\{([^}]*)\}"
     pointer_pattern = r"Pointer<.*?>+\s(.+)[;| ]"
 
-    output = "namespace PointerFunctions\n{\n\tstatic void INIT()\n\t{\n"
+    output = "\n\nnamespace PointerFunctions\n{\n\tstatic void INIT()\n\t{\n"
 
     for namespace, body in re.findall(namespace_pattern, input_code):
         if namespace == "PointerFunctions":

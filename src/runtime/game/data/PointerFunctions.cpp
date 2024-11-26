@@ -556,6 +556,19 @@ namespace PlayerMoveC
 	);
 }
 
+namespace PlayerDamageable
+{
+	Pointer<bool(Il2CppObject* player)> IsDead(
+		"PlayerDamageable",
+		"IsDead"
+	);
+
+	Pointer<bool(Il2CppObject* player, Il2CppObject* target)> IsEnemyTo(
+		"PlayerDamageable",
+		"IsEnemyTo"
+	);
+}
+
 namespace PhotonView
 {
 	Pointer<void(Il2CppObject* instance, int eventEnum, int photonTarget, void* param)> RPC(

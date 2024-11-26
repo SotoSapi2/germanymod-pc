@@ -1,6 +1,30 @@
 #pragma once
 #define _USE_MATH_DEFINES
 #include <math.h>
+struct Color
+{
+	public:
+	float r;
+	float g;
+	float b;
+	float a;
+
+	Color(float r, float g, float b)
+	{
+		this->r = r;
+		this->g = g;
+		this->b = b;
+		this->r = 1;
+	}
+
+	Color(float r, float g, float b, float alpha)
+	{
+		this->r = r;
+		this->g = g;
+		this->b = b;
+		this->r = alpha;
+	}
+};
 
 struct Vector2
 {

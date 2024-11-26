@@ -14,19 +14,19 @@ struct MonoList : Il2CppObject
 
 	T Get(int index)
 	{
-		return items->m_Items[index];
+		return items->vector[index];
 	}
 
 	void Set(T value, int index)
 	{
-		items->m_Items[index] = value;
+		items->vector[index] = value;
 	}
 
 	void foreach(std::function<void(T)> func)
 	{
 		for (int i = 0; i < size; ++i)
 		{
-			func(items->m_Items[i]);
+			func(items->vector[i]);
 		}
 	}
 
@@ -34,7 +34,7 @@ struct MonoList : Il2CppObject
 	{
 		for (int i = 0; i < size; ++i)
 		{
-			func(items->m_Items[i], i);
+			func(items->m_Ivectortems[i], i);
 		}
 	}
 };

@@ -1,26 +1,13 @@
 #include "Websocket.hpp"
 #include <json.hpp>
-
-#include "../ClassFinder.hpp"
-#include "../../util/HookingUtil.hpp"
-#include "../../unity/Unity.hpp"
-#include "ProgressUpdater.hpp"
-#include "../../framework/UIManager.hpp"
 #include <imgui.h>
-#include "ExperinceController.hpp"
 
-namespace MiniJson
-{
-	Pointer<Il2CppObject* (MonoString* jsonString)> Deserialize(
-		"MiniJson",
-		0x0
-	);
+#include "../util/HookingUtil.hpp"
+#include "../unity/Unity.hpp"
+#include "../framework/UIManager.hpp"
 
-	Pointer<MonoString* (Il2CppObject* jsonObject)> Serialize(
-		"MiniJson",
-		0x1
-	);
-}
+#include "data/ClassFinder.hpp"
+#include "data/PointerFunctions.hpp"
 
 namespace MessageBuilder
 {
@@ -93,28 +80,18 @@ namespace Websocket
 	bool logWebsocket = true;
 	Il2CppObject* WSManagerInstance = nullptr;
 
-	Pointer<int(Il2CppObject* instance, MonoString* msgType, Il2CppObject* jsonMsg)> Send(
-		"WebSocketManager",
-		0x16
-	);
-
-	Pointer<void(Il2CppObject* instance, Il2CppObject* jsonMsg)> SendProgress(
-		"ProgressUpdater",
-		0x74
-	);
-
 	void SaveProgress(const json& json_)
 	{
 		Il2CppObject* instance = ProgressUpdater::GetInstance();
 		Il2CppObject* bakedJson = BakeJson(BuildSnapshot(json_));
 
-		SendProgress(instance, bakedJson);
+		ProgressUpdater::SaveProgress(instance, bakedJson);
 	}
 
 	void Reload()
 	{
-		json command = json::object({{"RELOAD", 1}});
-		json out = json::array({BuildCommand((CommandID)rand(), command)});
+		json command = json::object({ {"RELOAD", 1} });
+		json out = json::array({ BuildCommand((CommandID)rand(), command) });
 		SaveProgress(out);
 	}
 
@@ -122,13 +99,13 @@ namespace Websocket
 	{
 		json command = json::object({
 			{"c", "GemsCurrency_1"},
-			{"v", 1000}, 
+			{"v", 1000},
 			{"ca", 6}
-		});
+			});
 
 		json out = json::array({
 			BuildCommand(CommandID::AddCurrency, command),
-		});
+			});
 
 		SaveProgress(out);
 	}
@@ -136,13 +113,13 @@ namespace Websocket
 	void AddSkinTest()
 	{
 		json command = json::object({
-			{"i", 496014}, 
+			{"i", 496014},
 			{"ca", 153}
-		});
+			});
 
 		json out = json::array({
 			BuildCommand(CommandID::InventoryAddItemSingle, command),
-		});
+			});
 
 		SaveProgress(out);
 	}
@@ -221,15 +198,15 @@ namespace Websocket
 
 	void INIT()
 	{
-		$RegisterHook(SendSocketMessage, Send.GetPointer());
+		$RegisterHook(SendSocketMessage, WebSocketManager::Send.GetPointer());
 
 		$RegisterHook(SocketSend, Il2CppUtils::GetMethodPointerByIndex(
-			GetClass("WebsocketSex0"), 
+			GetClass("WebsocketSex0"),
 			0x2
 		));
 
 		$RegisterHook(SocketRecieve, Il2CppUtils::GetMethodPointerByIndex(
-			GetClass("WebsocketSex0"), 
+			GetClass("WebsocketSex0"),
 			0x1
 		));
 

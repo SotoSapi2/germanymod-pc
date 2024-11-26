@@ -6,11 +6,7 @@
 #include <Logger.hpp>
 #include <WinReg.hpp>
 
-#include "framework/ConsoleManager.hpp"
-#include "framework/FileDialogService.hpp"
-#include "framework/UIManager.hpp"
-#include "unity/Unity.hpp"
-#include "game/GameBootstrap.hpp"
+#include "Bootstrap.hpp"
 
 std::wstring GetLoaderPath()
 {
@@ -32,25 +28,9 @@ std::wstring GetLoaderPath()
 	}
 }
 
-void InitializeLogger()
-{
-	std::wstring loaderPath = GetLoaderPath();
-	Logger::SetLogfilePath(loaderPath, L"" PROJECT_NAME);
-}
-
 DWORD WINAPI MainThread(LPVOID parameter)
 {
-	ConsoleManager::INIT();
-	InitializeLogger();
-	FileDialogService::INIT();
-	Unity::INIT();
-	UIManager::INIT();
-
-	GameBootstrap::INIT();
-
-	//DumperMenu::INIT();
-	//ReverseToolMenu::INIT();
-
+	Bootstrap::INIT();
 	return 0;
 }
 

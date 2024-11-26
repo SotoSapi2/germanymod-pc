@@ -1,7 +1,7 @@
 #include <Windows.h>
-#include "../ClassFinder.hpp"
-#include "../../util/HookingUtil.hpp"
 #include <imgui.h>
+#include "data/ClassFinder.hpp"
+#include "../util/HookingUtil.hpp"
 
 namespace MouseFix
 {
@@ -41,7 +41,7 @@ namespace MouseFix
 			RECT windowRect;
 			GetWindowRect(hwnd, &windowRect);
 
-			if (windowRect.left >= 0 && windowRect.top >= 0) 
+			if (windowRect.left >= 0 && windowRect.top >= 0)
 			{
 				POINT center;
 				center.x = (windowRect.left + windowRect.right) / 2;

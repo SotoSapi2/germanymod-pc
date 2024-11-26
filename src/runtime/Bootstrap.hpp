@@ -1,6 +1,6 @@
 #pragma once
 
-namespace GameBootstrap
+namespace Bootstrap
 {
 	void INIT();
 }

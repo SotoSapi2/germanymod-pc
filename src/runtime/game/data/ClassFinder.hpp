@@ -1,5 +1,8 @@
 #pragma once
-#include "../unity/Unity.hpp"
+#include "../../unity/Unity.hpp"
+
+#undef RegisterClass
+#undef GetClass
 
 namespace ClassManager
 {

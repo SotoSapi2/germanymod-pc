@@ -2,6 +2,7 @@
 #include <Windows.h>
 #include <cstdio>
 #include <Logger.hpp>
+#include "../entrypoint.hpp"
 
 namespace ConsoleManager
 {
@@ -25,8 +26,15 @@ namespace ConsoleManager
 		f3 = freopen("CONOUT$", "wb", stderr);
 	}
 
+	void InitializeLogger()
+	{
+		std::wstring loaderPath = GetLoaderPath();
+		Logger::SetLogfilePath(loaderPath, L"" PROJECT_NAME);
+	}
+
 	void INIT()
 	{
 		AllocateConsole();
+		InitializeLogger();
 	}
 }

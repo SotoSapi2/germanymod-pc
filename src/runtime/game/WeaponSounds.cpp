@@ -1,8 +1,9 @@
 #include "WeaponSounds.hpp"
 #include <imgui.h>
-#include "../ClassFinder.hpp"
-#include "../../util/HookingUtil.hpp"
-#include "../../framework/UIManager.hpp"
+#include "data/ClassFinder.hpp"
+#include "util/FieldWrapper.hpp"
+#include "../util/HookingUtil.hpp"
+#include "../framework/UIManager.hpp"
 
 namespace WeaponSounds
 {
@@ -16,12 +17,7 @@ namespace WeaponSounds
 	bool railgun = false;
 	bool zoomXray = false;
 
-
-
 	//floats
-
-
-
 
 	$Hook(void, WeaponSoundsUpdate, (Il2CppObject* _this))
 	{
@@ -31,51 +27,35 @@ namespace WeaponSounds
 			Field<float>(_this, "radiusRoundMelee") = 99999.0f;
 		}
 
-
-
 		if (explosiveBullet)
 		{
 			Field<bool>(_this, "bulletExplode") = true;
 		}
-
-
 
 		if (bazooka)
 		{
 			Field<bool>(_this, "bazooka") = true;
 		}
 
-
-
 		if (infiniteAmmo)
 		{
 			//Field<>(_this, "unknown") = 999;
 		}
-
 
 		if (freezer)
 		{
 			Field<bool>(_this, "freezer") = true;
 		}
 
-
 		if (railgun)
 		{
 			Field<bool>(_this, "railgun") = true;
 		}
 
-
 		if (zoomXray)
 		{
 			Field<bool>(_this, "zoomXray") = true;
 		}
-		else
-		{
-			Field<bool>(_this, "zoomXray") = false;
-		}
-
-
-
 
 		$CallOrig(WeaponSoundsUpdate, _this);
 	}
@@ -89,7 +69,7 @@ namespace WeaponSounds
 		ImGui::Checkbox("Rpg Bullet", &bazooka);
 		ImGui::Checkbox("Freezer", &freezer);
 		ImGui::Checkbox("Rail Gun", &railgun);
-		ImGui::Checkbox("Zoom Xray", &zoomXray);		
+		ImGui::Checkbox("Zoom Xray", &zoomXray);
 	}
 
 	void INIT()

@@ -5,11 +5,12 @@
 #include <Windows.h>
 
 #include "UIBackend.hpp"
-#include "../game/classes/MouseFix.hpp"
+#include "../game/MouseFix.hpp"
+
 namespace UIManager
 {
 	bool isMenuShown = false;
-    bool uiManagerInitlized = false;
+	bool uiManagerInitlized = false;
 	std::vector<std::function<void()>> uiUpdateCallbacks{};
 
 	void RegisterUIUpdate(std::function<void()> updateCallback)
@@ -65,25 +66,26 @@ namespace UIManager
 	{
 		ManageTheme();
 
-		if (ImGui::IsKeyPressed(ImGuiKey_F1)) 
+		if (ImGui::IsKeyPressed(ImGuiKey_F1))
 		{
 			isMenuShown = !isMenuShown;
 			MouseFix::ShowMouse(isMenuShown);
 		}
 
-		if (isMenuShown && ImGui::Begin("ProplamPG"))
+		if (isMenuShown)
 		{
+			ImGui::Begin("ProplamPG");
 			for (std::function<void()> func : uiUpdateCallbacks)
 			{
 				func();
 			}
-
 			ImGui::End();
 		}
+
 	}
 
-    void INIT()
-    {
+	void INIT()
+	{
 		if (uiManagerInitlized)
 		{
 			throw std::runtime_error("UI Manager already initialized.");
@@ -91,5 +93,5 @@ namespace UIManager
 
 		LOG_INFO("UI initializated.");
 		UIBackend::INIT(UIUpdateManager);
-    }
+	}
 }

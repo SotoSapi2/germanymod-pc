@@ -101,7 +101,7 @@ namespace Il2CppUtils
 			return false;
 		}
 
-		if (klass->field_count != fieldCount && klass->field_count != pattern.size() && klass->method_count != methodCount)
+		if (klass->field_count != fieldCount || klass->field_count != pattern.size() || klass->method_count != methodCount)
 		{
 			return false;
 		}
@@ -453,6 +453,7 @@ namespace Il2CppUtils
 
 		if (index > klass->method_count)
 		{
+			LOG_INFO("%s", klass->name);
 			LOG_ERROR("Index is out of bound. (method_count %i)", klass->method_count);
 			return nullptr;
 		}

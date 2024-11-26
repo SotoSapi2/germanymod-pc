@@ -1,16 +1,12 @@
 #include "PointerWrapper.hpp"
 
-#include <Windows.h>
-#include "ClassFinder.hpp"
-
-std::vector<PointerWrapper*> PointerWrapperManager::PointerWrapperList;
-
 bool PointerWrapper::Define()
 {
 	if (GetOffset().has_value())
 	{
-		static uintptr_t base = (uintptr_t)GetModuleHandle("GameAssembly.dll");
-		ptr = reinterpret_cast<MethodPtr>(base + offset);
+		ptr = reinterpret_cast<MethodPtr>(
+			(uintptr_t)GetModuleHandle("GameAssembly.dll") + GetOffset().value()
+		);
 	}
 	else if (GetKlassName().has_value() && GetIndex() > -1)
 	{
@@ -37,15 +33,4 @@ bool PointerWrapper::Define()
 	}
 
 	return ptr != nullptr;
-}
-
-void PointerWrapperManager::INIT()
-{
-	for (auto v : PointerWrapperManager::PointerWrapperList)
-	{
-		if (!v->Define())
-		{
-			LOG_ERROR("Failed to define a pointer wrapper.");
-		}
-	}
 }

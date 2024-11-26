@@ -1,7 +1,8 @@
 #pragma once
 #include "WeaponManager.hpp"
-#include "../../util/HookingUtil.hpp"
-#include "../ClassFinder.hpp"
+#include "util/FieldWrapper.hpp"
+#include "data/ClassFinder.hpp"
+#include "../util/HookingUtil.hpp"
 
 namespace WeaponManager
 {

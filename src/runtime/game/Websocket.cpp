@@ -1,6 +1,7 @@
 #include "Websocket.hpp"
 #include <json.hpp>
 #include <imgui.h>
+#include <queue>
 
 #include "../util/HookingUtil.hpp"
 #include "../unity/Unity.hpp"
@@ -8,6 +9,8 @@
 
 #include "data/ClassFinder.hpp"
 #include "data/PointerFunctions.hpp"
+#include "Functions.hpp"
+#include "PixelTime.hpp"
 
 namespace MessageBuilder
 {
@@ -25,27 +28,17 @@ namespace MessageBuilder
 		return ss.str();
 	}
 
-	json BuildBase(const json& body, std::string& hexId)
-	{
-		json outJson = {
-			{"d", body},
-			{"i", hexId}
-		};
-
-		return outJson;
-	}
-
 	json BuildSnapshot(const json& arr)
 	{
 		std::string hexId = RandHex();
 
-		json outJson = {
+		json outJson = json::object({
 			{"i", hexId},
 			{"id", CommandID::Snapshot},
 			{"p", {{"c", arr}}}
-		};
+		});
 
-		return BuildBase(outJson, hexId);
+		return outJson;
 	}
 
 	json BuildCommand(CommandID cmdId, json body, std::vector<int> u = { 140, 6 })
@@ -62,14 +55,6 @@ namespace MessageBuilder
 			{"u", u}
 		};
 	}
-
-	Il2CppObject* BakeJson(const json& json_)
-	{
-		std::string jsonStr = json_.dump();
-		MonoString* str = MonoString::Create(jsonStr.c_str());
-
-		return MiniJson::Deserialize(str);
-	}
 }
 
 using namespace MessageBuilder;
@@ -77,35 +62,43 @@ namespace Websocket
 {
 	using nlohmann::json;
 
+	bool test = false;
 	bool logWebsocket = false;
 	Il2CppObject* WSManagerInstance = nullptr;
+	std::queue<json> commandQueue;
 
-	void SaveProgress(const json& json_)
+	void Queue(const std::string& msgType, const json& json_)
 	{
-		Il2CppObject* instance = ProgressUpdater::GetInstance();
-		Il2CppObject* bakedJson = BakeJson(BuildSnapshot(json_));
+		commandQueue.push(json_);
+		WebSocketManager::SendEvent(WSManagerInstance, MonoString::Create(msgType.c_str()));
+	}
 
-		ProgressUpdater::SaveProgress(instance, bakedJson);
+	void SaveProgress(const json& arr)
+	{
+		Queue("update_progress", MessageBuilder::BuildSnapshot(arr));
+	}
+
+	void SaveProgressNoSnapshot(CommandID cmdId, const json& json_)
+	{
+		Queue("update_progress", BuildCommand(cmdId, json_));
 	}
 
 	void Reload()
 	{
-		json command = json::object({ {"RELOAD", 1} });
-		json out = json::array({ BuildCommand((CommandID)rand(), command) });
-		SaveProgress(out);
+		Queue("update_progress", json::object({}));
 	}
 
 	void AddCurrencyTest()
 	{
 		json command = json::object({
-			{"c", "GemsCurrency_1"},
+			{"c", "GemsCurrency"},
 			{"v", 1000},
-			{"ca", 6}
-			});
+			{"ca", 16}
+		});
 
 		json out = json::array({
 			BuildCommand(CommandID::AddCurrency, command),
-			});
+		});
 
 		SaveProgress(out);
 	}
@@ -115,27 +108,43 @@ namespace Websocket
 		json command = json::object({
 			{"i", 496014},
 			{"ca", 153}
+		});
+
+		SaveProgressNoSnapshot(CommandID::InventoryAddItemSingle, command);
+	}
+
+	void AddAllDlcTest()
+	{
+		ContentKeyRegister::IterateKeyRegister(OfferItemType::WeaponSkin, [&](MonoString* key, int index)
+		{
+			if (!ContentKeyRegister::IsKeyBannable(key)) return;
+
+			json command = json::object({
+				{"i", index},
+				{"ca", 153}
 			});
 
-		json out = json::array({
-			BuildCommand(CommandID::InventoryAddItemSingle, command),
-			});
-
-		SaveProgress(out);
+			SaveProgressNoSnapshot(CommandID::InventoryAddItemSingle, command);
+		});
 	}
 
 	void UIUpdate()
 	{
 		ImGui::Checkbox("Log Websocket", &logWebsocket);
 
-		if (ImGui::Button("Add Currency Test"))
+		if (ImGui::Button("Add Currency test"))
 		{
 			AddCurrencyTest();
 		}
 
-		if (ImGui::Button("Test DLC Skins"))
+		if (ImGui::Button("DLC Skins test"))
 		{
 			AddSkinTest();
+		}
+
+		if (ImGui::Button("Add all DLC Skins test"))
+		{
+			AddAllDlcTest();
 		}
 
 		if (ImGui::Button("Reload"))
@@ -146,7 +155,11 @@ namespace Websocket
 
 	$Hook(int, SendSocketMessage, (Il2CppObject* _this, MonoString* messageType, Il2CppObject* jsonObject))
 	{
-		WSManagerInstance = _this;
+		if (WSManagerInstance == nullptr)
+		{
+			WSManagerInstance = _this;
+		}
+
 		return $CallOrig(SendSocketMessage, _this, messageType, jsonObject);
 	}
 
@@ -157,11 +170,41 @@ namespace Websocket
 			static std::string command;
 			std::string sid;
 			int reqId;
+
 			MonoString* str = MonoString::FromMonoArray(buffer);
 
 			if (*buffer->vector == '{')
 			{
-				LOG_NOTAG("[%s | %s]\n%s", "Send", command.c_str(), str->ToUtf8());
+				json outJson = json::parse(str->ToUtf8());
+
+				if (outJson.contains("sid"))
+				{
+					sid = outJson["sid"];
+				}
+				if (outJson.contains("req_id"))
+				{
+					reqId = outJson["req_id"];
+				}
+
+				if (!commandQueue.empty())
+				{
+					json outJson = commandQueue.front();
+					outJson["req_id"] = reqId;
+					outJson["sid"] = sid;
+
+					if (logWebsocket)
+					{
+						LOG_NOTAG("[Send (Custom) | %s]\n%s", command.c_str(), outJson.dump().c_str());
+					}
+
+					commandQueue.pop();
+					return $CallOrig(SocketSend, _this, MonoString::Create(outJson.dump())->ToMonoArray(), idfk);
+				}
+
+				if (logWebsocket)
+				{
+					LOG_NOTAG("[Send | %s]\n%s", command.c_str(), str->ToUtf8());
+				}
 			}
 			else
 			{
@@ -179,13 +222,27 @@ namespace Websocket
 		if (buffer)
 		{
 			static std::string command = "";
-			std::string sid;
+			std::string sid = "";
 			int reqId = 0;
 			MonoString* str = MonoString::FromMonoArray(buffer);
 
 			if (*buffer->vector == '{')
 			{
-				LOG_NOTAG("[%s | %s]\n%s", "Recieve", command.c_str(), str->ToUtf8());
+				json outJson = json::parse(str->ToUtf8());
+
+				if (outJson.contains("sid"))
+				{
+					sid = outJson["sid"];
+				}
+				if (outJson.contains("req_id"))
+				{
+					reqId = outJson["req_id"];
+				}
+
+				if (logWebsocket)
+				{
+					LOG_NOTAG("[%s | %s]\n%s", "Recieve", command.c_str(), str->ToUtf8());
+				}
 			}
 			else
 			{

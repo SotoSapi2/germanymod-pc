@@ -24,3 +24,16 @@ namespace PlayerMoveC
 
 	bool IsEnemyTo(Il2CppObject* player, Il2CppObject* target);
 }
+
+namespace ContentKeyRegister
+{
+	int GetKeyRegisterSize(OfferItemType type);
+
+	void IterateKeyRegister(OfferItemType type, std::function<void(MonoString* x)> callback);
+
+	void IterateKeyRegister(OfferItemType type, std::function<void(MonoString* x, int i)> callback);
+
+	void IterateKeyRegister(size_t from, size_t to, OfferItemType type, std::function<void(MonoString* x)> callback);
+
+	bool IsKeyBannable(MonoString* key);
+}

@@ -8,7 +8,7 @@ struct MonoString : Il2CppObject
 {
 	public:
 	int length;
-	Il2CppChar chars[1];
+	Il2CppChar chars[32];
 
 	static MonoString* Create(const char* str)
 	{
@@ -37,7 +37,7 @@ struct MonoString : Il2CppObject
 
 	bool Equels(const std::string& str)
 	{
-		return this->Equels(Create(str));
+		return this->Equels(Create(str.c_str()));
 	}
 
 	bool Contains(MonoString* str)
@@ -57,7 +57,7 @@ struct MonoString : Il2CppObject
 
 	bool Contains(const std::string& str)
 	{
-		return this->Contains(Create(str));
+		return this->Contains(Create(str.c_str()));
 	}
 
 	bool IsNullOrEmpty()

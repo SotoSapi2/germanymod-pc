@@ -228,14 +228,21 @@ namespace InventoryItemType
 
 namespace WebSocketManager
 {
+	// UNSAFE!!! CAN TRHOW EXCEPTION! DO NOT USE.
 	Pointer<Il2CppObject* (Il2CppObject* instance, MonoString* msgType, Il2CppObject* jsonMsg)> SendAsync(
 		"WebSocketManager",
 		0x10
 	);
 
+	// UNSAFE!!! CAN TRHOW EXCEPTION! DO NOT USE.
 	Pointer<int(Il2CppObject* instance, MonoString* msgType, Il2CppObject* jsonMsg)> Send(
 		"WebSocketManager",
 		0x16
+	);
+
+	Pointer<int(Il2CppObject* instance, MonoString* msgType)> SendEvent(
+		"WebSocketManager",
+		0x15
 	);
 }
 

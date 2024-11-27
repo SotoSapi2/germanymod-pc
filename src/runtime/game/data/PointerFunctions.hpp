@@ -117,6 +117,8 @@ namespace WebSocketManager
 	extern Pointer<Il2CppObject* (Il2CppObject* instance, MonoString* msgType, Il2CppObject* jsonMsg)> SendAsync;
 
 	extern Pointer<int(Il2CppObject* instance, MonoString* msgType, Il2CppObject* jsonMsg)> Send;
+
+	extern Pointer<int(Il2CppObject* instance, MonoString* msgType)> SendEvent;
 }
 
 namespace KeyClass
@@ -402,6 +404,7 @@ namespace PointerFunctions
 		// WebSocketManager
 		WebSocketManager::SendAsync.Define();
 		WebSocketManager::Send.Define();
+		WebSocketManager::SendEvent.Define();
 
 		// KeyClass
 		KeyClass::AddKey.Define();

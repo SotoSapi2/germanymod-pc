@@ -15,6 +15,7 @@ namespace Bootstrap
 {
 	void INIT()
 	{
+		Sleep(5000);
 		ConsoleManager::INIT();
 		FileDialogService::INIT();
 		Unity::INIT();

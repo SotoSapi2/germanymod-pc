@@ -5,7 +5,6 @@
 
 #include "../util/HookingUtil.hpp"
 #include "../unity/Unity.hpp"
-#include "../framework/UIManager.hpp"
 
 #include "data/ClassFinder.hpp"
 #include "data/PointerFunctions.hpp"
@@ -266,7 +265,5 @@ namespace Websocket
 			GetClass("WebsocketSex0"),
 			0x1
 		));
-
-		UIManager::RegisterUIUpdate(UIUpdate);
 	}
 }

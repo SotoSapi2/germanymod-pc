@@ -3,5 +3,5 @@
 
 namespace UIBackend
 {
-	void INIT(std::function<void()> updateCallback);
+	void START(std::function<void()> loadCallback, std::function<void()> updateCallback);
 }

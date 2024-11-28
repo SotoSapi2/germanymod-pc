@@ -49,7 +49,7 @@ file(
 	"${SRC}/runtime/*.c"
 )
 
-add_library(${RUNTIME_NAME} SHARED ${RUNTIME_GLOB})
+add_library(${RUNTIME_NAME} SHARED ${RUNTIME_GLOB} )
 target_link_libraries(${RUNTIME_NAME} PRIVATE
 	logger imgui fileutils detours-x64
 )

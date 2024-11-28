@@ -3,7 +3,6 @@
 #include "data/ClassFinder.hpp"
 #include "util/FieldWrapper.hpp"
 #include "../util/HookingUtil.hpp"
-#include "../framework/UIManager.hpp"
 
 namespace WeaponSounds
 {
@@ -60,25 +59,11 @@ namespace WeaponSounds
 		$CallOrig(WeaponSoundsUpdate, _this);
 	}
 
-	void UIUpdate()
-	{
-		ImGui::Checkbox("Killaura", &killAura);
-		ImGui::Checkbox("Silent Aim", &silentAim);
-		ImGui::Checkbox("Infinite Ammo", &infiniteAmmo);
-		ImGui::Checkbox("Explosive Bullet", &explosiveBullet);
-		ImGui::Checkbox("Rpg Bullet", &bazooka);
-		ImGui::Checkbox("Freezer", &freezer);
-		ImGui::Checkbox("Rail Gun", &railgun);
-		ImGui::Checkbox("Zoom Xray", &zoomXray);
-	}
-
 	void INIT()
 	{
 		$RegisterHook(WeaponSoundsUpdate, Il2CppUtils::GetMethodPointerByName(
 			GetClass("WeaponSounds"),
 			"Update"
 		));
-
-		UIManager::RegisterUIUpdate(UIUpdate);
 	}
 }

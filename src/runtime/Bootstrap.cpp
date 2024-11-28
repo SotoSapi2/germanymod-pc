@@ -1,7 +1,6 @@
 #pragma once
 #include "framework/ConsoleManager.hpp"
 #include "framework/FileDialogService.hpp"
-#include "framework/UIManager.hpp"
 #include "unity/Unity.hpp"
 #include "game/data/ClassFinder.hpp"
 #include "game/data/PointerFunctions.hpp"
@@ -10,6 +9,7 @@
 #include "game/GameplayMain.hpp"
 #include "game/WeaponSounds.hpp"
 #include "game/Websocket.hpp"
+#include "game/Menu.hpp"
 
 namespace Bootstrap
 {
@@ -29,6 +29,7 @@ namespace Bootstrap
 		WeaponSounds::INIT();
 		Websocket::INIT();
 
-		UIManager::INIT();
+		Menu::INIT();
+		//UIManager::INIT();
 	}
 }

@@ -5,7 +5,6 @@
 #include "data/ClassFinder.hpp"
 #include "data/PointerFunctions.hpp"
 #include "../util/HookingUtil.hpp"
-#include "../framework/UIManager.hpp"
 
 namespace GameplayMain
 {
@@ -123,15 +122,6 @@ namespace GameplayMain
 		$CallOrig(AimCrosshairController, _this);
 	}
 
-	void UIUpdate()
-	{
-		ImGui::Checkbox("Triggerbot", &isTriggerbotAtive);
-		ImGui::Checkbox("Aimbot", &isAimbotActive);
-		ImGui::Checkbox("Aim at head", &aimAtHead);
-		ImGui::SliderFloat("Smoothness", &aimbotSmoothness, 0, 1);
-		ImGui::SliderFloat("Fov", &aimbotFov, 0, 1000);
-	}
-
 	void INIT()
 	{
 		$RegisterHook(WeaponManager, Il2CppUtils::GetMethodPointerByName(
@@ -143,7 +133,5 @@ namespace GameplayMain
 			GetClass("AimCrosshairController"),
 			"LateUpdate"
 		));
-
-		UIManager::RegisterUIUpdate(UIUpdate);
 	}
 }

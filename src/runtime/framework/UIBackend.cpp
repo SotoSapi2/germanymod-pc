@@ -1,7 +1,7 @@
 // pasted from: https://github.com/cazzwastaken/borderless-imgui-window
 #include "UIBackend.hpp"
 #include <ImGui.h>
-#include <backends/imgui_impl_dx10.h>
+//#include <backends/imgui_impl_dx10.h>
 #include <backends/imgui_impl_dx11.h>
 #include <backends/imgui_impl_win32.h>
 #include <Logger.hpp>
@@ -19,6 +19,8 @@ namespace UIBackend
 	HWND windowHandle = nullptr;
 	WNDPROC orig_WindowProcess = nullptr;
 	std::function<void()> updateCallback;
+	std::function<void()> loadCallback;
+
 
 	LRESULT WINAPI WindowProcess(HWND window, UINT message, WPARAM wideParameter, LPARAM longParameter)
 	{
@@ -37,44 +39,46 @@ namespace UIBackend
 		static ID3D10RenderTargetView* mainRenderTargetView;
 		static bool init = false;
 
-		if (!init)
-		{
-			if (SUCCEEDED(pSwapChain->GetDevice(__uuidof(ID3D10Device), (void**)&device)))
-			{
-				il2cpp_thread_attach(il2cpp_domain_get());
+		// TODO: DirectX 10 backport
 
-				DXGI_SWAP_CHAIN_DESC sd;
-				pSwapChain->GetDesc(&sd);
-				windowHandle = sd.OutputWindow;
-				ID3D10Texture2D* pBackBuffer;
-				pSwapChain->GetBuffer(0, __uuidof(ID3D10Texture2D), (LPVOID*)&pBackBuffer);
-				device->CreateRenderTargetView(pBackBuffer, NULL, &mainRenderTargetView);
-				pBackBuffer->Release();
-				orig_WindowProcess = (WNDPROC)SetWindowLongPtr(windowHandle, GWLP_WNDPROC, (LONG_PTR)WindowProcess);
+		//if (!init)
+		//{
+		//	if (SUCCEEDED(pSwapChain->GetDevice(__uuidof(ID3D10Device), (void**)&device)))
+		//	{
+		//		il2cpp_thread_attach(il2cpp_domain_get());
 
-				IMGUI_CHECKVERSION();
-				ImGui::CreateContext();
-				ImGui_ImplWin32_Init(windowHandle);
-				ImGui_ImplDX10_Init(device);
+		//		DXGI_SWAP_CHAIN_DESC sd;
+		//		pSwapChain->GetDesc(&sd);
+		//		windowHandle = sd.OutputWindow;
+		//		ID3D10Texture2D* pBackBuffer;
+		//		pSwapChain->GetBuffer(0, __uuidof(ID3D10Texture2D), (LPVOID*)&pBackBuffer);
+		//		device->CreateRenderTargetView(pBackBuffer, NULL, &mainRenderTargetView);
+		//		pBackBuffer->Release();
+		//		orig_WindowProcess = (WNDPROC)SetWindowLongPtr(windowHandle, GWLP_WNDPROC, (LONG_PTR)WindowProcess);
 
-				init = true;
-			}
-			else
-			{
-				return orig_Present10(pSwapChain, syncInterval, flags);
-			}
-		}
+		//		IMGUI_CHECKVERSION();
+		//		ImGui::CreateContext();
+		//		ImGui_ImplWin32_Init(windowHandle);
+		//		ImGui_ImplDX10_Init(device);
 
-		ImGui_ImplDX10_NewFrame();
-		ImGui_ImplWin32_NewFrame();
-		ImGui::NewFrame();
+		//		init = true;
+		//	}
+		//	else
+		//	{
+		//		return orig_Present10(pSwapChain, syncInterval, flags);
+		//	}
+		//}
 
-		updateCallback();
+		//ImGui_ImplDX10_NewFrame();
+		//ImGui_ImplWin32_NewFrame();
+		//ImGui::NewFrame();
 
-		ImGui::Render();
+		//updateCallback();
 
-		device->OMSetRenderTargets(1, &mainRenderTargetView, NULL);
-		ImGui_ImplDX10_RenderDrawData(ImGui::GetDrawData());
+		//ImGui::Render();
+
+		//device->OMSetRenderTargets(1, &mainRenderTargetView, NULL);
+		//ImGui_ImplDX10_RenderDrawData(ImGui::GetDrawData());
 
 		return orig_Present10(pSwapChain, syncInterval, flags);
 	}
@@ -108,6 +112,8 @@ namespace UIBackend
 				ImGui_ImplWin32_Init(windowHandle);
 				ImGui_ImplDX11_Init(device, context);
 
+				loadCallback();
+
 				init = true;
 			}
 			else
@@ -130,8 +136,9 @@ namespace UIBackend
 		return orig_Present11(pSwapChain, syncInterval, flags);
 	}
 
-	void INIT(std::function<void()> updateCallback)
+	void START(std::function<void()> loadCallback, std::function<void()> updateCallback)
 	{
+		UIBackend::loadCallback = loadCallback;
 		UIBackend::updateCallback = updateCallback;
 
 		if (kiero::init(kiero::RenderType::D3D10) == kiero::Status::Success)

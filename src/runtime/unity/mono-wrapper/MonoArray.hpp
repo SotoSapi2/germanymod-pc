@@ -41,7 +41,7 @@ struct MonoArray : Il2CppArray
 	{
 		for (size_t i = 0; i < this->max_length; ++i)
 		{
-			func(this->vector[i], size_t);
+			func(this->vector[i], i);
 		}
 	}
 };

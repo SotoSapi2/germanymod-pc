@@ -39,8 +39,6 @@ namespace Menu
 	const ImVec2 childSize = ImVec2(268, 200);
 	float alpha = 1.0f;
 	float tabAnim = -10;
-
-
 	bool isMenuShown = false;
 	bool bgDim = true;
 

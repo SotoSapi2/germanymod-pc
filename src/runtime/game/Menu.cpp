@@ -149,7 +149,7 @@ namespace Menu
 				Mode PrefabType(&GROUP, "Prefab type", { "Projectile", "Bot" });
 
 				const std::vector<std::string> projectilePrefabs = {
-
+					"placeholder"
 				};
 
 				Browser ProjectileBrowser(&GROUP, "Projectile Prefab", projectilePrefabs);

@@ -23,7 +23,7 @@
 #include "imgui_internal.h"
 
 #ifndef NOTIFY_CUSTOM_ICON
-#include "IconsFontAwesome6.h"
+#include "../src/runtime/framework/fonts/IconFontAwesome.h"
 #endif
 
 
@@ -545,13 +545,11 @@ namespace ImGui
             SetNextWindowBgAlpha(opacity);
 
 #if NOTIFY_RENDER_OUTSIDE_MAIN_WINDOW
-            short mainMonitorId = static_cast<ImGuiViewportP*>(GetMainViewport())->PlatformMonitor;
-
-            ImGuiPlatformIO& platformIO = ImGui::GetPlatformIO();
-            ImGuiPlatformMonitor& monitor = platformIO.Monitors[mainMonitorId];
+            ImVec2 WorkPos = ImGui::GetMainViewport()->WorkPos;   // Get work position directly
+            ImVec2 WorkSize = ImGui::GetMainViewport()->WorkSize; // Get work size directly
 
             // Set notification window position to bottom right corner of the monitor
-            SetNextWindowPos(ImVec2(monitor.WorkPos.x + monitor.WorkSize.x - NOTIFY_PADDING_X, monitor.WorkPos.y + monitor.WorkSize.y - NOTIFY_PADDING_Y - height), ImGuiCond_Always, ImVec2(1.0f, 1.0f));
+            SetNextWindowPos(ImVec2(WorkPos.x + WorkSize.x - NOTIFY_PADDING_X, WorkPos.y + WorkSize.y - NOTIFY_PADDING_Y - height), ImGuiCond_Always, ImVec2(1.0f, 1.0f));
 #else
             // Set notification window position to bottom right corner of the main window, considering the main window size and location in relation to the display
             ImVec2 mainWindowPos = GetMainViewport()->Pos;

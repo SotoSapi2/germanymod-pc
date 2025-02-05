@@ -1,5 +1,6 @@
 #pragma once
 #include <functional>
+#include <imgui_notify.hpp>
 
 namespace UIBackend
 {

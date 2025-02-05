@@ -1863,3 +1863,5 @@
 #define ICON_FA_X_RAY "\xef\x92\x97"	// U+f497
 #define ICON_FA_YEN_SIGN "\xef\x85\x97"	// U+f157
 #define ICON_FA_YIN_YANG "\xef\x9a\xad"	// U+f6ad
+#define ICON_FA_XMARK "\xef\x80\x8d"	// U+f00d
+#define ICON_FA_XMARKS_LINES "\xee\x96\x9a"	// U+e59a

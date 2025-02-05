@@ -2,60 +2,51 @@
 
 namespace PlayerMoveC
 {
-	Il2CppObject* GetTransform(Il2CppObject* player)
+	IL2CPP::Object* GetTransform(IL2CPP::Object* player)
 	{
-		Il2CppObject* plrTrans = Field<Il2CppObject*>(player, "myPlayerTransform").Get();
-
-		if (plrTrans == nullptr)
-		{
-			return nullptr;
-		}
-
+		IL2CPP::Object* plrTrans = player->GetFieldRef<IL2CPP::Object*>("myPlayerTransform");
 		return Component::GetTransform(plrTrans);
 	}
 
-	Vector3 GetPosition(Il2CppObject* player)
+	Vector3 GetPosition(IL2CPP::Object* player)
 	{
-		if (player == nullptr) return Vector3();
 		return Transform::GetPosition(GetTransform(player));
 	}
 
-	Il2CppObject* GetSkinName(Il2CppObject* player)
+	IL2CPP::Object* GetSkinName(IL2CPP::Object* player)
 	{
-		return Field<Il2CppObject*>(player, "mySkinName").Get();
+		return player->GetFieldRef<IL2CPP::Object*>("mySkinName");
 	}
 
-	Il2CppObject* GetPlayerDamageable(Il2CppObject* player)
+	IL2CPP::Object* GetPlayerDamageable(IL2CPP::Object* player)
 	{
-		return Field<Il2CppObject*>(player, "mySkinName", -5).Get();
+		return player->GetFieldRef<IL2CPP::Object*>("mySkinName", -5);
 	}
 
-	Il2CppObject* GetPlayerCamera(Il2CppObject* player)
+	IL2CPP::Object* GetPlayerCamera(IL2CPP::Object* player)
 	{
-		auto firstPerson = Field<Il2CppObject*>(GetSkinName(player), "firstPersonControl").Get();
-		auto cam = Field<Il2CppObject*>(firstPerson, "playerCamera").Get();
+		auto firstPerson = GetSkinName(player)->GetFieldRef<IL2CPP::Object*>("firstPersonControl");
+		auto cam = firstPerson->GetFieldRef<IL2CPP::Object*>("playerCamera");
 		return cam;
 	}
 
-	void SetPosition(Il2CppObject* player, Vector3 pos)
+	void SetPosition(IL2CPP::Object* player, Vector3 pos)
 	{
-		if (player == nullptr);
-		Il2CppObject* trans = GetTransform(player);
+		IL2CPP::Object* trans = GetTransform(player);
 		Transform::SetPosition(trans, pos);
 	}
 
-	bool IsMine(Il2CppObject* player)
+	bool IsMine(IL2CPP::Object* player)
 	{
-		if (player == nullptr) return false;
-		return Field<bool>(GetSkinName(player), "isMine").Get();
+		return GetSkinName(player)->GetFieldRef<bool>("isMine");
 	}
 
-	bool IsDead(Il2CppObject* player)
+	bool IsDead(IL2CPP::Object* player)
 	{
 		return PlayerDamageable::IsDead(GetPlayerDamageable(player));
 	}
 
-	bool IsEnemyTo(Il2CppObject* player, Il2CppObject* target)
+	bool IsEnemyTo(IL2CPP::Object* player, IL2CPP::Object* target)
 	{
 		return PlayerDamageable::IsEnemyTo(GetPlayerDamageable(player), target);
 	}
@@ -66,31 +57,31 @@ namespace ContentKeyRegister
 	int GetKeyRegisterSize(OfferItemType type)
 	{
 		auto list = ContentKeyRegister::GetRegisterList(ContentKeyRegister::GetInstance(), type);
-		return list == nullptr ? 0 : list->size;
+		return list == nullptr ? 0 : list->GetSize();
 	}
 
-	void IterateKeyRegister(OfferItemType type, std::function<void(MonoString* x)> callback)
+	void IterateKeyRegister(OfferItemType type, std::function<void(IL2CPP::String* x)> callback)
 	{
 		auto list = ContentKeyRegister::GetRegisterList(ContentKeyRegister::GetInstance(), type);
 
-		list->foreach([&](MonoString* x)
+		list->ForEach([&](IL2CPP::String* x)
 		{
 			callback(x);
 		});
 	}
 
-	void IterateKeyRegister(OfferItemType type, std::function<void(MonoString* x, int i)> callback)
+	void IterateKeyRegister(OfferItemType type, std::function<void(IL2CPP::String* x, int i)> callback)
 	{
 		auto instance = ContentKeyRegister::GetInstance();
 		auto list = ContentKeyRegister::GetRegisterList(ContentKeyRegister::GetInstance(), type);
 
-		list->foreach([&](MonoString* x)
+		list->ForEach([&](IL2CPP::String* x)
 		{
 			callback(x, ContentKeyRegister::GetItemIndex(instance, type, x));
 		});
 	}
 
-	void IterateKeyRegister(size_t from, size_t to, OfferItemType type, std::function<void(MonoString* x)> callback)
+	void IterateKeyRegister(size_t from, size_t to, OfferItemType type, std::function<void(IL2CPP::String* x)> callback)
 	{
 		auto list = ContentKeyRegister::GetRegisterList(ContentKeyRegister::GetInstance(), type);
 		int maxSize = ContentKeyRegister::GetKeyRegisterSize(type);
@@ -101,10 +92,10 @@ namespace ContentKeyRegister
 		}
 	}
 
-	void IterateKeyRegister(size_t from, size_t to, OfferItemType type, std::function<void(MonoString* x, int i)> callback)
+	void IterateKeyRegister(size_t from, size_t to, OfferItemType type, std::function<void(IL2CPP::String* x, int i)> callback)
 	{
-		auto instance = ContentKeyRegister::GetInstance();
-		auto list = ContentKeyRegister::GetRegisterList(ContentKeyRegister::GetInstance(), type);
+		IL2CPP::Object* instance = ContentKeyRegister::GetInstance();
+		IL2CPP::List<IL2CPP::String*>* list = ContentKeyRegister::GetRegisterList(ContentKeyRegister::GetInstance(), type);
 		int maxSize = ContentKeyRegister::GetKeyRegisterSize(type);
 
 		for (size_t i = from; i < min(maxSize, to); i++)
@@ -113,9 +104,9 @@ namespace ContentKeyRegister
 		}
 	}
 
-	bool IsKeyBannable(MonoString* key)
+	bool IsKeyBannable(IL2CPP::String* key)
 	{
-		static const std::vector<const char*> bannedKeys = {
+		static const std::vector<std::string> bannedKeys = {
 			"new_well_pistol",
 			"fps_destroyer",
 			"achieve_hunter",
@@ -175,9 +166,10 @@ namespace ContentKeyRegister
 		};
 
 		// ik this is a dumb check but this barely affect overall performance anyways
-		for (const char* v : bannedKeys)
+		std::string keyStr = key->ToString();
+		for (const std::string& v : bannedKeys)
 		{
-			if (strcmp(key->ToUtf8(), v) == 0)
+			if (keyStr == v)
 			{
 				return true;
 			}

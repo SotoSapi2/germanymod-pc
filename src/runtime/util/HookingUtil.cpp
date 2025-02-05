@@ -33,3 +33,14 @@ void AttachHook(void* targetPtr, void* replacementFunc, void** origFunc)
 
 	*origFunc = targetPtr;
 }
+
+void AttachHook(const IL2CPP::MethodInfo* method, void* replacementFunc, void** origFunc)
+{
+	if (method == nullptr)
+	{
+		LOG_ERROR("Trying hook a null pointer (method is null)");
+		return;
+	}
+
+	AttachHook(method->GetPointer(), replacementFunc, origFunc);
+}

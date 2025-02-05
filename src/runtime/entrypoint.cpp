@@ -7,6 +7,7 @@
 #include <WinReg.hpp>
 
 #include "Bootstrap.hpp"
+#include "util/Converter.hpp"
 
 std::wstring GetLoaderPath()
 {

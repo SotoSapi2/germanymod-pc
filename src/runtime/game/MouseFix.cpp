@@ -1,6 +1,5 @@
 #include <Windows.h>
 #include <imgui.h>
-#include "data/ClassFinder.hpp"
 #include "../util/HookingUtil.hpp"
 
 namespace MouseFix
@@ -21,7 +20,7 @@ namespace MouseFix
 		return $CallOrig(ClipCursorHOOK, &rect);
 	}
 
-	$Hook(void, ProcessTouch, (Il2CppObject* _this, bool idk0, bool idk1))
+	$Hook(void, ProcessTouch, (IL2CPP::Object* _this, bool idk0, bool idk1))
 	{
 		if (isMouseShown)
 		{
@@ -31,7 +30,7 @@ namespace MouseFix
 		$CallOrig(ProcessTouch, _this, idk0, idk1);
 	}
 
-	$Hook(void, Update, (Il2CppObject* _this))
+	$Hook(void, Update, (IL2CPP::Object* _this))
 	{
 		HWND hwnd = FindWindowA(NULL, "Pixel Gun 3D");
 		HWND activeWindow = GetForegroundWindow();
@@ -56,15 +55,21 @@ namespace MouseFix
 
 	void INIT()
 	{
-		$RegisterHook(ClipCursorHOOK, ClipCursor);
-		$RegisterHook(ProcessTouch, Il2CppUtils::GetMethodPointerByName(
-			GetClass("UICamera"),
-			"ProcessTouch"
-		));
+		using namespace IL2CPP::ClassMapping;
 
-		$RegisterHook(Update, Il2CppUtils::GetMethodPointerByName(
-			GetClass("UICamera"),
-			"Update"
-		));
+		$RegisterHook(
+			ClipCursorHOOK, 
+			ClipCursor
+		);
+
+		$RegisterHook(
+			ProcessTouch,
+			GetClass("UICamera")->GetMethod("ProcessTouch"),
+		);
+
+		$RegisterHook(
+			Update, 
+			GetClass("UICamera")->GetMethod("Update"),
+		);
 	}
 }

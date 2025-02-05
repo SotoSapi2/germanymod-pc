@@ -1,232 +1,757 @@
-/*
-ImGui used to make "immediate" ui for a flexible workflow, but this is a different story because you (Mod Developer) have
-to extensively modify the ui elements to make shit working. If you (UI Programmer) creating hardcoded ImGui widgets will BADLY hurts overall 
-developers' productivity and project scalability. So, please, learn how to program a flexible and modular code. Thanks!
-
-tldr; whoever made this ui is a retard.
-*/
-
 #include "Menu.hpp"
-
-#include <imgui.h>
-#include <iostream>
-
-#include "../framework/UIBackend.hpp"
-#include "../framework/fonts/Byte.h"
-#include "../framework/fonts/FontAwesome.h"
-#include "Websocket.hpp"
+#include "../entrypoint.hpp"
+#include "../util/Converter.hpp"
 #include "MouseFix.hpp"
-
-enum class Head
-{
-	Gameplay,
-	Account,
-	Websocket,
-	More
-};
-
-namespace SubTab
-{
-	enum class Gameplay
-	{
-		Main, 
-		Other
-	};
-}
+#include "Functions.hpp"
 
 namespace Menu
 {
-	const ImVec2 childSize = ImVec2(268, 200);
-	float alpha = 1.0f;
-	float tabAnim = -10;
-	bool isMenuShown = false;
-	bool bgDim = true;
+	using namespace UIFramework;
+	bool gMenuShown = false;
 
-	template<typename T>
-	void DrawSubtab(const char* name, T* var, T tabId)
+	MainWindow WINDOW(ImVec2(900, 600));
+
+	#pragma region MenuComponent
+	namespace Gameplay
 	{
-		const ImVec2 subTabSize = ImVec2(70, 30);
-		if (ImGui::SubTab(*var == tabId, name, subTabSize))
+		Tab TAB(&WINDOW, ICON_FA_GAMEPAD);
+
+		namespace General
 		{
-			*var = tabId;
-		}
-	}
+			SubTab SUBTAB(&TAB, "Genaral");
 
-	template<typename T>
-	void CreateHead(const char* name, const char* icon, T* var, T tabId)
-	{
-		const ImVec2 tabSize = ImVec2(122, 27);
-		if (ImGui::Tab(*var == tabId, icon, name, tabSize))
-		{
-			*var = tabId;
-		}
-	}
-
-	void GameplayUpdate()
-	{
-		using namespace SubTab;
-		static Gameplay currentSubtab = Gameplay::Main;
-
-		ImGui::SetCursorPos(ImVec2(150 + 390, 23 + 10));
-		DrawSubtab<Gameplay>("Main", &currentSubtab, Gameplay::Main);
-		ImGui::SameLine();
-		DrawSubtab<Gameplay>("Other", &currentSubtab, Gameplay::Other);
-
-		switch (currentSubtab)
-		{
-			case Gameplay::Main:
+			namespace Player
 			{
-				ImGui::SetCursorPos(ImVec2(150, 101 - tabAnim));
-				ImGui::BeginChild("Gameplay", childSize);
+				Group GROUP(&SUBTAB, "Player");
+
+				Checkbox InfAmmo(&GROUP, "Infinite Ammo");
+				Checkbox Godmode(&GROUP, "Godmode (client-sided)");
+				Checkbox FirerateHack(&GROUP, "Hack Firerate (kickable)");
+				FloatSlider Firerate(&GROUP, "Firerate", 0, 50);
+				Checkbox NoCatDelay(&GROUP, "No input/output delay");
+				Checkbox NoFixedDelay(&GROUP, "No fixed delay (must be enabled in lobby)");
+			}
+
+			namespace Bullet
+			{
+				Group GROUP(&SUBTAB, "Bullet");
+
+				Checkbox ForceShotgun(&GROUP, "Force Shotgun");
+				Checkbox BulletExplode(&GROUP, "Force Explosive Bullet");
+				Checkbox Wallbreak(&GROUP, "Force Railgun Bullet");
+			}
+
+			namespace Effects
+			{
+				Group GROUP(&SUBTAB, "Effects");
+
+				Checkbox NoCharge(&GROUP, "Instant Charge");
+				Checkbox EnemyMarker(&GROUP, "Enemy Marker");
+				Checkbox KillSpeedboost(&GROUP, "Kill Speedboost");
+				Checkbox Lifesteal(&GROUP, "Lifesteal");
+				Checkbox HeadMagnifier(&GROUP, "Head Magnifier");
+			}
+
+			namespace Movement
+			{
+				Group GROUP(&SUBTAB, "Movement");
+
+				Checkbox Speedhack(&GROUP, "Speedhack");
+				Checkbox AirJump(&GROUP, "Air jump (Double jump boots needed)");
+				FloatSlider GravityPower(&GROUP, "Gravity power", 0.0f, 2.0f, 1.0f);
+				Checkbox GravityToggle(&GROUP, "Modify gravity (must be enabled in lobby)");
+			}
+
+			namespace Aim
+			{
+				Group GROUP(&SUBTAB, "Aim");
+
+				Checkbox Killaura(&GROUP, "Killaura (kickable)");
+				Checkbox InfKillauraRadius(&GROUP, "Infinite Killaura radius", true);
+				FloatSlider KillauraRadius(&GROUP, "Killaura radius", "Killaura_optional", 0.0f, 100, 15);
+
+				Checkbox Triggerbot(&GROUP, "Triggerbot");
+				Checkbox Aimbot(&GROUP, "Aimbot");
+
+				FloatSlider AimbotSmoothing(&GROUP, "Smoothing", "Aimbot_options", 0.0f, 1, 0.0);
+				FloatSlider AimbotFOV(&GROUP, "FOV", "Aimbot_options", 0.0f, 1000, 180);
+				Checkbox AimHead(&GROUP, "Aim at head", "Aimbot_options", false);
+				Checkbox FOVCircle(&GROUP, "Show FOV Circle", "Aimbot_options", true);
+
+				#pragma region MenuFunctions
+				void Update()
 				{
-					static bool test1 = true;
-					static float test2 = 1;
-
-					ImGui::Checkbox("Kill-All", &test1);
-					ImGui::SliderFloat("Frost Radius", &test2, 1.0f, 9999.0f);
+					TagService::ToggleTagVisibility("Killaura_optional", !InfKillauraRadius.value);
+					TagService::ToggleTagVisibility("Aimbot_options", Aimbot.value);
 				}
-				ImGui::EndChild();
-				break;
+				#pragma endregion
 			}
 
-			case Gameplay::Other:
+			namespace Rocket
 			{
+				Group GROUP(&SUBTAB, "Rocket");
 
-				break;
+				Mode RocketMode(&GROUP, "Rocket mode", { "None", "Homing", "Follow Crosshair" });
+
+				Checkbox RocketTower(&GROUP, "Rocket tower");
+				Checkbox LongLifetime(&GROUP, "Long lifetime");
+				Checkbox NuclearExplosion(&GROUP, "Nuclear explosion");
+				Checkbox Gravity(&GROUP, "Gravity");
+				Checkbox Ricochet(&GROUP, "Ricochet");
+			}
+
+			namespace Visual
+			{
+				Group GROUP(&SUBTAB, "Visual", GroupPlacementType::RIGHT);
+
+				Checkbox Xray(&GROUP, "X-Ray vision");
+				Checkbox TPS(&GROUP, "Third-person view (must be enabled in lobby)");
+			}
+		}
+
+		namespace ServerMods
+		{
+			SubTab SUBTAB(&TAB, "Server Mods");
+
+			namespace Modifier
+			{
+				Group GROUP(&SUBTAB, "Modifier");
+
+				Checkbox FriendlyFire(&GROUP, "Friendly Fire");
+				Checkbox TargetFloatHit(&GROUP, "Target float on hit");
+				Checkbox ElectricShock(&GROUP, "Electric Shock (Sensivity Troll)");
+				Checkbox Polymorpher(&GROUP, "Polymorpher");
+			}
+
+			namespace ChatSpam
+			{
+				Group GROUP(&SUBTAB, "Chat Spam");
+				StringInput message(&GROUP, "Spam message", "Nazi Mod - discord.gg/Y3gj2Rszq6", 255);
+				Checkbox SpamChat(&GROUP, "Spam chat");
+			}
+
+			namespace RPC
+			{
+				Group GROUP(&SUBTAB, "RPC");
+
+				Checkbox DisableJumpAll(&GROUP, "Disable jump all");
+				Checkbox SpeedupAll(&GROUP, "Speedup all");
+				Checkbox SlowdownAll(&GROUP, "Slowdown all");
+
+				Button AttractEveryone(&GROUP, "Attract everyone");
+				Button NoClipEveryone(&GROUP, "No-clip everyone");
+				Button CrashEveryone(&GROUP, "Crash everyone (spam to trigger)");
+			}
+
+			namespace PrefabSpawner
+			{
+				Group GROUP(&SUBTAB, "Prefab Spawner");
+				Mode PrefabType(&GROUP, "Prefab type", { "Projectile", "Bot" });
+
+				const std::vector<std::string> projectilePrefabs = {
+
+				};
+
+				Browser ProjectileBrowser(&GROUP, "Projectile Prefab", projectilePrefabs);
+				Checkbox AutoSpawn(&GROUP, "Auto-spawn", "Prefab_proj", false);
+				Checkbox LongLifetime(&GROUP, "Long lifetime", "Prefab_proj", true);
+				Button SpawnProjectile(&GROUP, "Spawn projectile", "Prefab_proj");
+
+				Text Note(&GROUP,
+					"Bot nickname only works on public match.",
+					"Prefab_bot"
+				);
+
+				StringInput BotName(&GROUP, "Bot nickname", "Prefab_bot", "Nazi Mod - discord.gg/Y3gj2Rszq6", 255);
+				Button SpawnBot(&GROUP, "Spawn Bot", "Prefab_bot");
+
+				#pragma region MenuFunctions
+				void Update()
+				{
+					TagService::ToggleTagVisibility("Prefab_proj", PrefabType.index == 0);
+					TagService::ToggleTagVisibility("Prefab_bot", PrefabType.index == 1);
+				}
+				#pragma endregion
 			}
 		}
 	}
 
-	void AccountUpdate()
+	namespace Account
 	{
+		Tab TAB(&WINDOW, ICON_FA_USER);
 
-	}
-
-	void WebsocketUpdate()
-	{
-		ImGui::SetCursorPos(ImVec2(150, 101 - tabAnim));
-		ImGui::BeginChild("Socket", childSize);
+		namespace Unlocker
 		{
-			if (ImGui::Button("Reload Socket", ImVec2(252, 28)))
+			SubTab SUBTAB(&TAB, "Content Unlocker");
+
+			namespace WeaponSkinUnlocker
 			{
-				Websocket::Reload();
-			};
-		}
-		ImGui::EndChild();
-	}
+				Group GROUP(&SUBTAB, "Weapon Skin Unlocker");
 
-	void MiscUpdate()
-	{
-		ImGui::SetCursorPos(ImVec2(150, 101 - tabAnim));
-		ImGui::BeginChild("Menu", childSize);
+				Mode UnlockMode(&GROUP, "Unlock mode", { "Automatic", "Manual" });
+
+				IntSlider FromIndexInput(&GROUP, "From index", "WepSkinUnlock_auto", 0, 1);
+				IntSlider ToIndexInput(&GROUP, "To index", "WepSkinUnlock_auto", 0, 1);
+
+				Browser WeaponSkinBrowser(&GROUP, "Weapon Skin browser", "WepSkinUnlock_manual");
+
+				Button UnlockButton(&GROUP, "Unlock Skin");
+
+				#pragma region MenuFunctions
+				void Load()
+				{
+					ContentKeyRegister::GetRegisterList(ContentKeyRegister::GetInstance(), OfferItemType::WeaponSkin)->ForEach([&](IL2CPP::String* key)
+					{
+						WeaponSkinBrowser.list.push_back(key->ToString());
+					});
+
+					FromIndexInput.max = WeaponSkinBrowser.list.size() - 2;
+					ToIndexInput.max = WeaponSkinBrowser.list.size() - 1;
+				}
+
+				void Update()
+				{
+					TagService::ToggleTagVisibility("WepSkinUnlock_auto", UnlockMode.index == 0);
+					TagService::ToggleTagVisibility("WepSkinUnlock_manual", UnlockMode.index == 1);
+				}
+				#pragma endregion
+			}
+
+			namespace WeaponUnlocker
+			{
+				Group GROUP(&SUBTAB, "Weapon Unlocker");
+
+				Text NOTE(&GROUP,
+					"Weapon level can't go higher than your current \n"
+					"account level.\n"
+					"Otherwise the game will refuse to add weapons."
+				);
+
+				Mode UnlockMode(&GROUP, "Unlock mode", { "Automatic", "Manual", "Misc" });
+
+				IntSlider FromIndexInput(&GROUP, "From index", "WepUnlock_auto", 0, 0);
+				IntSlider ToIndexInput(&GROUP, "To index", "WepUnlock_auto", 1, 1);
+
+				Browser WeaponBrowser(&GROUP, "Weapon browser", "WepUnlock_manual");
+
+				IntSlider WeaponLevel(&GROUP, "Weapon level", 0, 65, 10);
+				Browser WeaponRarity(&GROUP, "Weapon rarity", { "Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythical" });
+
+				Button UnlockButton(&GROUP, "Unlock Weapon", "WepUnlock_unlockButton");
+				Button RemoveButton(&GROUP, "Remove Weapon", "WepUnlock_unlockButton");
+
+				Button UnlockRGBSet(&GROUP, "Unlock RGB Pioneer set", "WepUnlock_misc");
+				Button UnlockSecret(&GROUP, "Unlock Secret Weapons", "WepUnlock_misc");
+
+				#pragma region MenuFunctions
+				void Load()
+				{
+					ContentKeyRegister::GetRegisterList(ContentKeyRegister::GetInstance(), OfferItemType::Weapon)->ForEach([&](IL2CPP::String* key)
+					{
+						WeaponBrowser.list.push_back(key->ToString());
+					});
+
+					FromIndexInput.max = WeaponBrowser.list.size() - 2;
+					ToIndexInput.max = WeaponBrowser.list.size() - 1;
+				}
+
+				void Update()
+				{
+					TagService::ToggleTagVisibility("WepUnlock_auto", UnlockMode.index == 0);
+					TagService::ToggleTagVisibility("WepUnlock_manual", UnlockMode.index == 1);
+					TagService::ToggleTagVisibility("WepUnlock_misc", UnlockMode.index == 2);
+					TagService::ToggleTagVisibility("WepUnlock_unlockButton", UnlockMode.index != 2);
+				}
+				#pragma endregion
+			}
+
+
+			namespace RoyaleUnlocker
+			{
+				Group GROUP(&SUBTAB, "Royale Cosmetic Unlocker");
+
+				Mode UnlockMode(&GROUP, "Unlock mode", { "Automatic", "Manual" });
+
+				IntSlider FromIndexInput(&GROUP, "From index", "RoyaleUnlock_auto", 0, 1);
+				IntSlider ToIndexInput(&GROUP, "To index", "RoyaleUnlock_auto", 0, 1);
+
+				Browser RoyalesBrowser(&GROUP, "Royale browser", "RoyaleUnlock_manual");
+
+				Button UnlockButton(&GROUP, "Unlock Royale");
+
+				#pragma region MenuFunctions
+				void Load()
+				{
+					ContentKeyRegister::GetRegisterList(ContentKeyRegister::GetInstance(), OfferItemType::Royale)->ForEach([&](IL2CPP::String* key)
+					{
+						RoyalesBrowser.list.push_back(key->ToString());
+					});
+
+					FromIndexInput.max = RoyalesBrowser.list.size() - 2;
+					ToIndexInput.max = RoyalesBrowser.list.size() - 1;
+				}
+
+				void Update()
+				{
+					TagService::ToggleTagVisibility("RoyaleUnlock_auto", UnlockMode.index == 0);
+					TagService::ToggleTagVisibility("RoyaleUnlock_manual", UnlockMode.index == 1);
+				}
+				#pragma endregion
+			}
+
+			namespace GadgetUnlocker
+			{
+				Group GROUP(&SUBTAB, "Gadget Unlocker");
+
+				Mode UnlockMode(&GROUP, "Unlock mode", { "Automatic", "Manual" });
+
+				Button UnlockAllButton(&GROUP, "Unlock all Gadget", "GadgetUnlock_auto");
+
+				Browser GadgetBrowser(&GROUP, "Gadget browser", "GadgetUnlock_manual");
+
+				Button UnlockButton(&GROUP, "Unlock Gadget", "GadgetUnlock_manual");
+
+				#pragma region MenuFunctions
+				void Load()
+				{
+					ContentKeyRegister::GetRegisterList(ContentKeyRegister::GetInstance(), OfferItemType::Gadget)->ForEach([&](IL2CPP::String* key)
+					{
+						GadgetBrowser.list.push_back(key->ToString());
+					});
+				}
+
+				void Update()
+				{
+					TagService::ToggleTagVisibility("GadgetUnlock_auto", UnlockMode.index == 0);
+					TagService::ToggleTagVisibility("GadgetUnlock_manual", UnlockMode.index == 1);
+				}
+				#pragma endregion
+			}
+
+			namespace ArmorUnlocker
+			{
+				Group GROUP(&SUBTAB, "Armor Unlocker");
+
+				Mode UnlockMode(&GROUP, "Unlock mode", { "Automatic", "Manual" });
+
+				Browser ArmorBrowser(&GROUP, "Armor browser", "ArmorUnlock_manual");
+
+				IntInput ArmorLevel(&GROUP, "Armor level", 65);
+				Button UnlockAllArmors(&GROUP, "Unlock All armors", "ArmorUnlock_auto");
+				Button UnlockArmors(&GROUP, "Unlock armor", "ArmorUnlock_manual");
+
+				#pragma region MenuFunctions
+				void Load()
+				{
+					ContentKeyRegister::GetRegisterList(ContentKeyRegister::GetInstance(), OfferItemType::Armor)->ForEach([&](IL2CPP::String* key)
+					{
+						ArmorBrowser.list.push_back(key->ToString());
+					});
+				}
+
+				void Update()
+				{
+					TagService::ToggleTagVisibility("ArmorUnlock_manual", UnlockMode.index == 0);
+					TagService::ToggleTagVisibility("ArmorUnlock_auto", UnlockMode.index == 1);
+				}
+				#pragma endregion
+			}
+
+			namespace ModuleUnlocker
+			{
+				Group GROUP(&SUBTAB, "Module Unlocker");
+
+				IntInput ModuleAmount(&GROUP, "Module Amount", 2500);
+				IntInput UpgradeAmount(&GROUP, "Upgrade Amount", 1);
+
+				Button UnlockModule(&GROUP, "Unlock modules");
+				Button UpgradeModule(&GROUP, "Upgrade modules");
+			}
+
+			namespace PixelPassUnlocker
+			{
+				Group GROUP(&SUBTAB, "Pixel Pass Unlocker");
+
+				IntInput PassXP(&GROUP, "Pass EXP Amount", 1000);
+				Button AddPassXP(&GROUP, "Add Pass XP");
+
+				Button UnlockPixelPass(&GROUP, "Unlock Pixel Pass");
+			}
+
+			namespace MiscUnlocker
+			{
+				Group GROUP(&SUBTAB, "Misc Unlocker");
+
+				Button UnlockWears(&GROUP, "Unlock wears");
+				Button UnlockPets(&GROUP, "Unlock pets");
+				Button UnlockGraffiti(&GROUP, "Unlock graffitis");
+				Button UnlockLobbyItems(&GROUP, "Unlock lobby items");
+				Button GetAllParts(&GROUP, "Get all crafting parts");
+				Button GetVeteranBadge(&GROUP, "Get Veteran Badge");
+			}
+		}
+
+		namespace Adder
 		{
-			ImGui::Checkbox("Menu Dim", &bgDim);
+			SubTab SUBTAB(&TAB, "Adder/Editor");
+			namespace XpEditor
+			{
+				Group GROUP(&SUBTAB, "XP Adder");
+
+				Text Note(&GROUP,
+					"Adding too much XP is bannable. Don't overuse."
+				);
+
+				IntInput XpAmount(&GROUP, "XP amount", INT16_MAX, 0, INT16_MAX);
+				Button AddXp(&GROUP, "Add XP");
+			}
+
+			namespace CurrencyAdder
+			{
+				Group GROUP(&SUBTAB, "Currency Adder");
+
+				Browser CurrencyBrowser(&GROUP, "Currency browser");
+				IntInput CurrencyAmount(&GROUP, "Currency amount");
+				Button AddXp(&GROUP, "Add Currency");
+
+				#pragma region MenuFunctions
+				void Load()
+				{
+					ContentKeyRegister::GetRegisterList(ContentKeyRegister::GetInstance(), OfferItemType::Currency)->ForEach([&](IL2CPP::String* key)
+					{
+						CurrencyBrowser.list.push_back(key->ToString());
+					});
+				}
+				#pragma endregion
+			}
+
+			namespace ChestAdder
+			{
+				Group GROUP(&SUBTAB, "Chest Adder");
+
+				Browser ChestBrowser(&GROUP, "Chest browser");
+				IntInput ChestAmount(&GROUP, "Chest amount");
+				Button AddChest(&GROUP, "Add Chest");
+
+				#pragma region MenuFunctions
+				void Load()
+				{
+					ContentKeyRegister::GetRegisterList(ContentKeyRegister::GetInstance(), OfferItemType::Chest)->ForEach([&](IL2CPP::String* key)
+					{
+						ChestBrowser.list.push_back(key->ToString());
+					});
+				}
+				#pragma endregion
+			}
+
+			namespace BuffAdder
+			{
+				Group GROUP(&SUBTAB, "Player Buff Editor");
+
+				Browser BoosterBrowser(&GROUP, "Buff browser");
+				IntInput Duration(&GROUP, "Duration (in hour)", 24, 0);
+				Button AddBuff(&GROUP, "Add Buff");
+
+				#pragma region MenuFunctions
+				void Load()
+				{
+					ContentKeyRegister::GetRegisterList(ContentKeyRegister::GetInstance(), OfferItemType::PlayerBuff)->ForEach([&](IL2CPP::String* key)
+					{
+						BoosterBrowser.list.push_back(key->ToString());
+					});
+				}
+				#pragma endregion
+			}
 		}
-		ImGui::EndChild();
+
+		namespace Stats
+		{
+			SubTab SUBTAB(&TAB, "Account Stats");
+
+			namespace GlobalWin
+			{
+				Group GROUP(&SUBTAB, "Global win");
+
+				const std::vector<std::string> gamemodes =
+				{
+					"Deathmatch",
+					"TimeBattle",
+					"TeamFight",
+					"DeadlyGames",
+					"FlagCapture",
+					"CapturePoints",
+					"InFriendWindow",
+					"InClanWindow",
+					"Duel",
+					"Dater",
+					"DeathEscape",
+					"Campaign",
+					"Arena",
+					"SpeedRun",
+					"Spleef",
+					"Squad",
+					"TeamDuel",
+					"Siege",
+					"ClanSiege",
+					"Sniper",
+					"BattleRoyale",
+					"Glider",
+					"Dungeons",
+					"Racing",
+					"MiniGames",
+					"ClassicArena",
+					"FortDefence",
+					"FortAttack",
+					"MMTeamFight",
+					"MonsterHunter",
+					"Imposter",
+					"FreePlay",
+					"ArmRace",
+					"HoldPositions",
+					"Rotation",
+					"Competition",
+					"PlantTheBomb",
+					"Mutation",
+					"RedLight",
+					"PixelLegends",
+					"Domination",
+					"DefendTheTower",
+					"HideFromMonster",
+					"Extraction",
+					"PumpkinHunting",
+					"Christmas2023"
+				};
+
+				Browser Gamemode(&GROUP, "Gamemode browser", gamemodes);
+				Button AddStat(&GROUP, "Add win stat");
+			}
+
+			namespace MonthlyMatch
+			{
+				Group GROUP(&SUBTAB, "Montly match");
+
+				Checkbox MatchIsWin(&GROUP, "Set as winning match");
+				Button AddStat(&GROUP, "Add monthly match stat");
+			}
+
+			namespace Kill
+			{
+				Group GROUP(&SUBTAB, "Kill/Headshot");
+
+				IntInput HeadshotAmount(&GROUP, "Headshot amount");
+				Button AddStat(&GROUP, "Add Kill/Headshot stat");
+			}
+
+			namespace Winstreak
+			{
+				Group GROUP(&SUBTAB, "Killstreak/Winstreak");
+
+				IntInput KillstreakAmount(&GROUP, "Killstreak amount");
+				IntInput WinstreakAmount(&GROUP, "Winstreak amount");
+				Button AddStat(&GROUP, "Add Killstreak/Winstreak stat");
+			}
+		}
 	}
 
-	void MenuUpdate()
+	namespace Misc
+	{
+		Tab TAB(&WINDOW, ICON_FA_LIST);
+
+		namespace Bypass
+		{
+			SubTab SUBTAB(&TAB, "Bypasses");
+
+			namespace Chat
+			{
+				Group GROUP(&SUBTAB, "Chat");
+
+				Checkbox BypassChatFilter(&GROUP, "Bypass Chat filter", true);
+			}
+
+			namespace Armory
+			{
+				Group GROUP(&SUBTAB, "Armory");
+
+				Checkbox AllowShovel(&GROUP, "Allow to use shovel");
+			}
+
+			namespace Misc
+			{
+				Group GROUP(&SUBTAB, "Misc");
+				Button ForceReload(&GROUP, "Force reload");
+				Button SkipTutorial(&GROUP, "Skip tutorial");
+			}
+
+			namespace Analytics
+			{
+				Group GROUP(&SUBTAB, "Analytics");
+
+				Checkbox AnalyticsBypass(&GROUP, "Analytics bypass", true);
+				Checkbox DeeperAnalyticsBypass(&GROUP, "Deeper Analytics bypass");
+			}
+		}
+
+		namespace Skin
+		{
+			SubTab SUBTAB(&TAB, "Skin importer & stealer");
+
+			namespace CustomSkinImporter
+			{
+				Group GROUP(&SUBTAB, "Custom Skin Importer");
+				Text NOTE(&GROUP,
+					"Supported Skin Resolution: 64x64, 64x32.\n\n"
+					"Pixel Gun doesn't support slim mc skin. Don't import them\n"
+					"or the skin will break.\n\n"
+					"Custom Skin with 64x64 resolution will be converted\n"
+					"into 64x32 automatically."
+				);
+
+				Button ImportSkin(&GROUP, "Import Skin");
+			}
+
+			namespace SkinStealer
+			{
+				Group GROUP(&SUBTAB, "Skin Stealer");
+				Text NOTE(&GROUP,
+					"Stolen skins will be saved on the selected folder."
+				);
+				IntInput TargetID(&GROUP, "Target ID");
+				Button AddChest(&GROUP, "Steal skins from target");
+			}
+
+			namespace ClanIconStealer
+			{
+				Group GROUP(&SUBTAB, "Clan Icon Stealer");
+				Text NOTE(&GROUP,
+					"Stolen icon will be saved on the selected folder."
+				);
+				IntInput TargetID(&GROUP, "Target Clan ID");
+				Button AddChest(&GROUP, "Steal clan icon");
+			}
+		}
+	}
+
+	namespace Settings
+	{
+		Tab TAB(&WINDOW, ICON_FA_WRENCH);
+
+		namespace Menu
+		{
+			SubTab SUBTAB(&TAB, "Menu");
+
+			namespace MenuCustomization
+			{
+				Group GROUP(&SUBTAB, "Menu Customization");
+
+				const std::vector<MenuColorScheme> colorSchemeList = {
+					Themes::darkBlue,
+					Themes::darkGreen,
+					Themes::darkLavenderBlue,
+					{
+						ImColor(0, 0, 0),
+						ImColor(9, 0, 33),
+						ImColor(12, 0, 50),
+
+						ImColor(50, 0, 136),
+						ImColor(228, 0, 124),
+						ImColor(255, 189, 57),
+
+						ImColor(215, 215, 215),
+						ImColor(255, 255, 255)
+					}
+				};
+
+				const std::vector<std::string> themseList = {
+					"Dark Blue",
+					"Dark Green",
+					"Dark Purple",
+					"Retrowave"
+				};
+
+				Browser Themes(&GROUP, "Themes", themseList);
+				Button SetTheme(&GROUP, "Set theme");
+
+				#pragma region MenuFunctions
+				void HandleTheme()
+				{
+					UIFramework::Global::gMenuColorScheme = colorSchemeList[Themes.index];
+				}
+
+				void Load()
+				{
+					SetTheme.OnClick(HandleTheme);
+				}
+				#pragma endregion
+			}
+
+			namespace MouseFix
+			{
+				Group GROUP(&SUBTAB, "Mouse Fix");
+
+				Checkbox DisableGameClickEvent(&GROUP, "Disable Game click event", true);
+				Checkbox DisableCameraMovement(&GROUP, "Disable Camera movement", false);
+			}
+
+			namespace Config
+			{
+				Group GROUP(&SUBTAB, "Configuration Preset");
+
+				std::string currentConfigPath = "C:\\dumps\\nigga.nazicfg";
+				Checkbox DefaultConfig(&GROUP, "Set loaded config as default", false);
+				Button SelectConfig(&GROUP, "Select config file");
+			}
+		}
+	}
+	#pragma endregion
+
+	void OnUpdate()
 	{
 		if (ImGui::IsKeyPressed(ImGuiKey_F1))
 		{
-			isMenuShown = !isMenuShown;
-			MouseFix::ShowMouse(isMenuShown);
+			gMenuShown = !gMenuShown;
 		}
 
-		if (!isMenuShown) return;
+		MouseFix::ShowMouse(gMenuShown);
+		Gameplay::General::Aim::Update();
+		Gameplay::ServerMods::PrefabSpawner::Update();
+		Account::Unlocker::WeaponUnlocker::Update();
+		Account::Unlocker::WeaponSkinUnlocker::Update();
+		Account::Unlocker::RoyaleUnlocker::Update();
+		Account::Unlocker::GadgetUnlocker::Update();
+		Account::Unlocker::ArmorUnlocker::Update();
 
-		ImGui::SetNextWindowBgAlpha(alpha);
-		ImGui::SetNextWindowSize(ImVec2(720, 500));
-		const auto windowFlag = ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollWithMouse |
-								ImGuiWindowFlags_NoDecoration;
-
-		ImGui::Begin("##voidPG", nullptr, windowFlag);
+		if (gMenuShown)
 		{
-			std::string sub = "08.10.40";
-
-			auto pos = ImVec2{};
-			auto size = ImGui::GetWindowSize();
-			pos = ImVec2(ImGui::GetWindowPos().x + ImGui::GetStyle().WindowPadding.x, ImGui::GetWindowPos().y + ImGui::GetStyle().WindowPadding.y); //drag
-
-			if (bgDim)
-			{
-				ImGui::GetBackgroundDrawList()->AddRectFilled(ImVec2(0, 0), ImVec2(99999999, 99999999), ImColor(0, 0, 0, 100), 0, 0);
-			}
-
-			ImGui::GetBackgroundDrawList()->AddShadowRect(ImVec2(pos.x, pos.y), ImVec2(pos.x + 720 - 20, pos.y + 500 - 20), ImColor(130, 215, 130, 255), 100, ImVec2(0, 0), 10);
-
-			ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(pos.x, pos.y), ImVec2(pos.x + 132, pos.y + 480), ImColor(15, 13, 15), 10, ImDrawFlags_RoundCornersLeft);
-
-			ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(pos.x + 132, pos.y), ImVec2(pos.x + 132 + 568, pos.y + 480), ImColor(20, 18, 20), 10, ImDrawFlags_RoundCornersRight);
-
-			ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(pos.x + 132 + 10, pos.y + 10), ImVec2(pos.x + 132 + 10 + 548, pos.y + 10 + 58), ImColor(15, 13, 15), 4);
-
-			ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(pos.x + 132 + 10 + 14, pos.y + 10 + 14), ImVec2(pos.x + 132 + 10 + 14 + 30, pos.y + 10 + 14 + 30), ImColor(255, 255, 255), 3);
-			ImGui::GetWindowDrawList()->AddText(ImVec2(pos.x + 132 + 10 + 14 + 30 + 4, pos.y + 10 + 16), ImColor(255, 255, 255), "craze");
-			ImGui::GetWindowDrawList()->AddText(ImVec2(pos.x + 132 + 10 + 14 + 30 + 4, pos.y + 10 + 30), ImColor(130, 215, 130), "Expiry:");
-			ImGui::GetWindowDrawList()->AddText(ImVec2(pos.x + 132 + 10 + 14 + 30 + 4 + ImGui::CalcTextSize("Expiry: ").x, pos.y + 10 + 30), ImColor(130, 215, 130), sub.c_str());
-
-			ImGui::PushFont(Fonts::Large);
-			ImGui::GetWindowDrawList()->AddShadowRect(ImVec2(pos.x + ImGui::CalcTextSize("Bool").x + 15, pos.y + 25 + 10), ImVec2(pos.x + ImGui::CalcTextSize("Bool").x + 30, pos.y + 35), ImColor(255, 255, 255, 120), 40, ImVec2(0, 0), 1, 10);
-			ImGui::GetWindowDrawList()->AddText(ImVec2(pos.x + 38, pos.y + 25), ImColor(255, 255, 255), "Bool");
-
-			ImGui::GetWindowDrawList()->AddText(ImVec2(pos.x + 38 + ImGui::CalcTextSize("Bool").x, pos.y + 25), ImColor(130, 215, 130), "PG");
-			ImGui::GetWindowDrawList()->AddShadowRect(ImVec2(pos.x + ImGui::CalcTextSize("BoolPG").x + 15, pos.y + 25 + 10), ImVec2(pos.x + ImGui::CalcTextSize("BoolPG").x + 30, pos.y + 35), ImColor(130, 215, 130, 120), 40, ImVec2(0, 0), 1, 10);
-			ImGui::PopFont();
-
-			ImGui::SetCursorPos(ImVec2(13, 87));
-
-			static Head selectedHead = Head::Gameplay;
-			ImGui::BeginGroup();
-			{
-				CreateHead<Head>("Gameplay", ICON_FA_GAMEPAD, &selectedHead, Head::Gameplay);
-				CreateHead<Head>("Account", ICON_FA_ID_CARD, &selectedHead, Head::Account);
-				CreateHead<Head>("Websocket", ICON_FA_CODE, &selectedHead, Head::Websocket);
-				CreateHead<Head>("More", ICON_FA_LIST, &selectedHead, Head::More);
-			}
-			ImGui::EndGroup();
-
-			switch (selectedHead)
-			{
-				case Head::Gameplay:
-					GameplayUpdate();
-					break;
-				case Head::Account:
-					AccountUpdate();
-					break;
-				case Head::Websocket:
-					WebsocketUpdate();
-					break;
-				case Head::More:
-					MiscUpdate();
-					break;
-			}
+			WINDOW.Render();
 		}
-		ImGui::End();
-	}
-
-	void MenuLoad()
-	{
-		ImGuiIO& io = ImGui::GetIO();
-		//io.ConfigFlags = ImGuiConfigFlags_NoMouseCursorChange; // dont change cursors
-
-		ImGui::StyleColorsDark();
-
-		ImFontConfig font_config;
-
-		ImFontConfig icons_config;
-		icons_config.MergeMode = true;
-
-		static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
-
-		Fonts::Medium = io.Fonts->AddFontFromMemoryTTF((void*)Medium, sizeof(Medium), 14.f, &font_config);
-		io.Fonts->AddFontFromMemoryCompressedTTF((void*)fa6_solid_compressed_data, sizeof(fa6_solid_compressed_size), 14.f, &icons_config, icons_ranges);
-
-		Fonts::Large = io.Fonts->AddFontFromMemoryTTF((void*)Medium, sizeof(Medium), 18.f, &font_config);
 	}
 
 	void INIT()
 	{
-		UIBackend::START(MenuLoad, MenuUpdate);
+		Account::Unlocker::WeaponSkinUnlocker::Load();
+		Account::Unlocker::RoyaleUnlocker::Load();
+		Account::Unlocker::WeaponUnlocker::Load();
+		Account::Unlocker::GadgetUnlocker::Load();
+		Account::Unlocker::ArmorUnlocker::Load();
+		Account::Adder::CurrencyAdder::Load();
+		Account::Adder::BuffAdder::Load();
+		Account::Adder::ChestAdder::Load();
+		Settings::Menu::MenuCustomization::Load();
+
+		#undef ERROR // NIGGERED WINDOWS MACRO
+		if (gTotalFailedPointerDef > 0)
+		{
+			UIFramework::QueueNotification(NotificationType::ERROR,
+				"Nazi Mod didn't initialize properly due to pg update."
+				"Although still usable, some features may be unusable."
+				"Please wait for an update for fixes."
+			);
+		}
+
+		UIFramework::INIT(
+			Convert::ToString(GetLoaderPath()).append("\\assets"),
+			Themes::darkLavenderBlue,
+			OnUpdate
+		);
 	}
 }

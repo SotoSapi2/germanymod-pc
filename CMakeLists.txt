@@ -12,10 +12,20 @@ set(STATIC_LINKS "${CMAKE_CURRENT_SOURCE_DIR}/libs")
 set(SRC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(INJECTOR_NAME "${PROJECT_NAME}-loader")
 set(RUNTIME_NAME "${PROJECT_NAME}-runtime")
+set(ASSETS_SOURCE_DIR "${CMAKE_SOURCE_DIR}/assets")
+set(ASSETS_DEST_DIR "${CMAKE_BINARY_DIR}/assets")
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+add_custom_target(
+	assets ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${ASSETS_SOURCE_DIR}
+    ${ASSETS_DEST_DIR}
+    COMMENT "Copying assets into build directory"
+)
 
 file(GLOB dependencies LIST_DIRECTORIES true "dependencies/*")
 foreach(item ${dependencies})
@@ -40,6 +50,9 @@ add_executable(${INJECTOR_NAME} ${INJECTOR_GLOB})
 target_link_libraries(${INJECTOR_NAME} PRIVATE 
 	logger
 )
+add_dependencies(${INJECTOR_NAME}
+assets
+)
 
 file(
 	GLOB_RECURSE
@@ -51,5 +64,5 @@ file(
 
 add_library(${RUNTIME_NAME} SHARED ${RUNTIME_GLOB} )
 target_link_libraries(${RUNTIME_NAME} PRIVATE
-	logger imgui fileutils detours-x64
+	logger imgui fileutils detours-x64 Unity
 )

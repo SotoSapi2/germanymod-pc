@@ -2,10 +2,11 @@ import re
 from pathlib import Path
 
 header_code = """// Auto-generated with PointerFunctionsGen.py
-
 #pragma once
+#include <IL2CPP.hpp>
 #include "Structs.hpp"
-#include "../util/PointerWrapper.hpp\""""
+#include "PointerWrapper.hpp"
+"""
 
 def get_project_path():
     return Path(__file__).parent.parent
@@ -49,8 +50,8 @@ def start_gen():
     src_path = get_src_path()
     game_path = src_path / "runtime/game/"
 
-    executable_file = game_path / "data/PointerFunctions.cpp"
-    header_file = game_path / "data/PointerFunctions.hpp"
+    executable_file = game_path / "import/PointerFunctions.cpp"
+    header_file = game_path / "import/PointerFunctions.hpp"
 
     try:
         input_code = open(executable_file, "r").read()

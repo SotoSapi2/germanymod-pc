@@ -1,39 +1,38 @@
 #pragma once
-#include "util/FieldWrapper.hpp"
-#include "data/ClassFinder.hpp"
-#include "data/PointerFunctions.hpp"
-#include "data/Structs.hpp"
+#include "import/PointerFunctions.hpp"
+#include "import/Structs.hpp"
+#include <IL2CPP.hpp>
 
 namespace PlayerMoveC
 {
-	Il2CppObject* GetTransform(Il2CppObject* player);
+	IL2CPP::Object* GetTransform(IL2CPP::Object* player);
 
-	Vector3 GetPosition(Il2CppObject* player);
+	Vector3 GetPosition(IL2CPP::Object* player);
 
-	Il2CppObject* GetSkinName(Il2CppObject* player);
+	IL2CPP::Object* GetSkinName(IL2CPP::Object* player);
 
-	Il2CppObject* GetPlayerDamageable(Il2CppObject* player);
+	IL2CPP::Object* GetPlayerDamageable(IL2CPP::Object* player);
 
-	Il2CppObject* GetPlayerCamera(Il2CppObject* player);
+	IL2CPP::Object* GetPlayerCamera(IL2CPP::Object* player);
 
-	void SetPosition(Il2CppObject* player, Vector3 pos);
+	void SetPosition(IL2CPP::Object* player, Vector3 pos);
 
-	bool IsMine(Il2CppObject* player);
+	bool IsMine(IL2CPP::Object* player);
 
-	bool IsDead(Il2CppObject* player);
+	bool IsDead(IL2CPP::Object* player);
 
-	bool IsEnemyTo(Il2CppObject* player, Il2CppObject* target);
+	bool IsEnemyTo(IL2CPP::Object* player, IL2CPP::Object* target);
 }
 
 namespace ContentKeyRegister
 {
 	int GetKeyRegisterSize(OfferItemType type);
 
-	void IterateKeyRegister(OfferItemType type, std::function<void(MonoString* x)> callback);
+	void IterateKeyRegister(OfferItemType type, std::function<void(IL2CPP::String* x)> callback);
 
-	void IterateKeyRegister(OfferItemType type, std::function<void(MonoString* x, int i)> callback);
+	void IterateKeyRegister(OfferItemType type, std::function<void(IL2CPP::String* x, int i)> callback);
 
-	void IterateKeyRegister(size_t from, size_t to, OfferItemType type, std::function<void(MonoString* x)> callback);
+	void IterateKeyRegister(size_t from, size_t to, OfferItemType type, std::function<void(IL2CPP::String* x)> callback);
 
-	bool IsKeyBannable(MonoString* key);
+	bool IsKeyBannable(IL2CPP::String* key);
 }

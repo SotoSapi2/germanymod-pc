@@ -1,10 +1,10 @@
 #pragma once
-#include "../unity/Unity.hpp"
+#include <IL2CPP.hpp>
 
 namespace GameplayMain
 {
-	extern Il2CppObject* myPlayerMoveC;
-	extern MonoList<Il2CppObject*>* playerMoveCList;
+	extern IL2CPP::Object* gMyPlayerMoveC;
+	extern IL2CPP::List<IL2CPP::Object*>* gPlayerMoveCList;
 
 	void INIT();
 }

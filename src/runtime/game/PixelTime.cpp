@@ -1,6 +1,5 @@
 #include "PixelTime.hpp"
 #include <vector>
-#include "data/ClassFinder.hpp"
 #include "../util/HookingUtil.hpp"
 
 namespace PixelTime
@@ -12,7 +11,7 @@ namespace PixelTime
 		updateList.push_back(callback);
 	}
 
-	$Hook(void, PixelTimeUpdate, (Il2CppObject* _this))
+	$Hook(void, PixelTimeUpdate, (IL2CPP::Object* _this))
 	{
 		for (auto& func : updateList)
 		{
@@ -24,9 +23,11 @@ namespace PixelTime
 
 	void INIT()
 	{
-		$RegisterHook(PixelTimeUpdate, Il2CppUtils::GetMethodPointerByName(
-			GetClass("PixelTime"),
-			"Update"
-		));
+		using namespace IL2CPP::ClassMapping;
+
+		$RegisterHook(
+			PixelTimeUpdate,
+			GetClass("PixelTime")->GetMethod("Update")
+		);
 	}
 }

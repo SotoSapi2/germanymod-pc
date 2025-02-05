@@ -1,8 +1,11 @@
 #pragma once
+#include <IL2CPP.hpp>
 
 void Detour(void* targetPtr, void* replacementFunc);
 
 void AttachHook(void* targetPtr, void* replacementFunc, void** origFunc);
+
+void AttachHook(const IL2CPP::MethodInfo* method, void* replacementFunc, void** origFunc);
 
 #define $Hook(returnType, name, param) \
 namespace HookOrigs             \
@@ -19,4 +22,4 @@ returnType Hooks::##name param
 HookOrigs::##name (__VA_ARGS__)
 
 #define $RegisterHook(name, ptr) \
-AttachHook(ptr, (void*)Hooks::##name, (void**)&HookOrigs::##name)
+AttachHook(ptr, (void*)Hooks::name, (void**)&HookOrigs::name)

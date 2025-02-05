@@ -19,7 +19,7 @@ Memory::ModuleInfo::~ModuleInfo()
 
 std::optional<Memory::ModuleInfo> Memory::FindModule(const char* moduleName)
 {
-	HMODULE modules[128] = {0};
+	HMODULE modules[128] = { 0 };
 	DWORD modules_size = 0;
 	auto process_handle = GetCurrentProcess();
 	EnumProcessModulesEx(process_handle, modules, sizeof(modules), &modules_size, LIST_MODULES_64BIT);
@@ -29,12 +29,12 @@ std::optional<Memory::ModuleInfo> Memory::FindModule(const char* moduleName)
 	for (auto module : modules)
 	{
 		if (!modules) continue;
-		char module_filename[FILENAME_MAX + 1] = {0};
+		char module_filename[FILENAME_MAX + 1] = { 0 };
 		GetModuleBaseNameA(process_handle, module, module_filename, FILENAME_MAX);
 
 		if (strcmp(module_filename, moduleName) == 0)
 		{
-			char module_path[MAX_PATH + 1] = {0};
+			char module_path[MAX_PATH + 1] = { 0 };
 			GetModuleFileNameExA(process_handle, module, module_path, MAX_PATH);
 
 			MODULEINFO moduleInfo{};
@@ -125,27 +125,27 @@ void Memory::RestoreBytes(std::initializer_list<uintptr_t> address)
 uintptr_t Memory::PatternScan(uintptr_t module, const char* signature)
 {
 	static auto patternToByte = [](const char* pattern)
-	{
-		auto       bytes = std::vector<int>{};
-		const auto start = const_cast<char*>(pattern);
-		const auto end = const_cast<char*>(pattern) + strlen(pattern);
-
-		for (auto current = start; current < end; ++current)
 		{
-			if (*current == '?')
+			auto       bytes = std::vector<int>{};
+			const auto start = const_cast<char*>(pattern);
+			const auto end = const_cast<char*>(pattern) + strlen(pattern);
+
+			for (auto current = start; current < end; ++current)
 			{
-				++current;
 				if (*current == '?')
+				{
 					++current;
-				bytes.push_back(-1);
+					if (*current == '?')
+						++current;
+					bytes.push_back(-1);
+				}
+				else
+				{
+					bytes.push_back(strtoul(current, &current, 16));
+				}
 			}
-			else
-			{
-				bytes.push_back(strtoul(current, &current, 16));
-			}
-		}
-		return bytes;
-	};
+			return bytes;
+		};
 
 	const auto dosHeader = (PIMAGE_DOS_HEADER)module;
 	const auto ntHeaders = (PIMAGE_NT_HEADERS)((std::uint8_t*)module + dosHeader->e_lfanew);

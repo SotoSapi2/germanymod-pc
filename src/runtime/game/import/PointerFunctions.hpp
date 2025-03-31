@@ -2,7 +2,7 @@
 #pragma once
 #include <IL2CPP.hpp>
 #include "Structs.hpp"
-#include "PointerWrapper.hpp"
+#include "../structures/PointerWrapper.hpp"
 
 
 namespace Application 
@@ -34,6 +34,8 @@ namespace Screen
 	extern Pointer<int()> GetWidth;
 
 	extern Pointer<int()> GetHeight;
+
+	extern Pointer<void(int fullScreenMode)> SetfullScreenMode;
 }
 
 namespace Camera
@@ -96,6 +98,12 @@ namespace WeaponMenager
 	extern Pointer<void(IL2CPP::Object* instance, int value)> SetClipAmmo;
 
 	extern Pointer<IL2CPP::List<IL2CPP::Object*>* ()> GetItemRecordList;
+}
+
+namespace NetworkStartTable 
+{
+	extern Pointer<bool()> IsInMatch;
+
 }
 
 namespace InventoryItemType
@@ -290,7 +298,7 @@ namespace PlayerDamageable
 
 namespace PhotonView
 {
-	extern Pointer<void(IL2CPP::Object* instance, int eventEnum, int photonTarget, void* param)> RPC;
+	extern Pointer<void(IL2CPP::Object* instance, EventEnum eventEnum, PhotonTargets photonTarget, void* param)> RPC;
 
 	extern Pointer<bool(IL2CPP::Object* instance)> IsMine;
 }
@@ -319,26 +327,24 @@ namespace Encoding
 	extern Pointer<IL2CPP::Array<char>* (IL2CPP::Object* encoder, IL2CPP::String* string)> GetBytes;
 }
 
-//namespace Type
-//{
-//	extern Pointer<IL2CPP::Object* (IL2CPP::Object* type, IL2CPP::String* name)> GetMethod;
-//
-//	extern Pointer<IL2CPP::Object* (IL2CPP::String* typeName)> GetType;
-//
-//	extern Pointer<IL2CPP::Object* (IL2CPP::Object* obj)> GetObjectType;
-//
-//	extern Pointer<IL2CPP::Object* (IL2CPP::Object* base, Il2CppArray* generics)> MakeGenericType;
-//}
+namespace Type
+{
+	extern Pointer<IL2CPP::Object* (IL2CPP::Object* type, IL2CPP::String* name)> GetMethod;
 
-//namespace Activator
-//{
-//	extern Pointer<IL2CPP::Object* (IL2CPP::Object* type)> CreateInstance;
-//}
+	extern Pointer<IL2CPP::Object* (IL2CPP::String* typeName)> GetType;
 
-//namespace MethodBase
-//{
-//	extern Pointer<IL2CPP::Object* (IL2CPP::Object* info, IL2CPP::Object* instance, IL2CPP::Array<IL2CPP::Object*>* args)> Invoke;
-//}
+	extern Pointer<IL2CPP::Object* (IL2CPP::Object* base, IL2CPP::Array<IL2CPP::Object*>* generics)> MakeGenericType;
+}
+
+namespace Activator
+{
+	extern Pointer<IL2CPP::Object* (IL2CPP::Object* type)> CreateInstance;
+}
+
+namespace MethodBase
+{
+	extern Pointer<IL2CPP::Object* (IL2CPP::Object* info, IL2CPP::Object* instance, IL2CPP::Array<IL2CPP::Object*>* args)> Invoke;
+}
 
 namespace PointerFunctions
 {
@@ -361,6 +367,7 @@ namespace PointerFunctions
 		// Screen
 		Screen::GetWidth.Define();
 		Screen::GetHeight.Define();
+		Screen::SetfullScreenMode.Define();
 
 		// Camera
 		Camera::GetMain.Define();
@@ -394,6 +401,9 @@ namespace PointerFunctions
 		WeaponMenager::GetPlayerWeapons.Define();
 		WeaponMenager::SetClipAmmo.Define();
 		WeaponMenager::GetItemRecordList.Define();
+
+		// NetworkStartTable
+		NetworkStartTable::IsInMatch.Define();
 
 		// InventoryItemType
 		InventoryItemType::GetTypeFromIndex.Define();
@@ -515,6 +525,17 @@ namespace PointerFunctions
 		// Encoding
 		Encoding::GetUTF8.Define();
 		Encoding::GetBytes.Define();
+
+		// Type
+		Type::GetMethod.Define();
+		Type::GetType.Define();
+		Type::MakeGenericType.Define();
+
+		// Activator
+		Activator::CreateInstance.Define();
+
+		// MethodBase
+		MethodBase::Invoke.Define();
 
 	}
 }

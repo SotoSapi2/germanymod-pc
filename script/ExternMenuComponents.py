@@ -6,6 +6,7 @@ file_structure = """// Auto generated with ExternMenuComponents.py
 
 namespace Menu
 {
+    using namespace UIComponents;
     extern bool gMenuShown;
 
     void INIT();

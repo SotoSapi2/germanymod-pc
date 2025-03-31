@@ -53,6 +53,11 @@ namespace Screen
 		"Screen",
 		"get_height"
 	);
+
+	Pointer<void(int fullScreenMode)> SetfullScreenMode(
+		"Screen",
+		"set_fullScreenMode"
+	);
 }
 
 namespace Camera
@@ -191,6 +196,15 @@ namespace WeaponMenager
 		"ItemDb",
 		0x6
 	);
+}
+
+namespace NetworkStartTable 
+{
+	Pointer<bool()> IsInMatch(
+		"IdkBroClass",
+		0xc
+	);
+
 }
 
 namespace InventoryItemType
@@ -564,7 +578,7 @@ namespace PlayerMoveC
 {
 	Pointer<void(IL2CPP::Object* plrMoveC, bool active)> SetXrayShader(
 		"Player_move_c",
-		0x183
+		0x184
 		//{"internal", "Void", nullptr, {"Boolean", "ENUM"}},
 		//2)
 	);
@@ -596,7 +610,7 @@ namespace PlayerDamageable
 
 namespace PhotonView
 {
-	Pointer<void(IL2CPP::Object* instance, int eventEnum, int photonTarget, void* param)> RPC(
+	Pointer<void(IL2CPP::Object* instance, EventEnum eventEnum, PhotonTargets photonTarget, void* param)> RPC(
 		"PhotonView",
 		{ "internal", "Void", nullptr, {"ENUM", "ENUM", "Object[]"} }
 	);
@@ -649,41 +663,36 @@ namespace Encoding
 	);
 }
 
-//namespace Type
-//{
-//	Pointer<IL2CPP::Object* (IL2CPP::Object* type, IL2CPP::String* name)> GetMethod(
-//		"Type",
-//		0x60
-//	);
-//
-//	Pointer<IL2CPP::Object* (IL2CPP::String* typeName)> GetType(
-//		"Type",
-//		0x94
-//	);
-//
-//	Pointer<IL2CPP::Object* (IL2CPP::Object* obj)> GetObjectType(
-//		"SystemObject",
-//		0x5
-//	);
-//
-//	Pointer<IL2CPP::Object* (IL2CPP::Object* base, Il2CppArray* generics)> MakeGenericType(
-//		"RuntimeType",
-//		0x6c
-//	);
-//}
+namespace Type
+{
+	Pointer<IL2CPP::Object* (IL2CPP::Object* type, IL2CPP::String* name)> GetMethod(
+		"Type",
+		0x60
+	);
 
-//namespace Activator
-//{
-//	Pointer<IL2CPP::Object* (IL2CPP::Object* type)> CreateInstance(
-//		"Activator",
-//		0x4
-//	);
-//}
+	Pointer<IL2CPP::Object* (IL2CPP::String* typeName)> GetType(
+		"Type",
+		0x94
+	);
 
-//namespace MethodBase
-//{
-//	Pointer<IL2CPP::Object* (IL2CPP::Object* info, IL2CPP::Object* instance, IL2CPP::Array<IL2CPP::Object*>* args)> Invoke(
-//		"MethodBase",
-//		0x14
-//	);
-//}
+	Pointer<IL2CPP::Object* (IL2CPP::Object* base, IL2CPP::Array<IL2CPP::Object*>* generics)> MakeGenericType(
+		"RuntimeType",
+		0x6c
+	);
+}
+
+namespace Activator
+{
+	Pointer<IL2CPP::Object* (IL2CPP::Object* type)> CreateInstance(
+		"Activator",
+		0x4
+	);
+}
+
+namespace MethodBase
+{
+	Pointer<IL2CPP::Object* (IL2CPP::Object* info, IL2CPP::Object* instance, IL2CPP::Array<IL2CPP::Object*>* args)> Invoke(
+		"MethodBase",
+		0x14
+	);
+}

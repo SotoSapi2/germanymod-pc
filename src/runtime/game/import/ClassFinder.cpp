@@ -19,7 +19,7 @@ namespace FieldPatterns
 	FieldPattern WeaponSkinManager{ "Single", "String", "Comparison`1", "Dictionary`2", "Dictionary`2", "Dictionary`2", "Action`3", "Action`2", "Dictionary`2", "Dictionary`2", "Dictionary`2", "Dictionary`2", "List`1", "List`1" };
 	FieldPattern WeaponSkinIdk{ "Action", "String", "String", "String", "String", "List`1", "Boolean", "Dictionary`2" };
 	FieldPattern FreeBundle1{ "LobbyItemsBundle", "Nullable`1", "LobbyItemSlot", "String", "String", "String", "Int32", "String[]", "LobbyItemBuff[]", "LobbyItemLockInfo[]", "Boolean", "String" };
-	FieldPattern WearClass{"String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "List`1", "HashSet`1", "List`1", "String", "String", "String", "String", "String", "List`1", "Dictionary`2", "Dictionary`2", "Dictionary`2", "Int32", "WearScriptableObject_GENERATED", "Action" };
+	FieldPattern WearClass{ "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "String", "List`1", "HashSet`1", "List`1", "String", "String", "String", "String", "String", "List`1", "Dictionary`2", "Dictionary`2", "Dictionary`2", "Int32", "WearScriptableObject_GENERATED", "Action" };
 	FieldPattern RoyaleClass{ "String", "String", "String", "String", "String", "String", "String", "String", "String", "RoyaleScriptableObject_GENERATED", "Action`1", "Action`1", "Action`1", "Action`1", "Action`1", "Dictionary`2" };
 	FieldPattern WeaponUpgradeV8{ "Int32", nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, "ItemRarity", nullptr };
 	FieldPattern WeaponW{ nullptr, nullptr, "ItemRecord", nullptr, "Int32", "Int32[]", "Boolean", "Boolean", "Boolean" };
@@ -58,6 +58,7 @@ namespace FieldPatterns
 	FieldPattern SaltedDecimal{ "Int32", "Int32", "Int32", "Int32", "Int32", "Int32[]" };
 	FieldPattern KeyClass{ "Boolean", "Action`1", "Action`2", "Action`2", "Action`2", "Action`1", "Action`1", "Action" };
 	FieldPattern XPNiggaSex{ nullptr, "String", nullptr };
+	FieldPattern IdkBroClass{ "String", "String", nullptr, "Action`1", "Int32", "String" };
 }
 
 namespace ClassFinder
@@ -120,6 +121,8 @@ namespace ClassFinder
 
 		AddQueue("PlayerData", "");
 
+		AddQueue("FilterBadWorld", "", &FieldPatterns::FilterBadWorld, 5);
+		AddQueue("SexClass0", "", &FieldPatterns::SexClass0, 22);
 		AddQueue("GadgetManager", "", &FieldPatterns::GadgetManager, 25);
 		AddQueue("RoomInfo", "", &FieldPatterns::RoomInfo, 28);
 		AddQueue("NiggerSex", "", &FieldPatterns::NiggerSex, 10);
@@ -130,9 +133,10 @@ namespace ClassFinder
 		AddQueue("WeaponW", "", &FieldPatterns::WeaponW, 12);
 		AddQueue("KeyClass", "", &FieldPatterns::KeyClass, 41);
 		AddQueue("WeaponSkinManager", "", &FieldPatterns::WeaponSkinManager, 118);
-		AddQueue("PlayerListClass", "", &FieldPatterns::PlayerListClass, 30);
+		AddQueue("PlayerListClass", "", &FieldPatterns::PlayerListClass, 31);
 		AddQueue("PhotonNetwork", "", &FieldPatterns::PhotonNetwork, 148);
 		AddQueue("WearClass", "", &FieldPatterns::WearClass);
+		AddQueue("IdkBroClass", "", &FieldPatterns::IdkBroClass);
 		#pragma endregion
 
 		#pragma region Progress
@@ -220,6 +224,8 @@ namespace ClassFinder
 
 		AddQueue("SymmetricAlgorithm", "System.Security.Cryptography");
 		AddQueue("Rfc2898DeriveBytes", "System.Security.Cryptography");
+
+		AddQueue("MethodBase", "System.Reflection");
 	}
 
 	void DoPhoton3Unity3DQueue()
@@ -229,7 +235,7 @@ namespace ClassFinder
 		AddQueue("Hashtable", "ExitGames.Client.Photon");
 	}
 
-	void INIT()
+	bool INIT()
 	{	
 		using namespace IL2CPP;
 		using namespace IL2CPP::ClassMapping;
@@ -240,18 +246,23 @@ namespace ClassFinder
 			AddImageToScan(DefaultImage::UnityPhysicsModule);
 			AddImageToScan(DefaultImage::Corlib);
 			AddImageToScan(IL2CPP::CurrentDomain()->OpenAssembly("Photon3Unity3D.dll"));
+			AddImageToScan(IL2CPP::CurrentDomain()->OpenAssembly("System.dll"));
 
 			DoAssemblyCSharpQueue();
 			DoUnityCoreQueue();
 			DoCorlibQueue();
 			DoPhoton3Unity3DQueue();
+
 			StartMapping();
 
 			LOG_INFO("Class mapping complete.");
 		}
 		catch (const IL2CPP::Exception::UnresolvedMappingQueue& err)
 		{
-			LOG_INFO("Some class maps doesn't get registered. Some features might be unusable.");
+			LOG_NOTAG("%s", err.what());
+			return false;
 		}
+
+		return true;
 	}
 }

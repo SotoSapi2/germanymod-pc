@@ -1,6 +1,11 @@
 #pragma once
+#pragma warning(push)
+#pragma warning(disable: C4244)
+#pragma warning(disable: C4700)
+
 #define _USE_MATH_DEFINES
 #include <math.h>
+
 struct Color
 {
 	float r;
@@ -1988,3 +1993,5 @@ struct RaycastHit
 	float v;
 	int collider;
 };
+
+#pragma warning(pop)

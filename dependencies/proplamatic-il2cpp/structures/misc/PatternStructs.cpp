@@ -3,13 +3,7 @@
 
 namespace IL2CPP
 {
-	SignaturePattern::SignaturePattern(const char* modifier, const char* typeName, const char* methodName, std::vector<const char*> parameterTypeList)
-	{
-		this->modifier = modifier;
-		this->typeName = typeName;
-		this->methodName = methodName;
-		this->parameterTypeList = parameterTypeList;
-	}
+
 
 	std::string SignaturePattern::ToString() const
 	{
@@ -46,7 +40,7 @@ namespace IL2CPP
 		out << "{";
 		for (size_t i = 0; i < this->parameterTypeList.size(); i++)
 		{
-			const char* v = this->parameterTypeList.at(i);
+			const char* v = this->parameterTypeList[i];
 			v = v == nullptr ? "nullptr" : v;
 
 			if (i != this->parameterTypeList.size() - 1)

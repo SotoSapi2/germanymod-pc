@@ -4,19 +4,20 @@ namespace IL2CPP
 {
 	namespace DefaultTypeClass
 	{
-		const Class* Type;
-		const Class* Boolean;
-		const Class* Byte;
-		const Class* Int16;
-		const Class* Int32;
-		const Class* Int64;
-		const Class* Float;
-		const Class* Double;
-		const Class* Decimal;
-		const Class* Char;
-		const Class* String;
-		const Class* Object;
-		const Class* Array;
+		Class* Void;
+		Class* Type;
+		Class* Boolean;
+		Class* Byte;
+		Class* Int16;
+		Class* Int32;
+		Class* Int64;
+		Class* Float;
+		Class* Double;
+		Class* Decimal;
+		Class* Char;
+		Class* String;
+		Class* Object;
+		Class* Array;
 	}
 
 	namespace DefaultImage
@@ -41,7 +42,7 @@ namespace IL2CPP
 			DefaultImage::AssemblyCSharp = domain->OpenAssembly("Assembly-CSharp.dll");
 
 			#define DEFAULTS_INIT(field, ns, n) DefaultTypeClass::field = (Class*)IMPORT::il2cpp_class_from_name(IMPORT::il2cpp_get_corlib(), ns, n)
-
+			DEFAULTS_INIT(Void, "System", "Void");
 			DEFAULTS_INIT(Type, "System", "Type");
 			DEFAULTS_INIT(Boolean, "System", "Boolean");
 			DEFAULTS_INIT(Byte, "System", "Byte");

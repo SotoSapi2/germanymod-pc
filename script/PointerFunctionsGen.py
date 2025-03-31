@@ -5,7 +5,7 @@ header_code = """// Auto-generated with PointerFunctionsGen.py
 #pragma once
 #include <IL2CPP.hpp>
 #include "Structs.hpp"
-#include "PointerWrapper.hpp"
+#include "../structures/PointerWrapper.hpp"
 """
 
 def get_project_path():
@@ -63,7 +63,6 @@ def start_gen():
         header_output += generate_pointer_definator(header_output)
         
         open(header_file, "w").write(header_output)
-        # print("[NIGGA READ] pls update this code above manually cuz am lazy ^^^")
 
     except FileNotFoundError:
         msg = str(game_path / "PointerFunctions.cpp")

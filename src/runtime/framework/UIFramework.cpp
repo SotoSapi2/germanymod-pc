@@ -1,5 +1,4 @@
 /*
-
 ████████╗██╗░░██╗██╗░██████╗  ░██████╗░█████╗░██╗░░░██╗██████╗░░█████╗░███████╗
 ╚══██╔══╝██║░░██║██║██╔════╝  ██╔════╝██╔══██╗██║░░░██║██╔══██╗██╔══██╗██╔════╝
 ░░░██║░░░███████║██║╚█████╗░  ╚█████╗░██║░░██║██║░░░██║██████╔╝██║░░╚═╝█████╗░░
@@ -20,6 +19,13 @@
 ██║░░░██║██║╚████║██╔══██╗██╔══╝░░██╔══██║██║░░██║██╔══██║██╔══██╗██║░░░░░██╔══╝░░╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝
 ╚██████╔╝██║░╚███║██║░░██║███████╗██║░░██║██████╔╝██║░░██║██████╦╝███████╗███████╗██╗██╗██╗██╗██╗██╗██╗██╗██╗██╗██╗██╗██╗██╗
 ░╚═════╝░╚═╝░░╚══╝╚═╝░░╚═╝╚══════╝╚═╝░░╚═╝╚═════╝░╚═╝░░╚═╝╚═════╝░╚══════╝╚══════╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝
+
+TODO:
+- Fix flickering components when you load subtab for the first time. This bug most likey a ImGui bug.
+- Put more effort for flexible Button type.
+- Rewrite and finish notification system. (imgui_notify.h suck ass)
+- Clean up and refactor this choatic mess.
+- Hanging every Zack Zuckerberg slaves' on a rope for who contributing inventing React.
 */
 
 #include "UIFramework.hpp"
@@ -29,8 +35,12 @@
 #include <optional>
 #include <imgui_internal.h>
 #include <sstream>
+#include <regex>
 //#include <imgui_notify.hpp>
 #include "backend/UIBackend.hpp"
+#include <Logger.hpp>
+#include <json.hpp>
+#include <windows.h>
 
 #define IS_ODD(x) (x % 2 == 1)
 
@@ -49,8 +59,8 @@ class DataContainer
 {
 	std::unordered_map<ImGuiID, std::unordered_map<uint8_t, T*>> container;
 
-	public:
-	T& Get(const ImGuiID& id, uint8_t slot, T defaultValue)
+public:
+	T* Get(const ImGuiID& id, uint8_t slot, T defaultValue)
 	{
 		if (container.find(id) == container.end())
 		{
@@ -62,13 +72,13 @@ class DataContainer
 			auto data = new T;
 			*data = defaultValue;
 			container.at(id).insert({ slot, data });
-			return *data;
+			return data;
 		}
 
-		return *container.at(id).at(slot);
+		return container.at(id).at(slot);
 	}
 
-	T& Get(const ImGuiID& id, uint8_t slot)
+	T* Get(const ImGuiID& id, uint8_t slot)
 	{
 		if (container.find(id) == container.end())
 		{
@@ -79,10 +89,10 @@ class DataContainer
 		{
 			auto data = new T;
 			container.at(id).insert({ slot, data });
-			return *data;
+			return data;
 		}
 
-		return *container.at(id).at(slot);
+		return container.at(id).at(slot);
 	}
 };
 
@@ -96,42 +106,41 @@ namespace InterpHelper
 
 namespace UIFramework
 {
-	struct GroupQueue
-	{
-		const char* label;
-		GroupPlacementType placement;
-		std::function<void()> drawer;
-	};
+	//struct GroupQueue
+	//{
+	//	const char* label;
+	//	GroupPlacementType placement;
+	//	std::function<void()> drawer;
+	//};
 
-	namespace Global
+	namespace Vars
 	{
 		// PUBLIC FIELDS //
 		ImFont* gRegularFont = nullptr;
 		ImFont* gMediumFont = nullptr;
-		ImFont*	gLargeFont = nullptr;
+		ImFont* gLargeFont = nullptr;
 		ImFont* gExtraLargeFont = nullptr;
-		ImFont*	gIconFont = nullptr;
+		ImFont* gIconFont = nullptr;
 
 		MenuColorScheme gMenuColorScheme;
 		//
 
 		std::string assetsPath;
+		ImGuiID globalSelectedSectionId = 0;
 		ImGuiID globalSelectedTabId = 0;
-		ImGuiID globalSelectedSubTabId = 0;
 
-		GroupSplitType currentGroupSplitType = GroupSplitType::HALF;
+		UIComponents::Section* currentSelectedSection = nullptr;
 
-		std::function<void()> currentSubTabDrawer = nullptr;
-
-		std::vector<GroupQueue> groupQueueList;
+		UIComponents::Tab* currentSelectedTab = nullptr;
 
 		DataContainer<float> floatContainer;
 		DataContainer<ImColor> colorContainer;
+		DataContainer<ImRect> rectContainer;
 
 		std::function<void()> onUpdateCallback;
 	};
 
-	char AciiToLower(char in) 
+	char AciiToLower(char in)
 	{
 		if (in <= 'Z' && in >= 'A')
 			return in - ('Z' - 'z');
@@ -143,7 +152,7 @@ namespace UIFramework
 		std::vector<std::pair<int, const std::string&>> results;
 
 		int resultFound = 0;
-		for (int i = 0; i < vec->size(); i++) 
+		for (int i = 0; i < vec->size(); i++)
 		{
 			if (maxResult != 0 && resultFound > maxResult)
 			{
@@ -214,139 +223,45 @@ namespace UIFramework
 			}
 		}
 
-		void Section(const char* str_id, const ImVec2& size = ImVec2(0, 0), ImGuiChildFlags child_flags = 0, ImGuiWindowFlags window_flags = 0)
+		void Frame(const char* str_id, const ImVec2& size = ImVec2(0, 0), ImGuiChildFlags child_flags = 0, ImGuiWindowFlags window_flags = 0)
 		{
 			ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4());
 			ImGui::BeginChild(str_id, size, child_flags, window_flags);
 			ImGui::PopStyleColor();
 		}
 
-		void EndSection()
+		void EndFrame()
 		{
 			ImGui::EndChild(); // crazy rename
 		}
 
-		void Group(const char* label, const std::function<void()>& groupDrawer)
+		void Group(UIComponents::Group* group, const ImVec2& size = { 0, 0 })
 		{
-			std::string strId = label;
-			strId += "-group";
+			std::string strId = group->label + "-group";
 
 			ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 0);
-			ImGui::BeginChild(strId.c_str(), { -1.0, 0.0 }, ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_AlwaysUseWindowPadding);
+
+			if (size.x == 0 && size.y == 0)
 			{
-				ImGui::PopStyleVar();
-				ImGui::PushFont(Global::gLargeFont);
-				ImGui::TextUnformatted(label);
-				ImGui::PopFont();
-				ImGui::Separator();
-
-				groupDrawer();
-
-				ImGui::EndChild();
+				ImGui::BeginChild(strId.c_str(), { -1.0, 0.0 }, ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_AlwaysUseWindowPadding);
 			}
-		}
-
-		bool Tab(const char* icon, const std::function<void()>& subTabDrawer = nullptr)
-		{
-			ImGuiWindow* window = ImGui::GetCurrentWindow();
-			if (window->SkipItems)
+			else
 			{
-				return false;
+				ImGui::BeginChild(strId.c_str(), size, ImGuiChildFlags_AlwaysUseWindowPadding);
 			}
 
-			ImGuiContext& g = *GImGui;
-
-			ImGuiID id = window->GetID(icon);
-			ImGuiStyle& style = g.Style;
-
-			ImVec2 pos = window->DC.CursorPos;
-			ImVec2 size(window->Size.x, window->Size.x);
-			ImRect rect(pos, pos + size);
-
-			ImGui::ItemSize(size, style.FramePadding.y);
-			if (!ImGui::ItemAdd(rect, id))
-				return false;
-
-			if (Global::globalSelectedTabId == 0)
-			{
-				Global::globalSelectedTabId = id;
-			}
-
-			ImDrawList* draw = window->DrawList;
-
-			bool hovered, held;
-			bool pressed = ImGui::ButtonBehavior(rect, id, &hovered, &held, 0);
-
-			bool selected = Global::globalSelectedTabId == id;
-
-			if (pressed)
-			{
-				Global::globalSelectedTabId = id;
-
-				if (!selected)
-				{
-					Global::groupQueueList.clear();
-					Global::currentSubTabDrawer = subTabDrawer;
-					Global::globalSelectedSubTabId = 0;
-				}
-			}
-
-			if (selected)
-			{
-				Global::currentSubTabDrawer = subTabDrawer;
-			}
-
-			float& selectLerp = Global::floatContainer.Get(id, 0, 0);
-			selectLerp = InterpHelper::Lerp(selectLerp + g.IO.DeltaTime * 5.0f * (selected ? 1.0f : -1.0f));
-
-			ImU32 rectColor = ImLerp(
-				Global::gMenuColorScheme.bgLow,
-				Global::gMenuColorScheme.bgMed,
-				selectLerp
-			);
-
-			ImU32 lineColor = ImLerp(
-				Global::gMenuColorScheme.bgMed,
-				Global::gMenuColorScheme.primaryMed,
-				selectLerp
-			);
-
-			draw->AddRectFilled(
-				rect.Min,
-				rect.Max,
-				rectColor,
-				0
-			);
-
-			draw->AddRectFilled(
-				ImLerp(
-					rect.Min + ImVec2(size.x - 2, 0),
-					rect.Min + ImVec2(size.x - 3, 0),
-					selectLerp
-				),
-				rect.Max,
-				lineColor,
-				0
-			);
-
-			ImGui::PushFont(Global::gIconFont);
-			RenderTextDisabled(
-				!selected,
-				rect.Min,
-				rect.Max,
-				icon,
-				nullptr,
-				nullptr,
-				style.ButtonTextAlign,
-				&rect
-			);
+			ImGui::PopStyleVar();
+			ImGui::PushFont(Vars::gLargeFont);
+			ImGui::TextUnformatted(group->label.c_str());
 			ImGui::PopFont();
+			ImGui::Separator();
 
-			return selected;
+			group->RenderChildren();
+
+			ImGui::EndChild();
 		}
 
-		// NOTE: DO NOT call ImGui widgets on groupQueueRegister callback. IT WILL BREAK THE FRAMEWORK!
-		void SubTab(const char* label, GroupSplitType groupSplitType, const std::function<void()>& groupQueueRegister= nullptr)
+		void Tab(UIComponents::Tab* tab)
 		{
 			ImGuiWindow* window = ImGui::GetCurrentWindow();
 			if (window->SkipItems)
@@ -354,12 +269,12 @@ namespace UIFramework
 				return;
 			}
 			ImGui::SameLine();
-			ImGui::PushFont(Global::gLargeFont);
+			ImGui::PushFont(Vars::gLargeFont);
 
 			ImGuiContext& g = *GImGui;
 			const ImGuiStyle& style = g.Style;
-			const ImGuiID id = window->GetID(label);
-			const ImVec2 label_size = ImGui::CalcTextSize(label, nullptr, true);
+			const ImGuiID id = window->GetID(tab->label.c_str());
+			const ImVec2 label_size = ImGui::CalcTextSize(tab->label.c_str(), nullptr, true);
 			ImVec2 pos = window->DC.CursorPos;
 
 			ImVec2 itemSize(0, 50);
@@ -376,9 +291,9 @@ namespace UIFramework
 				return;
 			}
 
-			if (Global::globalSelectedSubTabId == 0)
+			if (Vars::globalSelectedTabId == 0)
 			{
-				Global::globalSelectedSubTabId = id;
+				Vars::globalSelectedTabId = id;
 			}
 
 			bool hovered, held;
@@ -386,33 +301,31 @@ namespace UIFramework
 
 			if (pressed)
 			{
-				Global::globalSelectedSubTabId = id;
+				Vars::globalSelectedTabId = id;
 			}
 
-			bool selected = Global::globalSelectedSubTabId == id;
+			bool selected = Vars::globalSelectedTabId == id;
 
-			float& selectLerp = Global::floatContainer.Get(id, 0, 0);
-			selectLerp = InterpHelper::Lerp(selectLerp + g.IO.DeltaTime * 2 * (selected ? 1.0f : -1.0f));
+			float* selectLerp = Vars::floatContainer.Get(id, 0, 0);
+			*selectLerp = InterpHelper::Lerp(*selectLerp + g.IO.DeltaTime * 2 * (selected ? 1.0f : -1.0f));
 
 			static ImRect subTabSelectionRect;
 
 			if (selected)
 			{
-				Global::groupQueueList.clear();
-				groupQueueRegister();
-				Global::currentGroupSplitType = groupSplitType;
+				Vars::currentSelectedTab = tab;
 
 				constexpr float lineHeight = 5;
 				subTabSelectionRect.Min.x = ImLerp(
 					subTabSelectionRect.Min.x,
 					rect.Min.x,
-					selectLerp
+					*selectLerp
 				);
 
 				subTabSelectionRect.Max.x = ImLerp(
 					subTabSelectionRect.Max.x,
 					rect.Max.x,
-					selectLerp
+					*selectLerp
 				);
 
 				subTabSelectionRect.Min.y = rect.Min.y;
@@ -421,7 +334,7 @@ namespace UIFramework
 				window->DrawList->AddRectFilled(
 					subTabSelectionRect.Min,
 					subTabSelectionRect.Max,
-					Global::gMenuColorScheme.primaryMed,
+					Vars::gMenuColorScheme.primaryMed,
 					0
 				);
 			}
@@ -430,7 +343,7 @@ namespace UIFramework
 				!selected,
 				rect.Min + style.FramePadding - ImVec2(2.5, 0),
 				rect.Max + style.FramePadding,
-				label,
+				tab->label.c_str(),
 				nullptr,
 				&label_size,
 				style.ButtonTextAlign,
@@ -439,13 +352,107 @@ namespace UIFramework
 			ImGui::PopFont();
 		}
 
+		bool Section(UIComponents::Section* section)
+		{
+			ImGuiWindow* window = ImGui::GetCurrentWindow();
+			if (window->SkipItems)
+			{
+				return false;
+			}
+
+			ImGuiContext& g = *GImGui;
+
+			ImGuiID id = window->GetID(section->icon);
+			ImGuiStyle& style = g.Style;
+
+			ImVec2 pos = window->DC.CursorPos;
+			ImVec2 size(window->Size.x, window->Size.x);
+			ImRect rect(pos, pos + size);
+
+			ImGui::ItemSize(size, style.FramePadding.y);
+			if (!ImGui::ItemAdd(rect, id))
+				return false;
+
+			if (Vars::globalSelectedSectionId == 0)
+			{
+				Vars::globalSelectedSectionId = id;
+			}
+
+			ImDrawList* draw = window->DrawList;
+
+			bool hovered, held;
+			bool pressed = ImGui::ButtonBehavior(rect, id, &hovered, &held, 0);
+
+			bool selected = Vars::globalSelectedSectionId == id;
+
+			if (pressed)
+			{
+				Vars::globalSelectedSectionId = id;
+				Vars::globalSelectedTabId = 0;
+				Vars::currentSelectedSection = section;
+			}
+
+			if (selected)
+			{
+				Vars::currentSelectedSection = section;
+			}
+
+			float* selectLerp = Vars::floatContainer.Get(id, 0, 0);
+			*selectLerp = InterpHelper::Lerp(*selectLerp + g.IO.DeltaTime * 5.0f * (selected ? 1.0f : -1.0f));
+
+			ImU32 rectColor = ImLerp(
+				Vars::gMenuColorScheme.bgLow,
+				Vars::gMenuColorScheme.bgMed,
+				*selectLerp
+			);
+
+			ImU32 lineColor = ImLerp(
+				Vars::gMenuColorScheme.bgMed,
+				Vars::gMenuColorScheme.primaryMed,
+				*selectLerp
+			);
+
+			draw->AddRectFilled(
+				rect.Min,
+				rect.Max,
+				rectColor,
+				0
+			);
+
+			draw->AddRectFilled(
+				ImLerp(
+					rect.Min + ImVec2(size.x - 2, 0),
+					rect.Min + ImVec2(size.x - 3, 0),
+					*selectLerp
+				),
+				rect.Max,
+				lineColor,
+				0
+			);
+
+			ImGui::PushFont(Vars::gIconFont);
+			RenderTextDisabled(
+				!selected,
+				rect.Min,
+				rect.Max,
+				section->icon,
+				nullptr,
+				nullptr,
+				style.ButtonTextAlign,
+				&rect
+			);
+			ImGui::PopFont();
+
+			return selected;
+		}
+
 		bool Checkbox(const char* label, bool* val)
 		{
 			ImGuiWindow* window = ImGui::GetCurrentWindow();
 			if (window->SkipItems)
 				return false;
 
-			ImGui::PushFont(Global::gMediumFont);
+			ImGui::PushFont(Vars::gMediumFont);
 
 			ImGuiContext& g = *GImGui;
 			const ImGuiStyle& style = g.Style;
@@ -472,34 +479,34 @@ namespace UIFramework
 			}
 			const ImRect check_bb(pos, pos + ImVec2(square_sz, square_sz));
 
-			ImColor checkmarkTargetColor = Global::gMenuColorScheme.bgLow;
-			ImColor borderTargetColor = Global::gMenuColorScheme.bgLow;
+			ImColor checkmarkTargetColor = Vars::gMenuColorScheme.bgLow;
+			ImColor borderTargetColor = Vars::gMenuColorScheme.bgLow;
 
 			if (!(*val) && hovered)
 			{
-				checkmarkTargetColor = Global::gMenuColorScheme.primaryMed;
+				checkmarkTargetColor = Vars::gMenuColorScheme.primaryMed;
 			}
 			else if (*val && hovered)
 			{
-				checkmarkTargetColor = Global::gMenuColorScheme.primaryHigh;
-				borderTargetColor = Global::gMenuColorScheme.primaryHigh;
+				checkmarkTargetColor = Vars::gMenuColorScheme.primaryHigh;
+				borderTargetColor = Vars::gMenuColorScheme.primaryHigh;
 			}
 			else if (*val)
 			{
-				checkmarkTargetColor = Global::gMenuColorScheme.primaryMed;
-				borderTargetColor = Global::gMenuColorScheme.primaryMed;
+				checkmarkTargetColor = Vars::gMenuColorScheme.primaryMed;
+				borderTargetColor = Vars::gMenuColorScheme.primaryMed;
 			}
 
-			ImColor& checkmarkColor = Global::colorContainer.Get(id, 0, checkmarkTargetColor);
-			ImColor& borderColor = Global::colorContainer.Get(id, 1, borderTargetColor);
-			checkmarkColor = ImLerp(
-				checkmarkColor,
+			ImColor* checkmarkColor = Vars::colorContainer.Get(id, 0, checkmarkTargetColor);
+			ImColor* borderColor = Vars::colorContainer.Get(id, 1, borderTargetColor);
+			*checkmarkColor = ImLerp(
+				*checkmarkColor,
 				checkmarkTargetColor,
 				g.IO.DeltaTime * 10
 			);
 
-			borderColor = ImLerp(
-				borderColor,
+			*borderColor = ImLerp(
+				*borderColor,
 				borderTargetColor,
 				g.IO.DeltaTime * 10
 			);
@@ -514,7 +521,7 @@ namespace UIFramework
 			window->DrawList->AddRect(
 				check_bb.Min,
 				check_bb.Max,
-				borderColor,
+				*borderColor,
 				style.FrameRounding,
 				0,
 				1.5f
@@ -524,7 +531,7 @@ namespace UIFramework
 			ImGui::RenderCheckMark(
 				window->DrawList,
 				check_bb.Min + ImVec2(pad, pad),
-				checkmarkColor,
+				*checkmarkColor,
 				square_sz - pad * 2.0f
 			);
 
@@ -536,14 +543,14 @@ namespace UIFramework
 			return true;
 		}
 
-		bool Button(const char* label, const ImVec2& size_arg, ImGuiButtonFlags flags = 0)
+		bool Button(const char* label, UIComponents::ButtonSizeType sizeType, ImGuiButtonFlags flags = 0)
 		{
 			ImGuiWindow* window = ImGui::GetCurrentWindow();
 			if (window->SkipItems)
 				return false;
 
-			ImGui::PushFont(Global::gMediumFont);
-			ImGui::PushStyleColor(ImGuiCol_Text, Global::gMenuColorScheme.textHigh.Value);
+			ImGui::PushFont(Vars::gMediumFont);
+			ImGui::PushStyleColor(ImGuiCol_Text, Vars::gMenuColorScheme.textHigh.Value);
 
 			ImGuiContext& g = *GImGui;
 			const ImGuiStyle& style = g.Style;
@@ -553,10 +560,25 @@ namespace UIFramework
 			ImVec2 pos = window->DC.CursorPos;
 			if ((flags & ImGuiButtonFlags_AlignTextBaseLine) && style.FramePadding.y < window->DC.CurrLineTextBaseOffset) // Try to vertically align buttons that are smaller/have no padding so that text baseline matches (bit hacky, since it shouldn't be a flag)
 				pos.y += window->DC.CurrLineTextBaseOffset - style.FramePadding.y;
-			ImVec2 size = ImGui::CalcItemSize(size_arg, label_size.x + style.FramePadding.x * 2.0f, label_size.y + style.FramePadding.y * 2.0f);
+			ImVec2 size_arg = sizeType == UIComponents::ButtonSizeType::FLEXIBLE ? ImVec2() : ImVec2(-1, 0);
+			ImVec2 size = ImGui::CalcItemSize(size_arg, label_size.x + style.FramePadding.x * 4.0f, label_size.y + style.FramePadding.y * 4.0f);
 
 			const ImRect bb(pos, pos + size);
+			auto window_dc_backup = window->DC;
+
 			ImGui::ItemSize(size, style.FramePadding.y);
+			if (sizeType == UIComponents::ButtonSizeType::FLEXIBLE &&
+				bb.Max.x + size.x + style.ItemSpacing.x * 2.0f < window->DC.CursorStartPos.x + window->Size.x)
+			{
+				ImGui::SameLine();
+			}
+
+			//if (strcmp(label, "Unlock RGB Pioneer set") == 0)
+			//{
+			//	//if(window->DC.CursorPosPrevLine.x + size.x + style.ItemSpacing.x > window->DC.CursorStartPos.x + window->Size.x)
+			//	IM_DEBUG_BREAK();
+			//}
+
 			if (!ImGui::ItemAdd(bb, id))
 			{
 				ImGui::PopFont();
@@ -568,24 +590,24 @@ namespace UIFramework
 			bool pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held, flags);
 
 			// Render
-			ImColor targetColor = Global::gMenuColorScheme.primaryMed;
+			ImColor targetColor = Vars::gMenuColorScheme.primaryMed;
 			if (held)
 			{
-				targetColor = Global::gMenuColorScheme.primaryHigh;
+				targetColor = Vars::gMenuColorScheme.primaryHigh;
 			}
 			else if (hovered)
 			{
-				targetColor = Global::gMenuColorScheme.primaryLow;
+				targetColor = Vars::gMenuColorScheme.primaryLow;
 			}
 
-			ImColor& lerpColor = Global::colorContainer.Get(id, 0, targetColor);
-			lerpColor = ImLerp(
-				lerpColor,
+			ImColor* lerpColor = Vars::colorContainer.Get(id, 0, targetColor);
+			*lerpColor = ImLerp(
+				*lerpColor,
 				targetColor,
 				g.IO.DeltaTime * 10
 			);
 
-			ImGui::RenderFrame(bb.Min, bb.Max, lerpColor, true, style.FrameRounding);
+			ImGui::RenderFrame(bb.Min, bb.Max, *lerpColor, true, style.FrameRounding);
 			ImGui::RenderTextClipped(bb.Min + style.FramePadding, bb.Max - style.FramePadding, label, NULL, &label_size, style.ButtonTextAlign, &bb);
 
 			ImGui::PopFont();
@@ -600,8 +622,8 @@ namespace UIFramework
 			if (window->SkipItems)
 				return false;
 
-			ImGui::PushFont(Global::gMediumFont);
-			ImGui::PushStyleColor(ImGuiCol_Text, Global::gMenuColorScheme.textHigh.Value);
+			ImGui::PushFont(Vars::gMediumFont);
+			ImGui::PushStyleColor(ImGuiCol_Text, Vars::gMenuColorScheme.textHigh.Value);
 
 			ImGuiContext& g = *GImGui;
 			const ImGuiStyle& style = g.Style;
@@ -626,21 +648,21 @@ namespace UIFramework
 			bool pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held, flags);
 
 			// Render
-			ImColor targetColor = Global::gMenuColorScheme.primaryMed;
+			ImColor targetColor = Vars::gMenuColorScheme.primaryMed;
 
 			if (disabled)
 			{
-				targetColor = Global::gMenuColorScheme.primaryLow;
+				targetColor = Vars::gMenuColorScheme.primaryLow;
 			}
 
-			ImColor& lerpColor = Global::colorContainer.Get(id, 0, targetColor);
-			lerpColor = ImLerp(
-				lerpColor,
+			ImColor* lerpColor = Vars::colorContainer.Get(id, 0, targetColor);
+			*lerpColor = ImLerp(
+				*lerpColor,
 				targetColor,
 				g.IO.DeltaTime * 10
 			);
 
-			ImGui::RenderFrame(bb.Min, bb.Max, lerpColor, true, style.FrameRounding);
+			ImGui::RenderFrame(bb.Min, bb.Max, *lerpColor, true, style.FrameRounding);
 			ImGui::RenderTextClipped(bb.Min + style.FramePadding, bb.Max - style.FramePadding, label, NULL, &label_size, style.ButtonTextAlign, &bb);
 
 			ImGui::PopFont();
@@ -664,7 +686,7 @@ namespace UIFramework
 			const char* value_buf_end = value_buf + ImGui::DataTypeFormatString(value_buf, IM_ARRAYSIZE(value_buf), data_type, p_data, format);
 
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(style.ItemSpacing.x, 5));
-			ImGui::PushFont(Global::gMediumFont);
+			ImGui::PushFont(Vars::gMediumFont);
 			ImGui::TextUnformatted(label);
 			ImGui::PopFont();
 
@@ -676,7 +698,7 @@ namespace UIFramework
 			window->DC.CurrLineTextBaseOffset = window->DC.PrevLineTextBaseOffset;
 			window->DC.IsSameLine = true;
 
-			ImGui::PushFont(Global::gRegularFont);
+			ImGui::PushFont(Vars::gRegularFont);
 			ImGui::TextUnformatted(value_buf, value_buf_end);
 			ImGui::PopFont();
 
@@ -743,38 +765,38 @@ namespace UIFramework
 				ImGui::MarkItemEdited(id);
 			}
 
-			ImColor targetFillerColor = Global::gMenuColorScheme.primaryMed;
-			ImColor targetGrabColor = Global::gMenuColorScheme.primaryHigh;
+			ImColor targetFillerColor = Vars::gMenuColorScheme.primaryMed;
+			ImColor targetGrabColor = Vars::gMenuColorScheme.primaryHigh;
 
 			if (held)
 			{
-				targetFillerColor = Global::gMenuColorScheme.primaryLow;
-				targetGrabColor = Global::gMenuColorScheme.primaryMed;
+				targetFillerColor = Vars::gMenuColorScheme.primaryLow;
+				targetGrabColor = Vars::gMenuColorScheme.primaryMed;
 			}
 			else if (hovered)
 			{
-				targetFillerColor = Global::gMenuColorScheme.primaryHigh;
+				targetFillerColor = Vars::gMenuColorScheme.primaryHigh;
 			}
 
 
-			ImColor& holdFillerColor = Global::colorContainer.Get(id, 0, Global::gMenuColorScheme.primaryMed);
-			ImColor& holdGrabColor = Global::colorContainer.Get(id, 1, Global::gMenuColorScheme.primaryHigh);
-			float& sliderInterp = Global::floatContainer.Get(id, 0, 0);
+			ImColor* holdFillerColor = Vars::colorContainer.Get(id, 0, Vars::gMenuColorScheme.primaryMed);
+			ImColor* holdGrabColor = Vars::colorContainer.Get(id, 1, Vars::gMenuColorScheme.primaryHigh);
+			float* sliderInterp = Vars::floatContainer.Get(id, 0, (frame_bb.Max.x - grab_bb.Max.x) / (frame_bb.Max.x - frame_bb.Min.x));
 
-			holdFillerColor = ImLerp(
-				holdFillerColor,
+			*holdFillerColor = ImLerp(
+				*holdFillerColor,
 				targetFillerColor,
 				g.IO.DeltaTime * 10
 			);
 
-			holdGrabColor = ImLerp(
-				holdGrabColor,
+			*holdGrabColor = ImLerp(
+				*holdGrabColor,
 				targetGrabColor,
 				g.IO.DeltaTime * 10
 			);
 
-			sliderInterp = ImLerp(
-				sliderInterp,
+			*sliderInterp = ImLerp(
+				*sliderInterp,
 				(frame_bb.Max.x - grab_bb.Max.x) / (frame_bb.Max.x - frame_bb.Min.x),
 				0.25f
 			);
@@ -799,10 +821,10 @@ namespace UIFramework
 					frame_bb.Min.y + sliderFillerThinness
 				),
 				ImVec2(
-					frame_bb.Max.x - size.x * sliderInterp,
+					frame_bb.Max.x - size.x * (*sliderInterp),
 					frame_bb.Max.y - sliderFillerThinness
 				),
-				holdFillerColor,
+				*holdFillerColor,
 				g.Style.FrameRounding
 			);
 
@@ -810,14 +832,14 @@ namespace UIFramework
 			float sliderGrabSize = (frame_bb.Max.y - sliderFillerThinness * sliderGrabThinnessMul) - (frame_bb.Min.y + sliderFillerThinness * sliderGrabThinnessMul);
 			window->DrawList->AddRectFilled(
 				ImVec2(
-					(frame_bb.Max.x - sliderGrabSize - size.x * sliderInterp) + sliderGrabSize * 0.5f - style.WindowPadding.x * 0.5f,
+					(frame_bb.Max.x - sliderGrabSize - size.x * (*sliderInterp)) + sliderGrabSize * 0.5f - style.WindowPadding.x * 0.5f,
 					frame_bb.Min.y + sliderFillerThinness * sliderGrabThinnessMul
 				),
 				ImVec2(
-					(frame_bb.Max.x - size.x * sliderInterp) + sliderGrabSize * 0.5f - style.WindowPadding.x * 0.5f,
+					(frame_bb.Max.x - size.x * (*sliderInterp)) + sliderGrabSize * 0.5f - style.WindowPadding.x * 0.5f,
 					frame_bb.Max.y - sliderFillerThinness * sliderGrabThinnessMul
 				),
-				holdGrabColor,
+				*holdGrabColor,
 				360
 			);
 
@@ -845,11 +867,11 @@ namespace UIFramework
 			ImGuiIO& io = ImGui::GetIO();
 
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(style.ItemSpacing.x, 5));
-			ImGui::PushFont(Global::gMediumFont);
+			ImGui::PushFont(Vars::gMediumFont);
 			ImGui::Text(label);
 			ImGui::PopFont();
 
-			ImGui::PushStyleColor(ImGuiCol_FrameBg, Global::gMenuColorScheme.bgLow.Value);
+			ImGui::PushStyleColor(ImGuiCol_FrameBg, Vars::gMenuColorScheme.bgLow.Value);
 
 			// ImGui::InputTextEx function was modified to disable label render cause you cant
 			// just paste the body here due to hardcoded used function accessibility.
@@ -860,7 +882,7 @@ namespace UIFramework
 			return value_changed;
 		}
 
-		bool InputScalar(const char* label, ImGuiDataType data_type, void* p_data, const char* hint = NULL, const char* format = NULL, 
+		bool InputScalar(const char* label, ImGuiDataType data_type, void* p_data, const char* hint = NULL, const char* format = NULL,
 			const ImVec2& size_arg = { -1, 0 })
 		{
 			ImGuiContext& g = *GImGui;
@@ -892,7 +914,7 @@ namespace UIFramework
 
 		bool InputInt(const char* label, const char* hint, int* v)
 		{
-			return InputScalar(label, ImGuiDataType_S32, v, hint,  "%d");
+			return InputScalar(label, ImGuiDataType_S32, v, hint, "%d");
 		}
 
 		bool BrowserElement(const char* label, bool selected, ImGuiSelectableFlags flags, const ImVec2& size_arg)
@@ -982,7 +1004,7 @@ namespace UIFramework
 			if (flags & ImGuiSelectableFlags_SelectOnClick) { button_flags |= ImGuiButtonFlags_PressedOnClick; }
 			if (flags & ImGuiSelectableFlags_SelectOnRelease) { button_flags |= ImGuiButtonFlags_PressedOnRelease; }
 			if (flags & ImGuiSelectableFlags_AllowDoubleClick) { button_flags |= ImGuiButtonFlags_PressedOnClickRelease | ImGuiButtonFlags_PressedOnDoubleClick; }
-			if ((flags & ImGuiSelectableFlags_AllowOverlap) || (g.LastItemData.InFlags & ImGuiItemFlags_AllowOverlap)) { button_flags |= ImGuiButtonFlags_AllowOverlap; }
+			//if ((flags & ImGuiSelectableFlags_AllowOverlap) || (g.LastItemData.InFlags & ImGuiItemFlags_AllowOverlap)) { button_flags |= ImGuiButtonFlags_AllowOverlap; }
 
 			const bool was_selected = selected;
 			bool hovered, held;
@@ -1000,14 +1022,7 @@ namespace UIFramework
 					selected = pressed = true;
 
 			// Update NavId when clicking or when Hovering (this doesn't happen on most widgets), so navigation can be resumed with gamepad/keyboard
-			if (pressed || (hovered && (flags & ImGuiSelectableFlags_SetNavIdOnHover)))
-			{
-				if (!g.NavDisableMouseHover && g.NavWindow == window && g.NavLayer == window->DC.NavLayerCurrent)
-				{
-					ImGui::SetNavID(id, window->DC.NavLayerCurrent, g.CurrentFocusScopeId, ImGui::WindowRectAbsToRel(window, bb)); // (bb == NavRect)
-					g.NavDisableHighlight = true;
-				}
-			}
+
 			if (pressed)
 				ImGui::MarkItemEdited(id);
 
@@ -1023,15 +1038,15 @@ namespace UIFramework
 			}
 
 
-			ImU32 col = Global::gMenuColorScheme.primaryLow;
+			ImU32 col = Vars::gMenuColorScheme.primaryLow;
 
 			if (selected)
 			{
-				col = Global::gMenuColorScheme.primaryHigh;
+				col = Vars::gMenuColorScheme.primaryHigh;
 			}
 			if (hovered)
 			{
-				col = Global::gMenuColorScheme.primaryMed;
+				col = Vars::gMenuColorScheme.primaryMed;
 			}
 
 			ImGui::RenderFrame(
@@ -1056,7 +1071,7 @@ namespace UIFramework
 			ImGui::RenderTextClipped(text_min, text_max, label, NULL, &label_size, style.SelectableTextAlign, &bb);
 
 			// Automatically close popups
-			if (pressed && (window->Flags & ImGuiWindowFlags_Popup) && !(flags & ImGuiSelectableFlags_DontClosePopups) && !(g.LastItemData.InFlags & ImGuiItemFlags_SelectableDontClosePopup))
+			if (pressed)
 				ImGui::CloseCurrentPopup();
 
 			if (disabled_item && !disabled_global)
@@ -1076,9 +1091,9 @@ namespace UIFramework
 			if (window->SkipItems)
 				return false;
 
-			const std::string& previewValue = list->at(*index);
+			const std::string& previewValue = list->empty() ? "empty list" : list->at(*index);
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(style.ItemSpacing.x, 5));
-			ImGui::PushFont(Global::gMediumFont);
+			ImGui::PushFont(Vars::gMediumFont);
 			ImGui::TextUnformatted(label);
 			ImGui::PopFont();
 
@@ -1108,19 +1123,19 @@ namespace UIFramework
 				popup_open = true;
 			}
 
-			ImColor targetButtonColor = Global::gMenuColorScheme.primaryMed;
+			ImColor targetButtonColor = Vars::gMenuColorScheme.primaryMed;
 			if (popup_open)
 			{
-				targetButtonColor = Global::gMenuColorScheme.primaryHigh;
+				targetButtonColor = Vars::gMenuColorScheme.primaryHigh;
 			}
 			else if (hovered)
 			{
-				targetButtonColor = Global::gMenuColorScheme.primaryLow;
+				targetButtonColor = Vars::gMenuColorScheme.primaryLow;
 			}
 
-			ImColor& buttonColor = Global::colorContainer.Get(id, 0);
-			buttonColor = ImLerp(
-				buttonColor,
+			ImColor* buttonColor = Vars::colorContainer.Get(id, 0);
+			*buttonColor = ImLerp(
+				*buttonColor,
 				targetButtonColor,
 				g.IO.DeltaTime * 10
 			);
@@ -1128,7 +1143,7 @@ namespace UIFramework
 			window->DrawList->AddRectFilled(
 				rect.Min,
 				rect.Max,
-				Global::gMenuColorScheme.bgLow,
+				Vars::gMenuColorScheme.bgLow,
 				style.FrameRounding
 			);
 
@@ -1143,13 +1158,13 @@ namespace UIFramework
 			window->DrawList->AddRectFilled(
 				ImVec2(rect.Max.x - squareRatio, rect.Min.y),
 				rect.Max,
-				buttonColor,
+				*buttonColor,
 				style.FrameRounding
 			);
 
 			ImGui::PushStyleColor(ImGuiCol_Text, ImColor(255, 255, 255).Value);
 			ImGui::SetWindowFontScale(0.75f);
-			ImGui::PushFont(Global::gIconFont);
+			ImGui::PushFont(Vars::gIconFont);
 			ImGui::RenderTextClipped(
 				ImVec2(rect.Max.x - squareRatio + style.FramePadding.y * 2.0, rect.Min.y - style.FramePadding.y),
 				ImVec2(rect.Max.x - style.FramePadding.y * 2.0, rect.Max.y - style.FramePadding.y * 2.0),
@@ -1165,6 +1180,7 @@ namespace UIFramework
 			if (!popup_open)
 			{
 				ImGui::PopStyleVar();
+				window->DC.CursorPos.y += style.ItemSpacing.y / 2.0f;
 				return false;
 			}
 
@@ -1195,7 +1211,7 @@ namespace UIFramework
 				{
 					ImGui::PopStyleVar();
 
-					ImGui::PushFont(Global::gLargeFont);
+					ImGui::PushFont(Vars::gLargeFont);
 					ImGui::TextUnformatted(label);
 					ImGui::PopFont();
 					ImGui::Separator();
@@ -1204,8 +1220,8 @@ namespace UIFramework
 					ImGui::EndChild();
 
 				}
-				ImGui::PushFont(Global::gMediumFont);
-				Section(listId.c_str(), { -1, -1 });
+				ImGui::PushFont(Vars::gMediumFont);
+				Frame(listId.c_str(), { -1, -1 });
 				{
 					bool valueChanged = false;
 					if (strlen(searchBuffer) == 0)
@@ -1269,13 +1285,14 @@ namespace UIFramework
 						ImGui::CloseCurrentPopup();
 					}
 
-					EndSection();
+					EndFrame();
 				}
 				ImGui::PopFont();
 				ImGui::EndPopup();
 			}
 
 			ImGui::PopStyleVar(2);
+			window->DC.CursorPos.y += style.ItemSpacing.y / 2.0f;
 			return true;
 		}
 
@@ -1289,7 +1306,7 @@ namespace UIFramework
 				return false;
 
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(style.ItemSpacing.x, 5));
-			ImGui::PushFont(Global::gMediumFont);
+			ImGui::PushFont(Vars::gMediumFont);
 			ImGui::Text(label);
 			ImGui::PopFont();
 
@@ -1318,9 +1335,9 @@ namespace UIFramework
 
 	namespace TagService
 	{
-		std::unordered_map<std::string, std::vector<IComponent*>*> taggedComponents;
+		std::unordered_map<std::string, std::vector<UIComponents::IComponent*>*> taggedComponents;
 
-		std::optional<std::vector<IComponent*>*> GetTaggedComponents(const char* tag)
+		std::optional<std::vector<UIComponents::IComponent*>*> GetTaggedComponents(const char* tag)
 		{
 			auto it = taggedComponents.find(std::string(tag));
 
@@ -1332,14 +1349,14 @@ namespace UIFramework
 			return it->second;
 		}
 
-		void TagComponent(const char* tag, IComponent* component)
+		void TagComponent(const char* tag, UIComponents::IComponent* component)
 		{
 			auto key = std::string(tag);
 			auto it = taggedComponents.find(key);
 
 			if (it == taggedComponents.end())
 			{
-				auto alllocatedList = new std::vector<IComponent*>;
+				auto alllocatedList = new std::vector<UIComponents::IComponent*>;
 				alllocatedList->push_back(component);
 				taggedComponents.insert({ key, alllocatedList });
 			}
@@ -1349,7 +1366,7 @@ namespace UIFramework
 			}
 		}
 
-		void IterateTaggedComponents(const char* tag, std::function<void(IComponent*)> func)
+		void IterateTaggedComponents(const char* tag, std::function<void(UIComponents::IComponent*)> func)
 		{
 			auto comps = TagService::GetTaggedComponents(tag);
 			if (comps.has_value())
@@ -1363,7 +1380,7 @@ namespace UIFramework
 
 		void ToggleTagVisibility(const char* tag, bool toggle)
 		{
-			IterateTaggedComponents(tag, [&](IComponent* comp)
+			IterateTaggedComponents(tag, [&](UIComponents::IComponent* comp)
 			{
 				comp->visible = toggle;
 			});
@@ -1382,52 +1399,119 @@ namespace UIFramework
 			0
 		);
 
-		if (Global::currentSubTabDrawer != nullptr)
+		if (Vars::currentSelectedSection != nullptr)
 		{
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2());
-			Global::currentSubTabDrawer();
+			Vars::currentSelectedSection->RenderChildren();
 			ImGui::PopStyleVar();
 		}
 	}
 
-	void RenderGroupContainer(const std::string& strId)
+	namespace ConfigManager
 	{
-		std::string leftBodyId = strId + "-body-left";
-		std::string rightBodyId = strId + "-body-right";
+		std::vector<UIComponents::IConfigurable*> configurableCompsList;
+		using nlohmann::json;
 
-		if (Global::currentGroupSplitType == GroupSplitType::NO_SPLIT)
+		bool LoadConfig(const std::wstring& path)
 		{
-			for (const GroupQueue& queue : Global::groupQueueList)
+			std::ifstream fileStream(path);
+			assert(fileStream.is_open());
+
+			if (!fileStream.is_open())
 			{
-				Widgets::Group(queue.label, queue.drawer);
+				return false;
 			}
+
+			try
+			{
+				auto fileSize = std::filesystem::file_size(path);
+				std::string fileData;
+				fileData.resize(fileSize);
+				fileStream.read(fileData.data(), fileSize);
+				json configData = json::parse(fileData);
+
+				for (UIComponents::IConfigurable* component : configurableCompsList)
+				{
+					component->HandleConfigLoad(configData[component->label]);
+
+				}
+			}
+			catch (std::exception& err)
+			{
+				return false;
+			}
+
+			return true;
 		}
-		else if(Global::currentGroupSplitType == GroupSplitType::HALF)
+
+		bool SaveConfig(const std::wstring& path)
 		{
+			bool hasExtension = path.find(L".nazicfg") != std::wstring::npos;
+			std::ofstream fileStream(!hasExtension ? path + L".nazicfg" : path);
+			try
+			{
+				json configData = json::object({});
+
+				for (UIComponents::IConfigurable* component : configurableCompsList)
+				{
+					auto config = component->HandleConfigSave();
+					configData[component->label] = config;
+				}
+
+				fileStream << configData.dump();
+				fileStream.flush();
+			}
+
+			catch (std::exception& err)
+			{
+				return false;
+			}
+
+			return true;
+		}
+	}
+
+	void RenderGroups(UIComponents::Tab* tab)
+	{
+		if (tab == nullptr) return;
+
+		std::string leftBodyId = tab->label + "-body-left";
+		std::string rightBodyId = tab->label + "-body-right";
+
+		if (tab->splitType == UIComponents::GroupSplitType::NO_SPLIT)
+		{
+			tab->RenderChildren();
+		}
+		else if (tab->splitType == UIComponents::GroupSplitType::HALF)
+		{
+			using UIComponents::GroupPlacementType;
+
 			ImVec2 itemSpacing = ImGui::GetStyle().ItemSpacing;
 			ImVec2 containerSize = ImGui::GetWindowSize();
 
 			ImVec2 leftBodySize((containerSize.x / 2) - itemSpacing.x * 2, 0.0);
 			ImVec2 rightBodySize(-1.0, 0.0);
 
-			std::vector<const GroupQueue*> leftGroupsList;
-			std::vector<const GroupQueue*> rightGroupsList;
+			std::vector<UIComponents::Group*> leftGroupsList;
+			std::vector<UIComponents::Group*> rightGroupsList;
 
-			GroupPlacementType autoPlacementType = GroupPlacementType::LEFT;
+			UIComponents::GroupPlacementType autoPlacementType = GroupPlacementType::LEFT;
 
-			for (auto queue = Global::groupQueueList.begin(); queue < Global::groupQueueList.end(); ++queue)
+			for (size_t i = 0; i < tab->children.size(); i++)
 			{
-				switch (queue->placement)
+				UIComponents::Group* group = (UIComponents::Group*)tab->children.at(i);
+
+				switch (group->placementType)
 				{
 					case GroupPlacementType::LEFT:
 					{
-						leftGroupsList.push_back(queue._Ptr);
+						leftGroupsList.push_back(group);
 						autoPlacementType = GroupPlacementType::RIGHT;
 						break;
 					}
 					case GroupPlacementType::RIGHT:
 					{
-						rightGroupsList.push_back(queue._Ptr);
+						rightGroupsList.push_back(group);
 						autoPlacementType = GroupPlacementType::LEFT;
 						break;
 					}
@@ -1435,12 +1519,12 @@ namespace UIFramework
 					{
 						if (autoPlacementType == GroupPlacementType::LEFT)
 						{
-							leftGroupsList.push_back(queue._Ptr);
+							leftGroupsList.push_back(group);
 							autoPlacementType = GroupPlacementType::RIGHT;
 						}
 						else if (autoPlacementType == GroupPlacementType::RIGHT)
 						{
-							rightGroupsList.push_back(queue._Ptr);
+							rightGroupsList.push_back(group);
 							autoPlacementType = GroupPlacementType::LEFT;
 						}
 						break;
@@ -1448,25 +1532,25 @@ namespace UIFramework
 				}
 			}
 
-			Widgets::Section(leftBodyId.c_str(), leftBodySize, ImGuiChildFlags_AutoResizeY);
+			Widgets::Frame(leftBodyId.c_str(), leftBodySize, ImGuiChildFlags_AutoResizeY);
 			{
-				for (const GroupQueue* queue : leftGroupsList)
+				for (UIComponents::Group* queue : leftGroupsList)
 				{
-					Widgets::Group(queue->label, queue->drawer);
+					Widgets::Group(queue);
 				}
 
 				ImGui::EndChild();
 			}
 			ImGui::SameLine();
 
-			Widgets::Section(rightBodyId.c_str(), rightBodySize, ImGuiChildFlags_AutoResizeY);
+			Widgets::Frame(rightBodyId.c_str(), rightBodySize, ImGuiChildFlags_AutoResizeY);
 			{
-				for (const GroupQueue* queue : rightGroupsList)
+				for (UIComponents::Group* queue : rightGroupsList)
 				{
-					Widgets::Group(queue->label, queue->drawer);
+					Widgets::Group(queue);
 				}
 
-				Widgets::EndSection();
+				Widgets::EndFrame();
 			}
 		}
 	}
@@ -1477,29 +1561,24 @@ namespace UIFramework
 		std::string tabRowId = strId + "-tabRow";
 		std::string groupContainerId = strId + "-container";
 
-		Widgets::Section(sectionId.c_str(), { -1, -1 }, 0, ImGuiWindowFlags_NoScrollbar);
+		Widgets::Frame(sectionId.c_str(), { -1, -1 }, 0, ImGuiWindowFlags_NoScrollbar);
 		{
-			Widgets::Section(tabRowId.c_str(), { -1, 50 }, 0 , ImGuiWindowFlags_NoResize | ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoScrollbar);
+			Widgets::Frame(tabRowId.c_str(), { -1, 50 }, 0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoScrollbar);
 			{
 				RenderSubTabBar();
-				Widgets::EndSection();
+				Widgets::EndFrame();
 			}
 
-			Widgets::Section(groupContainerId.c_str(), { -1, 0.0 });
+			Widgets::Frame(groupContainerId.c_str(), { -1, 0.0 });
 			{
-				RenderGroupContainer(strId);
-				Widgets::EndSection();
+				RenderGroups(Vars::currentSelectedTab);
+				Widgets::EndFrame();
 			}
-			Widgets::EndSection();
+			Widgets::EndFrame();
 		}
 	}
 
-	void QueueGroup(const char* label, GroupPlacementType placementType, const std::function<void()>& groupDrawer)
-	{
-		Global::groupQueueList.push_back({ label, placementType, groupDrawer });
-	}
-
-	void MainWindow(const ImVec2& size, const std::function<void()>& tabDrawer)
+	void MainWindow(const ImVec2& size, UIComponents::MainWindow* mainWindow)
 	{
 		auto WindowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar;
 		if (ImGui::Begin("#MainWindow", nullptr, WindowFlags))
@@ -1507,26 +1586,26 @@ namespace UIFramework
 			ImVec2 itemSpacing = ImGui::GetStyle().ItemSpacing;
 			ImGui::SetWindowSize(size);
 
-			Widgets::Section("#Selection", { 50, -1 }, 0);
+			Widgets::Frame("#Selection", { 50, -1 }, 0);
 			{
 				ImVec2 parentSize = ImGui::GetWindowSize();
 
 				ImVec2 logoSectionSize(parentSize.x, parentSize.x);
 				ImVec2 tabColumnSize(logoSectionSize.x, parentSize.y - logoSectionSize.x - itemSpacing.y);
 
-				Widgets::Section("#Logo", logoSectionSize);
+				Widgets::Frame("#Logo", logoSectionSize);
 				{
 					//ImGui::Image(Global::gMenuLogo, logoSectionSize);
 					//ImGui::SetWindowFontScale(2.0f);
 					ImGui::SetCursorPosY(ImGui::GetStyle().FramePadding.y * 2.0f);
-					ImGui::PushFont(Global::gExtraLargeFont);
+					ImGui::PushFont(Vars::gExtraLargeFont);
 					ImGui::TextUnformatted("Nzi");
 					ImGui::PopFont();
 					//ImGui::SetWindowFontScale(1.0f);
-					Widgets::EndSection();
+					Widgets::EndFrame();
 				}
 
-				Widgets::Section("#TabColumn", tabColumnSize);
+				Widgets::Frame("#TabColumn", tabColumnSize);
 				{
 					ImVec2 columnPos = ImGui::GetWindowPos();
 					ImVec2 columnSize = ImGui::GetWindowSize();
@@ -1541,13 +1620,13 @@ namespace UIFramework
 					ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
 					ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0);
 
-					tabDrawer();
+					mainWindow->RenderChildren();
 
 					ImGui::PopStyleVar(2);
-					Widgets::EndSection();
+					Widgets::EndFrame();
 				}
 
-				Widgets::EndSection();
+				Widgets::EndFrame();
 			}
 
 			ImGui::SameLine();
@@ -1556,10 +1635,58 @@ namespace UIFramework
 		}
 	}
 
+	void DisclaimerWindow(const ImVec2& size, const std::function<void()>& onClose)
+	{
+		auto WindowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar;
+		if (ImGui::Begin("#MainWindow", nullptr, WindowFlags))
+		{
+			ImVec2 itemSpacing = ImGui::GetStyle().ItemSpacing;
+			ImGui::SetWindowSize(size);
+			ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 0);
+
+			ImGui::BeginChild("credit-group", {-1.0, -1.0}, ImGuiChildFlags_AlwaysUseWindowPadding);
+			{
+				ImGui::PopStyleVar();
+				ImGui::PushFont(Vars::gLargeFont);
+				ImGui::TextUnformatted("Disclaimer");
+				ImGui::PopFont();
+				ImGui::Separator();
+
+				ImGui::TextUnformatted(
+					"Please, read carefuly!\n\n"
+
+					"Our cheat (Nazi Mod) is provided to you completely free of charge.\n"
+					"We do not engage in any transactions involving the sale of our cheat.\n"
+					"If you encounter any individual or entity claiming to sell our cheat, please be aware that it is unequivocally a scam.\n"
+					"We do not endorse or participate in any form of commercialization of our cheat software.\n\n"
+
+					"Additionally, we emphasize that our cheat is exclusively distributed through our official Discord server.\n"
+					"Any download links or sources claiming to offer our cheat outside of our Discord server could potentially contain malware or other\n"
+					"malicious software.We do not recommend obtaining our cheat from any other source apart from our official Discord server.\n\n"
+
+					"tdlr: Nazi Mod is free. If you bought this cheat from someone, you're cooked.\n"
+					"If you find Nazi Mod from any source other than our Discord server, it might be a malware or virus.\n\n"
+
+					"Thank you for your understanding!"
+				);
+				if (Widgets::Button("Nazi Mod Discord server (.gg/Y3gj2Rszq6)", UIComponents::ButtonSizeType::FLEXIBLE))
+				{
+					ShellExecuteA(0, 0, "https://discord.gg/Y3gj2Rszq6", 0, 0, SW_SHOW);
+				}
+				if (Widgets::Button("I understand.", UIComponents::ButtonSizeType::FLEXIBLE))
+				{
+					onClose();
+				}
+				ImGui::EndChild();
+			}
+		}
+		ImGui::End();
+	}
+
 	void SaveColorScheme(const std::string& path)
 	{
 		char colorSchemeBuffer[sizeof(MenuColorScheme)];
-		memcpy(colorSchemeBuffer, &Global::gMenuColorScheme, sizeof(MenuColorScheme));
+		memcpy(colorSchemeBuffer, &Vars::gMenuColorScheme, sizeof(MenuColorScheme));
 
 		std::ofstream wStream(path, std::ios::binary);
 		if (!wStream.is_open())
@@ -1574,7 +1701,7 @@ namespace UIFramework
 	MenuColorScheme ReadColorScheme(const std::string& path)
 	{
 		char colorSchemeBuffer[sizeof(MenuColorScheme)];
-		memcpy(colorSchemeBuffer, &Global::gMenuColorScheme, sizeof(MenuColorScheme));
+		memcpy(colorSchemeBuffer, &Vars::gMenuColorScheme, sizeof(MenuColorScheme));
 
 		std::ifstream rStream(path, std::ios::binary);
 		if (!rStream.is_open())
@@ -1593,22 +1720,22 @@ namespace UIFramework
 		ImGuiStyle& style = ImGui::GetStyle();
 		style.Colors[ImGuiCol_TableBorderLight] = ImColor();
 		style.Colors[ImGuiCol_TableBorderStrong] = ImColor();
-		style.Colors[ImGuiCol_WindowBg] = Global::gMenuColorScheme.bgLow;
-		style.Colors[ImGuiCol_ChildBg] = Global::gMenuColorScheme.bgMed;
-		style.Colors[ImGuiCol_PopupBg] = Global::gMenuColorScheme.bgLow;
-		style.Colors[ImGuiCol_TitleBgCollapsed] = Global::gMenuColorScheme.bgLow;
-		style.Colors[ImGuiCol_TitleBgActive] = Global::gMenuColorScheme.bgLow;
-		style.Colors[ImGuiCol_Header] = Global::gMenuColorScheme.bgLow;
-		style.Colors[ImGuiCol_HeaderActive] = Global::gMenuColorScheme.bgLow;
-		style.Colors[ImGuiCol_HeaderHovered] = Global::gMenuColorScheme.bgLow;
+		style.Colors[ImGuiCol_WindowBg] = Vars::gMenuColorScheme.bgLow;
+		style.Colors[ImGuiCol_ChildBg] = Vars::gMenuColorScheme.bgMed;
+		style.Colors[ImGuiCol_PopupBg] = Vars::gMenuColorScheme.bgLow;
+		style.Colors[ImGuiCol_TitleBgCollapsed] = Vars::gMenuColorScheme.bgLow;
+		style.Colors[ImGuiCol_TitleBgActive] = Vars::gMenuColorScheme.bgLow;
+		style.Colors[ImGuiCol_Header] = Vars::gMenuColorScheme.bgLow;
+		style.Colors[ImGuiCol_HeaderActive] = Vars::gMenuColorScheme.bgLow;
+		style.Colors[ImGuiCol_HeaderHovered] = Vars::gMenuColorScheme.bgLow;
 		style.Colors[ImGuiCol_ScrollbarBg] = ImColor();
-		style.Colors[ImGuiCol_ScrollbarGrab] = Global::gMenuColorScheme.bgHigh;
-		style.Colors[ImGuiCol_ScrollbarGrabHovered] = Global::gMenuColorScheme.primaryMed;
-		style.Colors[ImGuiCol_ScrollbarGrabActive] = Global::gMenuColorScheme.primaryMed;
-		style.Colors[ImGuiCol_Button] = Global::gMenuColorScheme.primaryMed;
-		style.Colors[ImGuiCol_ButtonHovered] = Global::gMenuColorScheme.primaryHigh;
-		style.Colors[ImGuiCol_ButtonActive] = Global::gMenuColorScheme.primaryLow;
-		style.Colors[ImGuiCol_Text] = Global::gMenuColorScheme.textMed;
+		style.Colors[ImGuiCol_ScrollbarGrab] = Vars::gMenuColorScheme.bgHigh;
+		style.Colors[ImGuiCol_ScrollbarGrabHovered] = Vars::gMenuColorScheme.primaryMed;
+		style.Colors[ImGuiCol_ScrollbarGrabActive] = Vars::gMenuColorScheme.primaryMed;
+		style.Colors[ImGuiCol_Button] = Vars::gMenuColorScheme.primaryMed;
+		style.Colors[ImGuiCol_ButtonHovered] = Vars::gMenuColorScheme.primaryHigh;
+		style.Colors[ImGuiCol_ButtonActive] = Vars::gMenuColorScheme.primaryLow;
+		style.Colors[ImGuiCol_Text] = Vars::gMenuColorScheme.textMed;
 	}
 
 	ImFont* LoadFont(ImGuiIO& io, const std::string& filepath, float fontSize, const ImFontConfig* fontCfg = NULL, const ImWchar* glyphRanges = NULL)
@@ -1666,405 +1793,489 @@ namespace UIFramework
 			0
 		};
 
-		Global::gRegularFont = LoadFont(io, Global::assetsPath + "\\fonts\\BuilderSans-Regular.ttf", 18.0f);
-		Global::gMediumFont = LoadFont(io, Global::assetsPath + "\\fonts\\BuilderSans-Bold.ttf", 20.0f);
-		Global::gLargeFont = LoadFont(io, Global::assetsPath + "\\fonts\\BuilderSans-Bold.ttf", 22.0f);
-		Global::gExtraLargeFont = LoadFont(io, Global::assetsPath + "\\fonts\\BuilderSans-ExtraBold.ttf", 40.0f);
-		Global::gIconFont = LoadFont(io, Global::assetsPath + "\\fonts\\FontAwesome.ttf", 23.0f, &iconConfig, iconRanges);
+		Vars::gRegularFont = LoadFont(io, Vars::assetsPath + "\\fonts\\BuilderSans-Regular.ttf", 18.0f);
+		Vars::gMediumFont = LoadFont(io, Vars::assetsPath + "\\fonts\\BuilderSans-Bold.ttf", 20.0f);
+		Vars::gLargeFont = LoadFont(io, Vars::assetsPath + "\\fonts\\BuilderSans-Bold.ttf", 22.0f);
+		Vars::gExtraLargeFont = LoadFont(io, Vars::assetsPath + "\\fonts\\BuilderSans-ExtraBold.ttf", 40.0f);
+		Vars::gIconFont = LoadFont(io, Vars::assetsPath + "\\fonts\\FontAwesome.ttf", 23.0f, &iconConfig, iconRanges);
 
 		ManageDefaultTheme();
 	}
 
 	void OnUpdate()
 	{
-		Global::onUpdateCallback();
+		Vars::onUpdateCallback();
 		//ImGui::RenderNotifications();
 	}
 
 	void INIT(const std::string& assetsPath, MenuColorScheme colorScheme, const std::function<void()>& onUpdateCallback)
 	{
-		Global::onUpdateCallback = onUpdateCallback;
-		Global::assetsPath = assetsPath;
-		Global::gMenuColorScheme = colorScheme;
+		Vars::onUpdateCallback = onUpdateCallback;
+		Vars::assetsPath = assetsPath;
+		Vars::gMenuColorScheme = colorScheme;
 
 		UIBackend::START(OnLoad, OnUpdate);
 	}
 }
 
-void IRender::Render()
-{
 
-}
-
-void IComponent::RenderChildren()
+namespace UIComponents
 {
-	if (!this->visible)
+	void IRender::Render()
 	{
-		return;
+
 	}
 
-	for (IRender* child : children)
+	void IComponent::RenderChildren()
 	{
-		if (child->visible)
+		if (!this->visible)
 		{
-			child->Render();
+			return;
+		}
+
+		for (IRender* child : children)
+		{
+			if (child->visible)
+			{
+				child->Render();
+			}
 		}
 	}
-}
 
-void IComponent::AddChild(IComponent* child)
-{
-	// you shouldn't be adding yourself bruh
-	if (this == child)
+	void IComponent::AddChild(IComponent* child)
 	{
-		return;
+		// you shouldn't be adding yourself bruh
+		if (this == child)
+		{
+			return;
+		}
+
+		children.push_back(child);
 	}
 
-	children.push_back(child);
-}
-
-void IComponent::AddTag(const char* tagname)
-{
-	if (tagname == nullptr) return;
-	UIFramework::TagService::TagComponent(tagname, this);
-}
-
-IComponent::~IComponent()
-{
-	// TODO: Handle children deconstruction
-}
-
-void IConfigurable::HandleConfigLoad()
-{
-
-}
-
-void IConfigurable::HandleConfigSave()
-{
-
-}
-
-MainWindow::MainWindow(ImVec2 windowSize)
-{
-	this->windowSize = windowSize;
-}
-
-void MainWindow::Render()
-{
-	if (this->visible)
+	void IComponent::AddTag(const char* tagname)
 	{
-		UIFramework::MainWindow(windowSize, [&]
-		{
-			this->RenderChildren();
-		});
+		if (tagname == nullptr) return;
+		UIFramework::TagService::TagComponent(tagname, this);
 	}
-}
 
-Tab::Tab(MainWindow* parentWindow, const char* icon)
-{
-	this->icon = icon;
-	parentWindow->AddChild(this);
-}
-
-void Tab::Render() 
-{
-	UIFramework::Widgets::Tab(icon, [&]
+	IComponent::~IComponent()
 	{
-		this->RenderChildren();
-	});
-}
+		// TODO: Handle children deconstruction
+	}
 
-SubTab::SubTab(Tab* parentTab, const char* label, GroupSplitType splitType)
-{
-	this->splitType = splitType;
-	this->label = label;
-	parentTab->AddChild(this);
-}
-
-void SubTab::Render()
-{
-	UIFramework::Widgets::SubTab(label.c_str(), splitType, [&]
+	IConfigurable::IConfigurable()
 	{
-		this->RenderChildren();
-	});
-}
+		UIFramework::ConfigManager::configurableCompsList.push_back(this);
+	}
 
-Group::Group(SubTab* parentTab, const char* label, GroupPlacementType placementType)
-{
-	this->label = label;
-	this->placementType = placementType;
-	parentTab->AddChild(this);
-}
-
-void Group::Render()
-{
-	UIFramework::QueueGroup(label.c_str(), placementType, [&]
+	void IConfigurable::HandleConfigLoad(const nlohmann::json& data)
 	{
-		this->RenderChildren();
-	});
-}
 
-Text::Text(Group* parentGroup, const char* text)
-{
-	this->text = text;
-	parentGroup->AddChild(this);
-}
+	}
 
-Text::Text(Group* parentGroup, const char* text, const char* tag)
-{
-	this->text = text;
-	this->AddTag(tag);
-	parentGroup->AddChild(this);
-}
-
-void Text::Render()
-{
-	ImGui::TextUnformatted(text.c_str());
-}
-
-Checkbox::Checkbox(Group* parentGroup, const char* label, bool defaultValue)
-{
-	this->label = label;
-	this->value = defaultValue;
-	parentGroup->AddChild(this);
-}
-
-Checkbox::Checkbox(Group* parentGroup, const char* label, const char* tag, bool defaultValue)
-{
-	this->label = label;
-	this->value = defaultValue;
-	this->AddTag(tag);
-	parentGroup->AddChild(this);
-}
-
-void Checkbox::Render()
-{
-	bool previousValue = value;
-	UIFramework::Widgets::Checkbox(label.c_str(), &value);
-
-	if (previousValue != value)
+	nlohmann::json::object_t IConfigurable::HandleConfigSave()
 	{
-		for (auto& event : onToggleEventEntry)
+		return {};
+	}
+
+	MainWindow::MainWindow(ImVec2 windowSize)
+	{
+		this->windowSize = windowSize;
+	}
+
+	void MainWindow::Render()
+	{
+		if (this->visible)
 		{
-			event(value);
+			UIFramework::MainWindow(windowSize, this);
 		}
 	}
-}
 
-bool Checkbox::IsActive() const
-{
-	return value;
-}
-
-void Checkbox::OnToggle(const std::function<void(bool value)>& callback)
-{
-	onToggleEventEntry.push_back(callback);
-}
-
-Button::Button(Group* parentGroup, const char* label)
-{
-	this->label = label;
-	parentGroup->AddChild(this);
-}
-
-Button::Button(Group* parentGroup, const char* label, const char* tag)
-{
-	this->label = label;
-	this->AddTag(tag);
-	parentGroup->AddChild(this);
-}
-
-void Button::Render()
-{
-	if (UIFramework::Widgets::Button(label.c_str(), { -1, 30 }))
+	Section::Section(MainWindow* parentWindow, const char* icon)
 	{
-		for (auto& event : onClickEventEntry)
+		this->icon = icon;
+		parentWindow->AddChild(this);
+	}
+
+	void Section::Render()
+	{
+		UIFramework::Widgets::Section(this);
+	}
+
+	Tab::Tab(Section* parentTab, const char* label, GroupSplitType splitType)
+	{
+		this->splitType = splitType;
+		this->label = label;
+		parentTab->AddChild(this);
+	}
+
+	void Tab::Render()
+	{
+		UIFramework::Widgets::Tab(this);
+	}
+
+	Group::Group(Tab* parentTab, const char* label, GroupPlacementType placementType)
+	{
+		this->label = label;
+		this->placementType = placementType;
+		parentTab->AddChild(this);
+	}
+
+	Group::Group(Tab* parentTab, const char* label, ImVec2 intialSize, GroupPlacementType placementType):
+		intialSize(intialSize)
+	{
+		this->label = label;
+		this->placementType = placementType;
+		parentTab->AddChild(this);
+	}
+
+	void Group::Render()
+	{
+		UIFramework::Widgets::Group(this, this->intialSize);
+	}
+
+	Text::Text(Group* parentGroup, const char* text)
+	{
+		this->text = text;
+		parentGroup->AddChild(this);
+	}
+
+	Text::Text(Group* parentGroup, const char* text, const char* tag)
+	{
+		this->text = text;
+		this->AddTag(tag);
+		parentGroup->AddChild(this);
+	}
+
+	void Text::Render()
+	{
+		ImGui::TextUnformatted(text.c_str());
+	}
+
+	Checkbox::Checkbox(Group* parentGroup, const char* label, bool defaultValue) : IConfigurable()
+	{
+		this->label = label;
+		this->value = defaultValue;
+		parentGroup->AddChild(this);
+	}
+
+	Checkbox::Checkbox(Group* parentGroup, const char* label, const char* tag, bool defaultValue) : IConfigurable()
+	{
+		this->label = label;
+		this->value = defaultValue;
+		this->AddTag(tag);
+		parentGroup->AddChild(this);
+	}
+
+	void Checkbox::Render()
+	{
+		bool previousValue = value;
+		UIFramework::Widgets::Checkbox(label.c_str(), &value);
+
+		if (previousValue != value)
 		{
-			event();
+			for (auto& event : onToggleEventEntry)
+			{
+				event(value);
+			}
 		}
 	}
-}
 
- void Button::OnClick(const std::function<void()>& callback)
-{
-	onClickEventEntry.push_back(callback);
-}
+	bool Checkbox::IsActive() const
+	{
+		return value;
+	}
 
-IntSlider::IntSlider(Group* parentGroup, const char* label, int min, int max, int defaultValue)
-{
-	this->label = label;
-	this->min = min;
-	this->max = max;
-	this->value = defaultValue;
-	parentGroup->AddChild(this);
-}
+	void Checkbox::OnToggle(const std::function<void(bool value)>& callback)
+	{
+		onToggleEventEntry.push_back(callback);
+	}
 
-IntSlider::IntSlider(Group* parentGroup, const char* label, const char* tag, int min, int max, int defaultValue)
-{
-	this->label = label;
-	this->min = min;
-	this->max = max;
-	this->value = defaultValue;
-	this->AddTag(tag);
-	parentGroup->AddChild(this);
-}
+	void Checkbox::HandleConfigLoad(const nlohmann::json& data)
+	{
+		this->value = data["value"];
+	}
 
-void IntSlider::Render()
-{
-	UIFramework::Widgets::SliderInt(label.c_str(), &value, min, max);
-}
+	nlohmann::json::object_t Checkbox::HandleConfigSave()
+	{
+		return nlohmann::json::object({{"value", this->value}});
+	}
 
-FloatSlider::FloatSlider(Group* parentGroup, const char* label, float min, float max, float defaultValue)
-{
-	this->label = label;
-	this->min = min;
-	this->max = max;
-	this->value = defaultValue;
-	parentGroup->AddChild(this);
-}
+	Button::Button(Group* parentGroup, const char* label, ButtonSizeType buttonSizeType)
+	{
+		this->label = label;
+		this->buttonSizeType = buttonSizeType;
+		parentGroup->AddChild(this);
+	}
 
-FloatSlider::FloatSlider(Group* parentGroup, const char* label, const char* tag, float min, float max, float defaultValue)
-{
-	this->label = label;
-	this->min = min;
-	this->max = max;
-	this->value = defaultValue;
-	this->AddTag(tag);
-	parentGroup->AddChild(this);
-}
+	Button::Button(Group* parentGroup, const char* label, const char* tag, ButtonSizeType buttonSizeType)
+	{
+		this->label = label;
+		this->buttonSizeType = buttonSizeType;
+		this->AddTag(tag);
+		parentGroup->AddChild(this);
+	}
 
-void FloatSlider::Render()
-{
-	UIFramework::Widgets::SliderFloat(label.c_str(), &value, min, max);
-}
+	void Button::Render()
+	{
+		if (UIFramework::Widgets::Button(label.c_str(), this->buttonSizeType))
+		{
+			for (auto& event : onClickEventEntry)
+			{
+				event();
+			}
+		}
+	}
 
-StringInput::StringInput(Group* parentGroup, const char* label, const char* defaultValue, size_t maxLength, 
-	const char* hint, ImVec2 sizeArg)
-{
-	this->label = label;
-	this->maxLength = maxLength;
-	this->sizeArg = sizeArg;
-	this->value = std::unique_ptr<char[]>(new char[maxLength]);
-	std::copy(defaultValue, defaultValue + maxLength, value.get());
-	parentGroup->AddChild(this);
-}
+	void Button::OnClick(const std::function<void()>& callback)
+	{
+		onClickEventEntry.push_back(callback);
+	}
 
-StringInput::StringInput(Group* parentGroup, const char* label, const char* tag, const char* defaultValue, size_t maxLength,
-	const char* hint, ImVec2 sizeArg)
-{
-	this->label = label;
-	this->maxLength = maxLength;
-	this->sizeArg = sizeArg;
-	this->value = std::unique_ptr<char[]>(new char[maxLength]);
-	std::copy(defaultValue, defaultValue + maxLength, value.get());
-	this->AddTag(tag);
-	parentGroup->AddChild(this);
-}
+	IntSlider::IntSlider(Group* parentGroup, const char* label, int min, int max, int defaultValue) : IConfigurable()
+	{
+		this->label = label;
+		this->min = min;
+		this->max = max;
+		this->value = defaultValue;
+		parentGroup->AddChild(this);
+	}
 
-void StringInput::Render()
-{
-	UIFramework::Widgets::InputString(label.c_str(), hint.c_str(), value.get(), maxLength, sizeArg);
-}
+	IntSlider::IntSlider(Group* parentGroup, const char* label, const char* tag, int min, int max, int defaultValue) : IConfigurable()
+	{
+		this->label = label;
+		this->min = min;
+		this->max = max;
+		this->value = defaultValue;
+		this->AddTag(tag);
+		parentGroup->AddChild(this);
+	}
 
-IntInput::IntInput(Group* parentGroup, const char* label, int defaultValue, int min, int max, const char* hint, ImVec2 sizeArg)
-{
-	this->label = label;
-	this->value = defaultValue;
-	this->min = min;
-	this->max = max;
-	this->hint = hint;
-	parentGroup->AddChild(this);
-}
+	void IntSlider::Render()
+	{
+		UIFramework::Widgets::SliderInt(label.c_str(), &value, min, max);
+	}
 
-IntInput::IntInput(Group* parentGroup, const char* label, const char* tag, int defaultValue, int min, int max, const char* hint, ImVec2 sizeArg)
-{
-	this->label = label;
-	this->value = defaultValue;
-	this->min = min;
-	this->max = max;
-	this->hint = hint;
-	this->AddTag(tag);
-	parentGroup->AddChild(this);
-}
+	void IntSlider::HandleConfigLoad(const nlohmann::json& data)
+	{
+		this->value = data["value"];
+	}
 
-void IntInput::Render()
-{
-	value = std::clamp(value, min, max);
-	UIFramework::Widgets::InputInt(label.c_str(), hint.c_str(), &value);
-}
+	nlohmann::json::object_t IntSlider::HandleConfigSave()
+	{
+		return nlohmann::json::object({{ "value", this->value }});
+	}
 
-std::string StringInput::GetValue()
-{
-	return {this->value.get(), this->value.get() + this->maxLength};
-}
+	FloatSlider::FloatSlider(Group* parentGroup, const char* label, float min, float max, float defaultValue) : IConfigurable()
+	{
+		this->label = label;
+		this->min = min;
+		this->max = max;
+		this->value = defaultValue;
+		parentGroup->AddChild(this);
+	}
 
-Browser::Browser(Group* parentGroup, const char* label, const std::vector<std::string>& list, int defaultIndex)
-{
-	this->label = label;
-	this->list = list;
-	this->index = defaultIndex;
+	FloatSlider::FloatSlider(Group* parentGroup, const char* label, const char* tag, float min, float max, float defaultValue) : IConfigurable()
+	{
+		this->label = label;
+		this->min = min;
+		this->max = max;
+		this->value = defaultValue;
+		this->AddTag(tag);
+		parentGroup->AddChild(this);
+	}
 
-	parentGroup->AddChild(this);
-}
+	void FloatSlider::Render()
+	{
+		UIFramework::Widgets::SliderFloat(label.c_str(), &value, min, max);
+	}
 
-Browser::Browser(Group* parentGroup, const char* label, const char* tag, const std::vector<std::string>& list, int defaultIndex)
-{
-	this->label = label;
-	this->list = list;
-	this->index = defaultIndex;
-	this->AddTag(tag);
-	parentGroup->AddChild(this);
-}
+	void FloatSlider::HandleConfigLoad(const nlohmann::json& data)
+	{
+		this->value = data["value"];
+	}
 
-void Browser::Render()
-{
-	UIFramework::Widgets::Browser(label.c_str(), &index, &list);
-}
+	nlohmann::json::object_t FloatSlider::HandleConfigSave()
+	{
+		return nlohmann::json::object({{ "value", this->value }});
+	}
 
-Mode::Mode(Group* parentGroup, const char* label, const std::vector<std::string>& modes, int defaultIndex)
-{
-	this->label = label;
-	this->modes = modes;
-	this->index = defaultIndex;
+	StringInput::StringInput(Group* parentGroup, const char* label, const char* defaultValue, size_t maxLength,
+		const char* hint, ImVec2 sizeArg) : IConfigurable()
+	{
+		this->label = label;
+		this->maxLength = maxLength;
+		this->sizeArg = sizeArg;
+		this->value = std::unique_ptr<char[]>(new char[maxLength]);
+		std::copy(defaultValue, defaultValue + maxLength, value.get());
+		parentGroup->AddChild(this);
+	}
 
-	parentGroup->AddChild(this);
-}
+	StringInput::StringInput(Group* parentGroup, const char* label, const char* tag, const char* defaultValue, size_t maxLength,
+		const char* hint, ImVec2 sizeArg) : IConfigurable()
+	{
+		this->label = label;
+		this->maxLength = maxLength;
+		this->sizeArg = sizeArg;
+		this->value = std::unique_ptr<char[]>(new char[maxLength]);
+		std::copy(defaultValue, defaultValue + maxLength, value.get());
+		this->AddTag(tag);
+		parentGroup->AddChild(this);
+	}
 
-Mode::Mode(Group* parentGroup, const char* label, const char* tag, const std::vector<std::string>& modes, int defaultIndex)
-{
-	this->label = label;
-	this->modes = modes;
-	this->index = defaultIndex;
-	this->AddTag(tag);
-	parentGroup->AddChild(this);
-}
+	void StringInput::Render()
+	{
+		UIFramework::Widgets::InputString(label.c_str(), hint.c_str(), value.get(), maxLength, sizeArg);
+	}
 
-void Mode::Render()
-{
-	UIFramework::Widgets::Mode(label.c_str(), &index, &modes);
-}
+	std::string StringInput::GetValue()
+	{
+		return { this->value.get()};
+	}
 
-ColorPicker::ColorPicker(Group* parentGroup, const char* label, const ImColor& defaultColor)
-{
-	this->label = label;
-	this->SetColor(defaultColor);
-	parentGroup->AddChild(this);
-}
+	void StringInput::SetValue(const std::string& value)
+	{
+		memcpy(this->value.get(), value.c_str(), this->maxLength);
+	}
 
-ImColor ColorPicker::GetColor()
-{
-	return ImColor(colorBuffer[0], colorBuffer[1], colorBuffer[2], colorBuffer[3]);
-}
+	void StringInput::HandleConfigLoad(const nlohmann::json& data)
+	{
+		SetValue(data["value"]);
+	}
 
-void ColorPicker::SetColor(const ImColor& color)
-{
-	this->colorBuffer[0] = color.Value.x;
-	this->colorBuffer[1] = color.Value.y;
-	this->colorBuffer[2] = color.Value.z;
-	this->colorBuffer[3] = color.Value.w;
-}
+	nlohmann::json::object_t StringInput::HandleConfigSave()
+	{
+		return nlohmann::json::object({{ "value", GetValue() }});
+	}
 
-void ColorPicker::Render()
-{
-	ImGui::ColorPicker4(label.c_str(), colorBuffer);
+	IntInput::IntInput(Group* parentGroup, const char* label, int defaultValue, int min, int max, const char* hint, ImVec2 sizeArg)
+		: IConfigurable()
+	{
+		this->label = label;
+		this->value = defaultValue;
+		this->min = min;
+		this->max = max;
+		this->hint = hint;
+		parentGroup->AddChild(this);
+	}
+
+	IntInput::IntInput(Group* parentGroup, const char* label, const char* tag, int defaultValue, int min, int max, const char* hint, ImVec2 sizeArg)
+		: IConfigurable()
+	{
+		this->label = label;
+		this->value = defaultValue;
+		this->min = min;
+		this->max = max;
+		this->hint = hint;
+		this->AddTag(tag);
+		parentGroup->AddChild(this);
+	}
+
+	void IntInput::Render()
+	{
+		value = std::clamp(value, min, max);
+		UIFramework::Widgets::InputInt(label.c_str(), hint.c_str(), &value);
+	}
+
+	void IntInput::HandleConfigLoad(const nlohmann::json& data)
+	{
+		this->value = data["value"];
+	}
+
+	nlohmann::json::object_t IntInput::HandleConfigSave()
+	{
+		return nlohmann::json::object({{ "value", this->value }});
+	}
+
+	Browser::Browser(Group* parentGroup, const char* label, const std::vector<std::string>& list, int defaultIndex) : IConfigurable()
+	{
+		this->label = label;
+		this->list = list;
+		this->index = defaultIndex;
+
+		parentGroup->AddChild(this);
+	}
+
+	Browser::Browser(Group* parentGroup, const char* label, const char* tag, const std::vector<std::string>& list, int defaultIndex) : IConfigurable()
+	{
+		this->label = label;
+		this->list = list;
+		this->index = defaultIndex;
+		this->AddTag(tag);
+		parentGroup->AddChild(this);
+	}
+
+	void Browser::Render()
+	{
+		UIFramework::Widgets::Browser(label.c_str(), &index, &list);
+	}
+
+	void Browser::HandleConfigLoad(const nlohmann::json& data)
+	{
+		this->index = data["index"];
+	}
+
+	nlohmann::json::object_t Browser::HandleConfigSave()
+	{
+		return nlohmann::json::object({{ "index", this->index }});
+	}
+
+	Mode::Mode(Group* parentGroup, const char* label, const std::vector<std::string>& modes, int defaultIndex) : IConfigurable()
+	{
+		this->label = label;
+		this->modes = modes;
+		this->index = defaultIndex;
+
+		parentGroup->AddChild(this);
+	}
+
+	Mode::Mode(Group* parentGroup, const char* label, const char* tag, const std::vector<std::string>& modes, int defaultIndex) : IConfigurable()
+	{
+		this->label = label;
+		this->modes = modes;
+		this->index = defaultIndex;
+		this->AddTag(tag);
+		parentGroup->AddChild(this);
+	}
+
+	void Mode::Render()
+	{
+		UIFramework::Widgets::Mode(label.c_str(), &index, &modes);
+	}
+
+	void Mode::HandleConfigLoad(const nlohmann::json& data)
+	{
+		this->index = data["index"];
+	}
+
+	nlohmann::json::object_t Mode::HandleConfigSave()
+	{
+		return nlohmann::json::object({{ "index", this->index }});
+	}
+
+	ColorPicker::ColorPicker(Group* parentGroup, const char* label, const ImColor& defaultColor)
+	{
+		this->label = label;
+		this->SetColor(defaultColor);
+		parentGroup->AddChild(this);
+	}
+
+	ImColor ColorPicker::GetColor()
+	{
+		return ImColor(colorBuffer[0], colorBuffer[1], colorBuffer[2], colorBuffer[3]);
+	}
+
+	void ColorPicker::SetColor(const ImColor& color)
+	{
+		this->colorBuffer[0] = color.Value.x;
+		this->colorBuffer[1] = color.Value.y;
+		this->colorBuffer[2] = color.Value.z;
+		this->colorBuffer[3] = color.Value.w;
+	}
+
+	void ColorPicker::Render()
+	{
+		ImGui::ColorPicker4(label.c_str(), colorBuffer);
+	}
 }

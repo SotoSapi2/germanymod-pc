@@ -4,13 +4,26 @@
 #include "../util/HookingUtil.hpp"
 #include "Menu.hpp"
 #include <json.hpp>
+#include "Global.hpp"
+#include "structures/DictionaryBuilder.hpp"
+#include "structures/Stacktrace.hpp"
+#include <sstream>
+#include "utils/MemPatcher.hpp"
 
 namespace GameplayMain
 {
 	using namespace Menu::Gameplay;
 
 	IL2CPP::Object* gMyPlayerMoveC = nullptr;
+	IL2CPP::Object* gCurrentWeaponSounds = nullptr;
 	IL2CPP::List<IL2CPP::Object*>* gPlayerMoveCList = nullptr;
+	IL2CPP::List<IL2CPP::Object*>* gPhotonViewList = nullptr;
+
+	bool processNoClipAll = false;
+	bool processCrashAll = false;
+	bool processProjectileSpawning = false;
+
+	bool dontDespawnBot = false;
 
 	void HandleAimbot()
 	{
@@ -29,7 +42,7 @@ namespace GameplayMain
 		gPlayerMoveCList->ForEach([&](IL2CPP::Object* player)
 		{
 			if (player == nullptr) return;
-			Vector3 pos = PlayerMoveC::GetPosition(player);
+ 			Vector3 pos = PlayerMoveC::GetPosition(player);
 			Vector3 plrScreenPos = Camera::WorldToScreenPoint(cam, pos);
 			IL2CPP::Object* bodyCollider = player->GetFieldRef<IL2CPP::Object*>("_bodyAimCollider");
 			IL2CPP::Object* headCollider = player->GetFieldRef<IL2CPP::Object*>("_headAimCollider");
@@ -89,19 +102,215 @@ namespace GameplayMain
 		}
 	}
 
+	void HandleSpamChat(IL2CPP::Object* photonView, const std::string& content)
+	{
+		auto args = IL2CPP::Array<IL2CPP::Object*>::Create(IL2CPP::DefaultTypeClass::Object, 2);
+		args->Set(0, IL2CPP::String::Create(content));
+		args->Set(1, IL2CPP::String::Create(""));
+
+		PhotonView::RPC(photonView, EventEnum::SendChatMessageWithIcon, PhotonTargets::All, args);
+	}
+
+	void CrashEveryone()
+	{
+		#include "CrashString.h"
+
+		if (gPhotonViewList == nullptr) return;
+
+		gPhotonViewList->ForEach([&](IL2CPP::Object* view)
+		{
+			if (!PhotonView::IsMine(view)) return;
+
+			auto args = IL2CPP::Array<IL2CPP::Object*>::Create(IL2CPP::DefaultTypeClass::Object, 2);
+			args->Set(0, IL2CPP::String::Create(crashString));
+			args->Set(1, IL2CPP::String::Create(""));
+
+			PhotonView::RPC(view, EventEnum::SendChatMessageWithIcon, PhotonTargets::Others, args);
+		});
+	}
+
+	void HandleSpeedhackRPC(IL2CPP::Object* photonView, float speed)
+	{
+		if (PhotonView::IsMine(photonView)) return;
+
+		auto args = IL2CPP::Array<IL2CPP::Object*>::Create(IL2CPP::DefaultTypeClass::Object, 2);
+		args->Set(0, IL2CPP::Object::BoxValue(IL2CPP::DefaultTypeClass::Float, speed));
+		args->Set(1, IL2CPP::Object::BoxValue(IL2CPP::DefaultTypeClass::Float, 9999999999.0f));
+
+		PhotonView::RPC(photonView, EventEnum::PlayerEffectRPC, PhotonTargets::All, args);
+	}
+
+	void HandleJumpDisableRPC(IL2CPP::Object* photonView)
+	{
+		if (PhotonView::IsMine(photonView)) return;
+
+		auto args = IL2CPP::Array<IL2CPP::Object*>::Create(IL2CPP::DefaultTypeClass::Object, 2);
+		args->Set(0, IL2CPP::Object::BoxValue(IL2CPP::DefaultTypeClass::Float, 2.f));
+		args->Set(1, IL2CPP::Object::BoxValue(IL2CPP::DefaultTypeClass::Float, 2.f));
+
+		PhotonView::RPC(photonView, EventEnum::JumpDisableRPC, PhotonTargets::All, args);
+	}
+
+	void SpamProjectiles()
+	{
+		if (!gCurrentWeaponSounds || !gMyPlayerMoveC) return;
+
+		gPlayerMoveCList->ForEach([&](IL2CPP::Object* player)
+		{
+			if (PlayerMoveC::IsMine(player)) return;
+
+			Rocket::Create(
+				ServerMods::PrefabSpawner::projectilePrefabs[ServerMods::PrefabSpawner::ProjectileBrowser.index],
+				gMyPlayerMoveC,
+				gCurrentWeaponSounds,
+				ServerMods::PrefabSpawner::LongLifetime.value,
+				PlayerMoveC::GetPosition(player)
+			);
+		});
+	}
+
+	void AttractEveryone()
+	{
+		if (gMyPlayerMoveC == nullptr) return;
+
+		IL2CPP::Object* pixelView = gMyPlayerMoveC->GetFieldPtr<IL2CPP::Object*>("pixelView");
+		IL2CPP::Object* photonView = gMyPlayerMoveC->GetFieldPtr<IL2CPP::Object*>("photonView");
+
+		auto args = IL2CPP::Array<IL2CPP::Object*>::Create(IL2CPP::DefaultTypeClass::Object, 4);
+		args->Set(0, IL2CPP::String::Create("Weapon1652"));
+		args->Set(1, IL2CPP::Object::BoxValue(IL2CPP::DefaultTypeClass::Int32, 9));
+		args->Set(2, IL2CPP::Object::BoxValue(IL2CPP::DefaultTypeClass::Float, 9999999999.0f));
+		args->Set(3, IL2CPP::Object::BoxValue(IL2CPP::DefaultTypeClass::Int32, PixelView::GetViewID(pixelView)));
+
+		PhotonView::RPC(photonView, EventEnum::PlayerEffectRPC, PhotonTargets::OthersBuffered, args);
+	}
+
+	void NoClipEveryone()
+	{
+		processNoClipAll = true;
+	}
+
+	void SpawnBotPrefab()
+	{
+		if (gPlayerMoveCList == nullptr || gPlayerMoveCList->GetSize() == 0) return;
+
+		auto arr = IL2CPP::Array<int>::Create(IL2CPP::DefaultTypeClass::Int32, 6);
+		arr->Set(0, 834);
+		arr->Set(1, 834);
+		arr->Set(2, 834);
+		arr->Set(3, 834);
+		arr->Set(4, 834);
+		arr->Set(5, 834);
+
+		std::string botname = ServerMods::PrefabSpawner::BotName.GetValue();
+		DictionaryBuilder dic = DictionaryBuilder::Create(
+			IL2CPP::DefaultTypeClass::String,
+			IL2CPP::DefaultTypeClass::Object
+		);
+
+		dic.Add(IL2CPP::String::Create("w"), (IL2CPP::Object*) arr);
+		dic.Add(IL2CPP::String::Create("av"), IL2CPP::String::Create("avatar_unknown"));
+		dic.Add(IL2CPP::String::Create("sn"), IL2CPP::String::Create("league_skin_steel"));
+		dic.Add(IL2CPP::String::Create("n"), IL2CPP::String::Create(botname));
+		dic.Add(IL2CPP::String::Create("gg"), IL2CPP::String::Create("gadget_singularity"));
+		dic.Add(IL2CPP::String::Create("pa"), IL2CPP::String::Create("armor_ultimate_defense"));
+		dic.Add(IL2CPP::String::Create("spa"), IL2CPP::Object::BoxValue(IL2CPP::DefaultTypeClass::Boolean, true));
+		dic.Add(IL2CPP::String::Create("pid"), IL2CPP::Object::BoxValue(IL2CPP::DefaultTypeClass::Int32, rand()));
+
+		auto settings = IL2CPP::Array<IL2CPP::Object*>::Create(IL2CPP::DefaultTypeClass::Object, 1);
+		settings->Set(0, dic.GetInstance());
+
+		auto gameObject = PhotonNetwork::InstantiatePrefab(
+			IL2CPP::String::Create("Bots/BotInstance"), 
+			Vector3::Zero(),
+			Quaternion::Identity(), 
+			(char)0, 
+			settings
+		);
+
+		dontDespawnBot = true;
+	}
+
 	$Hook(void, WeaponManager, (IL2CPP::Object* _this))
 	{
-		if (gMyPlayerMoveC == nullptr)
-			gMyPlayerMoveC = _this->GetFieldRef<IL2CPP::Object*>("myPlayerMoveC");
+		gMyPlayerMoveC = _this->GetFieldPtr<IL2CPP::Object*>("myPlayerMoveC");
+		gPlayerMoveCList = IL2CPP::ClassMapping::GetClass("PlayerListClass")->GetField(0x0)->GetValue<IL2CPP::List<IL2CPP::Object*>*>(nullptr);
+		gPhotonViewList = IL2CPP::ClassMapping::GetClass("PhotonObjectCacher")->GetField(0x0)->GetValue<IL2CPP::List<IL2CPP::Object*>*>(nullptr);
 
-		if(gPlayerMoveCList == nullptr)
-			gPlayerMoveCList = IL2CPP::ClassMapping::GetClass("PlayerListClass")->GetField(0x0)->GetValue<IL2CPP::List<IL2CPP::Object*>*>(nullptr);
+		if (gMyPlayerMoveC != nullptr)
+			gCurrentWeaponSounds = _this->GetFieldPtr<IL2CPP::Object*>("myPlayerMoveC", 10);
+
+		if (gPlayerMoveCList == nullptr || gPlayerMoveCList->GetSize() == 0)
+			dontDespawnBot = false;
+
+		if (ServerMods::PrefabSpawner::AutoSpawn.value && Global::gGlobalTick % 20)
+		{
+			SpamProjectiles();
+		}
 
 		if (gMyPlayerMoveC != nullptr)
 		{
+			if (!PhotonNetwork::IsMasterClient())
+			{
+				PhotonNetwork::SetMasterClient(PhotonNetwork::GetLocalPlayer());
+			}
+
 			if (General::Aim::Aimbot.value && gPlayerMoveCList != nullptr)
 			{
 				HandleAimbot();
+			}
+
+			if (gPhotonViewList != nullptr)
+			{
+				gPhotonViewList->ForEach([&](IL2CPP::Object* view)
+				{
+					if (ServerMods::ChatSpam::SpamChat.value && Global::gGlobalTick % 10 == 0)
+					{
+						HandleSpamChat(view, ServerMods::ChatSpam::message.GetValue());
+					}
+
+					if (Global::gGlobalTick % 60 != 0) return;
+
+					if (ServerMods::RPC::SlowdownAll.value)
+					{
+						HandleSpeedhackRPC(view, -99999999999.0f);
+					}
+
+					if (ServerMods::RPC::SpeedupAll.value)
+					{
+						HandleSpeedhackRPC(view, 99999999999.0f);
+					}
+
+					if (ServerMods::RPC::DisableJumpAll.value)
+					{
+						HandleJumpDisableRPC(view);
+					}
+				});
+			}
+
+			if (processNoClipAll)
+			{
+				static int tpToNormalPosTimer = 0;
+				static Vector3 oldPos;
+
+				if (tpToNormalPosTimer <= 0)
+				{
+					oldPos = PlayerMoveC::GetPosition(gMyPlayerMoveC);
+				}
+
+				if (tpToNormalPosTimer < 30)
+				{
+					tpToNormalPosTimer++;
+					// DUMB COMPILER
+					volatile float nanFloat = 0.0f;
+					PlayerMoveC::SetPosition(gMyPlayerMoveC, Vector3(0.0f / nanFloat, 0.0f / nanFloat, 0.0f / nanFloat));
+				}
+				else
+				{
+					PlayerMoveC::SetPosition(gMyPlayerMoveC, oldPos);
+					tpToNormalPosTimer = 0;
+					processNoClipAll = false;
+				}
 			}
 
 			if (General::Player::InfAmmo.value)
@@ -132,11 +341,12 @@ namespace GameplayMain
 
 		$CallOrig(WeaponManager, _this);
 	}
-
+	
 	$Hook(void, AimCrosshairController, (IL2CPP::Object* _this))
 	{
-		const Color* crosshairColor = _this->GetFieldPtr<Color>(0x27);
-		if (General::Aim::Triggerbot.value && crosshairColor->r >= 0.5f && crosshairColor->g == 0 && crosshairColor->b == 0)
+		Color crosshairColor = _this->GetFieldRef<Color>(0x27);
+		if (gMyPlayerMoveC != nullptr && General::Aim::Triggerbot.value 
+			&& crosshairColor.r >= 0.5f && crosshairColor.g == 0.0f && crosshairColor.b == 0.0f)
 		{
 			PlayerMoveC::ShotPressed(gMyPlayerMoveC);
 		}
@@ -190,6 +400,20 @@ namespace GameplayMain
 
 	$Hook(void, Rocket, (IL2CPP::Object* _this, IL2CPP::Object* rocketSettings))
 	{
+		if (_this->GetFieldRef<bool>("harpoonMinDistance", 14) == false)
+		{
+			$CallOrig(Rocket, _this, rocketSettings);
+			return;
+		}
+
+		IL2CPP::Object* gameObj = Component::GetGameObject(_this);
+
+		if (GameObject::GetName(gameObj)->Equals("ThugHunting"))
+		{
+			rocketSettings->GetFieldRef<float>("lifeTime") = 9999999999999.0f;
+			GameObject::SetName(gameObj, IL2CPP::String::Create("Rocket (Clone)"));
+		}
+
 		if (General::Rocket::NuclearExplosion.value)
 		{
 			_this->GetFieldRef<IL2CPP::String*>(0x8) = IL2CPP::String::Create("a-bomb_mini");
@@ -269,7 +493,7 @@ namespace GameplayMain
 
 		if (General::Effects::NoCharge.value)
 		{
-			_this->GetFieldRef<bool>("isCharging") = true;
+			_this->GetFieldRef<bool>("isCharging") = false;
 			_this->GetFieldRef<int>("chargeMax") = 2;
 		}
 
@@ -310,20 +534,50 @@ namespace GameplayMain
 			_this->GetFieldRef<float>("radiusRoundMelee") = killauraRadius;
 		}
 
+		if (ServerMods::Modifier::TargetFloatHit.value)
+		{
+			_this->GetFieldRef<bool>("isPoisoning") = true;
+			_this->GetFieldRef<int>("poisonCount") = 3;
+			_this->GetFieldRef<int>("poisonType") = 2;
+			_this->GetFieldRef<float>("poisonDamageMultiplier") = 0.1f;
+		}
+
+		if (ServerMods::Modifier::ElectricShock.value)
+		{
+			_this->GetFieldRef<bool>("isElectricShock") = true;
+			_this->GetFieldRef<float>("electricShockCoeff") = 99999999.0f;
+			_this->GetFieldRef<float>("electricShockTime") = 99999999.0f;
+		}
+
+		if (ServerMods::Modifier::Polymorpher.value)
+		{
+			_this->GetFieldRef<bool>("polymorpher") = true;
+			_this->GetFieldRef<int>("polymorphType") = rand() % 3;
+			_this->GetFieldRef<float>("polymorphDuarationTime") = 99999999.0f;
+			_this->GetFieldRef<float>("polymorphMaxHealth") = 99999999.0f;
+
+			_this->GetFieldRef<bool>("harpoon") = true;
+			_this->GetFieldRef<float>("harpoonMaxDistance") = 99999999.0f;
+			_this->GetFieldRef<float>("harpoonMinDistance") = 99999999.0f;
+		}
+
 		$CallOrig(WeaponSounds, _this);
 	}
 
-	#pragma region PatchesHooks
-	$Hook(void, TakeDamage, (IL2CPP::Object* _this, float dmg, int sex0, int sex1, int sex2, int sex3, Vector3 vec, IL2CPP::String* wepPrefab, int idfk, IL2CPP::Object* idfk1))
+	$Hook(void, SendPlayerEffect, (void* _this, void* player, IL2CPP::String* source, int effectIndex, float duration, int senderPixelID))
 	{
-		if (General::Player::Godmode.value)
+		if (_this != nullptr && ServerMods::Modifier::TargetFloatHit.value)
 		{
-			return;
+			for (int i = 1; i < 77; i++)
+			{
+				if (i == 9) continue;
+				$CallOrig(SendPlayerEffect, _this, player, source, i, 99999999999.0f, senderPixelID);
+			}
 		}
-
-		$CallOrig(TakeDamage, _this, dmg, sex0, sex1, sex2, sex3, vec, wepPrefab, idfk, idfk1);
+		$CallOrig(SendPlayerEffect, _this, player, source, effectIndex, duration, senderPixelID);
 	}
 
+	#pragma region PatchesHooks
 	$Hook(float, FireRateModifier, (IL2CPP::Object* _this))
 	{
 		if (General::Player::FirerateHack.value)
@@ -332,16 +586,6 @@ namespace GameplayMain
 		}
 
 		return $CallOrig(FireRateModifier, _this);
-	}
-
-	$Hook(void, ForceCatSpamTest, (IL2CPP::Object* _this, bool idfk0, float idfk1, bool idfk2, float idfk3))
-	{
-		if (General::Player::NoCatDelay.value)
-		{
-			return;
-		}
-
-		$CallOrig(ForceCatSpamTest, _this, idfk0, idfk1, idfk2, idfk3);
 	}
 
 	$Hook(float, get_SpeedModifier, (IL2CPP::Object* _this))
@@ -353,11 +597,72 @@ namespace GameplayMain
 
 		return $CallOrig(get_SpeedModifier, _this);
 	}
+
+	$Hook(void, PhotonNetwork_Destroy, (IL2CPP::Object* obj))
+	{
+		if(dontDespawnBot && Stacktrace::New()->ToString()->Contains("PlayerBotsManager"))
+		{
+			return;
+		}
+
+		$CallOrig(PhotonNetwork_Destroy, obj);
+	}
 	#pragma endregion
 
 	void INIT()
 	{
 		using namespace IL2CPP::ClassMapping;
+			
+		ServerMods::RPC::AttractEveryone.OnClick(AttractEveryone);
+		ServerMods::PrefabSpawner::SpawnBot.OnClick(SpawnBotPrefab);
+		ServerMods::RPC::CrashEveryone.OnClick([&]
+		{
+			Global::ExecuteOnGameThread([]
+			{
+				CrashEveryone();
+			});
+		});
+
+		ServerMods::PrefabSpawner::SpawnProjectile.OnClick([&]
+		{
+			Global::ExecuteOnGameThread([]
+			{
+				SpamProjectiles();
+			});
+		});
+
+		ServerMods::RPC::NoClipEveryone.OnClick([&] { processNoClipAll = true; });
+
+		General::Player::Godmode.OnToggle([&](bool value)
+		{
+			static IL2CPP::SignaturePattern pattern{ "private", "Void", nullptr, {"Single", "ENUM", "ENUM", "ENUM", "ENUM", "Vector3", "String", "Int32", nullptr} };
+			static auto ptr = GetClass("Player_move_c")->GetMethodByPattern(pattern)->GetPointer();
+
+			if (value)
+			{
+				MemPatcher::Nop(ptr);
+			}
+			else
+			{
+				MemPatcher::Restore(ptr);
+			}
+		});
+
+
+		ServerMods::Modifier::FriendlyFire.OnToggle([&](bool value)
+		{
+			static IL2CPP::SignaturePattern pattern{ "internal static", "Void", nullptr, {"Boolean"} };
+			static auto ptr = GetClass("GameConnect")->GetMethodByPattern(pattern, -6)->GetPointer();
+
+			if (value)
+			{
+				MemPatcher::ReturnFalse(ptr);
+			}
+			else
+			{
+				MemPatcher::Restore(ptr);
+			}
+		});
 
 		$RegisterHook(
 			WeaponManager, 
@@ -394,9 +699,9 @@ namespace GameplayMain
 		);
 
 		$RegisterHook(
-			TakeDamage, 
+			SendPlayerEffect,
 			GetClass("Player_move_c")->GetMethodByPattern(
-				{"private", "Void", nullptr, {"Single", "ENUM", "ENUM", "ENUM", "ENUM", "Vector3", "String", "Int32", nullptr}}
+				{"internal", "Void", nullptr, {nullptr, "String", "Int32", "Single", "Int32"}}
 			)
 		);
 
@@ -406,13 +711,13 @@ namespace GameplayMain
 		);
 
 		$RegisterHook(
-			ForceCatSpamTest,
-			GetClass("Player_move_c")->GetMethod("Awake", 0, 2)
+			get_SpeedModifier,
+			GetClass("ItemRecord")->GetMethod("get_SpeedModifier")
 		);
 
 		$RegisterHook(
-			get_SpeedModifier,
-			GetClass("ItemRecord")->GetMethod("get_SpeedModifier")
+			PhotonNetwork_Destroy,
+			GetClass("PhotonNetwork")->GetMethod(0x7a)
 		);
 	}
 }

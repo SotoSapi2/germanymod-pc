@@ -124,12 +124,7 @@ namespace UIBackend
 		updateCallback();
 
 		// Notify
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 5.f);
-		ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(25.f / 255.f, 25.f / 255.f, 25.f / 255.f, 100.f / 255.f));
-		ImGui::RenderNotifications();
-		ImGui::PopStyleVar(1);
-		ImGui::PopStyleColor(1);
-		
+
 		ImGui::Render();
 
 		context->OMSetRenderTargets(1, &mainRenderTargetView, nullptr);

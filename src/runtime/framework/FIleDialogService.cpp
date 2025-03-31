@@ -27,7 +27,7 @@ namespace FileDialogService
 
 	namespace Internal
 	{
-		std::optional<std::string> GetDisplayName(IFileDialog* pFileDialog)
+		std::optional<std::wstring> GetDisplayName(IFileDialog* pFileDialog)
 		{
 			std::string displayName;
 			IShellItem* pItem = NULL;
@@ -36,26 +36,21 @@ namespace FileDialogService
 				PWSTR pszFolderPath = NULL;
 				pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFolderPath);
 
-				std::wstring wstr(pszFolderPath);
-				size_t size;
-				displayName.resize(wstr.length());
-				wcstombs_s(&size, &displayName[0], displayName.size() + 1, wstr.c_str(), wstr.size());
-
 				CoTaskMemFree(pszFolderPath);
 				pItem->Release();
 
-				return displayName;
+				return { pszFolderPath };
 			}
 
 			return std::nullopt;
 		}
 	}
 
-	std::optional<std::string> GetFilepathLoad(const char* filter)
+	std::optional<std::wstring> GetFilepathLoad(const wchar_t* filter)
 	{
-		char szFile[MAX_PATH];
+		wchar_t szFile[MAX_PATH];
 
-		OPENFILENAME ofn;
+		OPENFILENAMEW ofn;
 		ZeroMemory(&ofn, sizeof(ofn));
 		ofn.lStructSize = sizeof(ofn);
 		ofn.hwndOwner = nullptr;
@@ -69,15 +64,16 @@ namespace FileDialogService
 		ofn.lpstrInitialDir = nullptr;
 		ofn.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
 
-		if (!GetOpenFileName(&ofn)) return std::nullopt;
+		ShowWindow(GetActiveWindow(), SW_SHOWMINIMIZED);
+		if (!GetOpenFileNameW(&ofn)) return std::nullopt;
 		return ofn.lpstrFile;
 	}
 
-	std::optional<std::string> GetFilepathSave(const char* filter)
+	std::optional<std::wstring> GetFilepathSave(const wchar_t* filter)
 	{
-		char szFile[MAX_PATH];
+		wchar_t szFile[MAX_PATH];
 
-		OPENFILENAME ofn;
+		OPENFILENAMEW ofn;
 		ZeroMemory(&ofn, sizeof(ofn));
 		ofn.lStructSize = sizeof(ofn);
 		ofn.hwndOwner = nullptr;
@@ -91,11 +87,11 @@ namespace FileDialogService
 		ofn.lpstrInitialDir = nullptr;
 		ofn.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
 
-		if (!GetSaveFileName(&ofn)) return std::nullopt;
+		if (!GetSaveFileNameW(&ofn)) return std::nullopt;
 		return ofn.lpstrFile;
 	}
 
-	std::optional<std::string> SelectFolder()
+	std::optional<std::wstring> SelectFolder()
 	{
 		IFileOpenDialog* pFileDialog = NULL;
 		if (FAILED(CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_PPV_ARGS(&pFileDialog))))
@@ -105,6 +101,7 @@ namespace FileDialogService
 
 		pFileDialog->SetOptions(FOS_PICKFOLDERS);
 
+		ShowWindow(GetActiveWindow(), SW_SHOWMINIMIZED);
 		if (FAILED(pFileDialog->Show(NULL)))
 		{
 			return std::nullopt;

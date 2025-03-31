@@ -6,7 +6,7 @@ if (POLICY CMP0141)
   set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
 endif()
 
-project ("boolpg")
+project ("nazimod")
 
 set(STATIC_LINKS "${CMAKE_CURRENT_SOURCE_DIR}/libs")
 set(SRC "${CMAKE_CURRENT_SOURCE_DIR}/src")
@@ -15,9 +15,25 @@ set(RUNTIME_NAME "${PROJECT_NAME}-runtime")
 set(ASSETS_SOURCE_DIR "${CMAKE_SOURCE_DIR}/assets")
 set(ASSETS_DEST_DIR "${CMAKE_BINARY_DIR}/assets")
 
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDebug$<$<CONFIG:Debug>:Debug>")
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Release>:Release>")
+
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+add_compile_definitions(
+	RUNTIME_DLL_FILENAME="${RUNTIME_NAME}.dll" 
+	PROJECT_NAME="${PROJECT_NAME}"
+	LOGGER_DEFINE_MACRO
+	LOGGER_ERROR_DEBUG_BREAK
+	LOGGER_TRACE_ERROR
+	LOGGER_TRACE_WARNING
+	$<$<CONFIG:Debug>:OE_DEBUG>
+    $<$<CONFIG:RelWithDebInfo>:OE_DEBUG>
+    $<$<CONFIG:Release>:OE_RELEASE>
+    $<$<CONFIG:MinSizeRel>:OE_RELEASE>
+)
 
 add_custom_target(
 	assets ALL
@@ -48,10 +64,10 @@ file(
 
 add_executable(${INJECTOR_NAME} ${INJECTOR_GLOB})
 target_link_libraries(${INJECTOR_NAME} PRIVATE 
-	logger
+	logger TulipHook
 )
 add_dependencies(${INJECTOR_NAME}
-assets
+	assets
 )
 
 file(
@@ -62,7 +78,8 @@ file(
 	"${SRC}/runtime/*.c"
 )
 
-add_library(${RUNTIME_NAME} SHARED ${RUNTIME_GLOB} )
+add_library(${RUNTIME_NAME} SHARED ${RUNTIME_GLOB})
 target_link_libraries(${RUNTIME_NAME} PRIVATE
-	logger imgui fileutils detours-x64 Unity
+	logger imgui Unity TulipHook detours-x64
+	base64
 )

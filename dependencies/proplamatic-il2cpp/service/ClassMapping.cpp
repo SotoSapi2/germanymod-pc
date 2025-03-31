@@ -113,7 +113,7 @@ namespace IL2CPP
 						case ClassQueueType::PATTERN:
 						{
 							matches = (queueIter->methodCount < 0 || queueIter->methodCount == klass->MethodCount()) 
-								&& klass->CompareFieldPattern(queueIter->pattern);
+								&& klass->CompareFieldPattern(*queueIter->pattern);
 							break;
 						}
 						default:

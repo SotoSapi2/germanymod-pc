@@ -4,7 +4,9 @@
 namespace GameplayMain
 {
 	extern IL2CPP::Object* gMyPlayerMoveC;
+	extern IL2CPP::Object* gCurrentWeaponSounds;
 	extern IL2CPP::List<IL2CPP::Object*>* gPlayerMoveCList;
+	extern IL2CPP::List<IL2CPP::Object*>* gPhotonViewList;
 
 	void INIT();
 }

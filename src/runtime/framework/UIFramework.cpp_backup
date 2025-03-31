@@ -1,0 +1,2276 @@
+/*
+████████╗██╗░░██╗██╗░██████╗  ░██████╗░█████╗░██╗░░░██╗██████╗░░█████╗░███████╗
+╚══██╔══╝██║░░██║██║██╔════╝  ██╔════╝██╔══██╗██║░░░██║██╔══██╗██╔══██╗██╔════╝
+░░░██║░░░███████║██║╚█████╗░  ╚█████╗░██║░░██║██║░░░██║██████╔╝██║░░╚═╝█████╗░░
+░░░██║░░░██╔══██║██║░╚═══██╗  ░╚═══██╗██║░░██║██║░░░██║██╔══██╗██║░░██╗██╔══╝░░
+░░░██║░░░██║░░██║██║██████╔╝  ██████╔╝╚█████╔╝╚██████╔╝██║░░██║╚█████╔╝███████╗
+░░░╚═╝░░░╚═╝░░╚═╝╚═╝╚═════╝░  ╚═════╝░░╚════╝░░╚═════╝░╚═╝░░╚═╝░╚════╝░╚══════╝
+
+███████╗██╗██╗░░░░░███████╗  ██╗░██████╗
+██╔════╝██║██║░░░░░██╔════╝  ██║██╔════╝
+█████╗░░██║██║░░░░░█████╗░░  ██║╚█████╗░
+██╔══╝░░██║██║░░░░░██╔══╝░░  ██║░╚═══██╗
+██║░░░░░██║███████╗███████╗  ██║██████╔╝
+╚═╝░░░░░╚═╝╚══════╝╚══════╝  ╚═╝╚═════╝░
+
+██╗░░░██╗███╗░░██╗██████╗░███████╗░█████╗░██████╗░░█████╗░██████╗░██╗░░░░░███████╗██╗██╗██╗██╗██╗██╗██╗██╗██╗██╗██╗██╗██╗██╗
+██║░░░██║████╗░██║██╔══██╗██╔════╝██╔══██╗██╔══██╗██╔══██╗██╔══██╗██║░░░░░██╔════╝██║██║██║██║██║██║██║██║██║██║██║██║██║██║
+██║░░░██║██╔██╗██║██████╔╝█████╗░░███████║██║░░██║███████║██████╦╝██║░░░░░█████╗░░██║██║██║██║██║██║██║██║██║██║██║██║██║██║
+██║░░░██║██║╚████║██╔══██╗██╔══╝░░██╔══██║██║░░██║██╔══██║██╔══██╗██║░░░░░██╔══╝░░╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝
+╚██████╔╝██║░╚███║██║░░██║███████╗██║░░██║██████╔╝██║░░██║██████╦╝███████╗███████╗██╗██╗██╗██╗██╗██╗██╗██╗██╗██╗██╗██╗██╗██╗
+░╚═════╝░╚═╝░░╚══╝╚═╝░░╚═╝╚══════╝╚═╝░░╚═╝╚═════╝░╚═╝░░╚═╝╚═════╝░╚══════╝╚══════╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝
+
+TODO:
+- Fix flickering components when you load subtab for the first time. This bug most likey a ImGui bug.
+- Put more effort for flexible Button type.
+- Rewrite and finish notification system. (imgui_notify.h suck ass)
+- Clean up and refactor this choatic mess.
+- Hanging every Zack Zuckerberg slaves' on a rope for who contributing inventing React.
+*/
+
+#include "UIFramework.hpp"
+#include <unordered_map>
+#include <algorithm>
+#include <vector>
+#include <optional>
+#include <imgui_internal.h>
+#include <sstream>
+#include <imgui_notify.hpp>
+#include "backend/UIBackend.hpp"
+#include <imgui_widgets.cpp>
+#include <Logger.hpp>
+#include "../game/Menu.hpp"
+
+#define IS_ODD(x) (x % 2 == 1)
+
+template<typename T>
+class DataContainer
+{
+	std::unordered_map<ImGuiID, std::unordered_map<uint8_t, T*>> container;
+
+	public:
+	T* Get(ImGuiID id, uint8_t slot, T defaultValue)
+	{
+		if (container.find(id) == container.end())
+		{
+			container[id] = std::unordered_map<uint8_t, T*>{};
+		}
+
+		if (container.at(id).find(slot) == container.at(id).end())
+		{
+			auto data = new T;
+			*data = defaultValue;
+			container.at(id).insert({ slot, data });
+			return data;
+		}
+
+		return container.at(id).at(slot);
+	}
+
+	T* Get(ImGuiID id, uint8_t slot)
+	{
+		if (container.find(id) == container.end())
+		{
+			container[id] = std::unordered_map<uint8_t, T*>{};
+		}
+
+		if (container.at(id).find(slot) == container.at(id).end())
+		{
+			auto data = new T;
+			container.at(id).insert({ slot, data });
+			return data;
+		}
+
+		return container.at(id).at(slot);
+	}
+
+	bool Exist(ImGuiID id)
+	{
+		return container.find(id) != container.end();
+	}
+
+	bool Delete(ImGuiID id)
+	{
+		auto it = container.find(id);
+		if (it != container.end())
+		{
+			container.erase(container.find(id));
+			return true;
+		}
+
+		return false;
+	}
+};
+
+static inline ImColor ImLerp(const ImColor& a, const ImColor& b, float t)
+{
+	return ImColor(
+		a.Value.x + (b.Value.x - a.Value.x) * t,
+		a.Value.y + (b.Value.y - a.Value.y) * t,
+		a.Value.z + (b.Value.z - a.Value.z) * t,
+		a.Value.w + (b.Value.w - a.Value.w) * t
+	);
+}
+
+namespace InterpHelper
+{
+	float Lerp(float x, float min = 0.0f, float max = 1.0f)
+	{
+		return std::clamp(x, min, max);
+	}
+}
+
+namespace UIFramework
+{
+	struct NotificationQueue
+	{
+		NotificationType type;
+		std::string content;
+	};
+
+	namespace Global
+	{
+		// PUBLIC FIELDS //
+		ImFont* gRegularFont = nullptr;
+		ImFont* gMediumFont = nullptr;
+		ImFont*	gLargeFont = nullptr;
+		ImFont* gExtraLargeFont = nullptr;
+		ImFont*	gIconFont = nullptr;
+
+		MenuColorScheme gMenuColorScheme;
+		//
+
+		std::string assetsPath;
+		ImGuiID lastSectionId = 0;
+		UIComponents::GroupSplitType currentGroupSplitType = UIComponents::GroupSplitType::HALF;
+		UIComponents::Section* selectedSection = nullptr;
+		std::vector<NotificationQueue> notificationQueueList;
+
+		DataContainer<float> floatContainer;
+		DataContainer<ImColor> colorContainer;
+		DataContainer<ImRect> rectContainer;
+
+		std::function<void()> onUpdateCallback;
+	};
+
+	char AciiToLower(char in) 
+	{
+		if (in <= 'Z' && in >= 'A')
+			return in - ('Z' - 'z');
+		return in;
+	}
+
+	std::vector<std::pair<int, const std::string&>> SearchSubstring(const std::vector<std::string>* vec, const std::string& target, bool caseSenstive = false, int maxResult = 0)
+	{
+		std::vector<std::pair<int, const std::string&>> results;
+
+		int resultFound = 0;
+		for (int i = 0; i < vec->size(); i++) 
+		{
+			if (maxResult != 0 && resultFound > maxResult)
+			{
+				break;
+			}
+			const std::string& origStr = vec->at(i);
+
+			if (caseSenstive)
+			{
+				if (origStr.find(target) != std::string::npos)
+				{
+					resultFound++;
+					results.push_back({ i, origStr });
+				}
+			}
+			else
+			{
+				std::string str = origStr;
+				std::transform(str.begin(), str.end(), str.begin(), AciiToLower);
+
+				if (str.find(target) != std::string::npos)
+				{
+					resultFound++;
+					results.push_back({ i, origStr });
+				}
+			}
+		}
+
+		return results;
+	}
+
+	namespace Widgets
+	{
+		void RenderTextDisabled(bool isDisabled, const ImVec2& pos_min, const ImVec2& pos_max, const char* text, const char* text_end,
+			const ImVec2* text_size_if_known, const ImVec2& align, const ImRect* clip_rect)
+		{
+			const char* text_display_end = ImGui::FindRenderedTextEnd(text, text_end);
+			const int text_len = (int)(text_display_end - text);
+			if (text_len == 0)
+				return;
+
+			ImGuiContext& g = *GImGui;
+			ImGuiWindow* window = g.CurrentWindow;
+			ImDrawList* draw_list = window->DrawList;
+
+			ImVec2 pos = pos_min;
+			const ImVec2 text_size = text_size_if_known ? *text_size_if_known : ImGui::CalcTextSize(text, text_display_end, false, 0.0f);
+
+			const ImVec2* clip_min = clip_rect ? &clip_rect->Min : &pos_min;
+			const ImVec2* clip_max = clip_rect ? &clip_rect->Max : &pos_max;
+			bool need_clipping = (pos.x + text_size.x >= clip_max->x) || (pos.y + text_size.y >= clip_max->y);
+			if (clip_rect) // If we had no explicit clipping rectangle then pos==clip_min
+				need_clipping |= (pos.x < clip_min->x) || (pos.y < clip_min->y);
+
+			// Align whole block. We should defer that to the better rendering function when we'll have support for individual line alignment.
+			if (align.x > 0.0f) pos.x = ImMax(pos.x, pos.x + (pos_max.x - pos.x - text_size.x) * align.x);
+			if (align.y > 0.0f) pos.y = ImMax(pos.y, pos.y + (pos_max.y - pos.y - text_size.y) * align.y);
+
+			// Render
+			if (need_clipping)
+			{
+				ImVec4 fine_clip_rect(clip_min->x, clip_min->y, clip_max->x, clip_max->y);
+				draw_list->AddText(NULL, 0.0f, pos, ImGui::GetColorU32(isDisabled ? ImGuiCol_TextDisabled : ImGuiCol_Text), text, text_display_end, 0.0f, &fine_clip_rect);
+			}
+			else
+			{
+				draw_list->AddText(NULL, 0.0f, pos, ImGui::GetColorU32(isDisabled ? ImGuiCol_TextDisabled : ImGuiCol_Text), text, text_display_end, 0.0f, NULL);
+			}
+		}
+
+		bool Frame(const char* str_id, const ImVec2& size = ImVec2(0, 0), ImGuiChildFlags child_flags = 0, ImGuiWindowFlags window_flags = 0)
+		{
+			ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4());
+			bool ret = ImGui::BeginChild(str_id, size, child_flags, window_flags);
+			ImGui::PopStyleColor();
+			return ret;
+		}
+
+		void EndFrame()
+		{
+			ImGui::EndChild(); // crazy rename
+		}
+
+		void Group(UIComponents::Group* group, const ImVec2& size = {0, 0})
+		{
+			std::string strId = group->label + "-group";
+
+			ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 0);
+
+			if (size.x == 0 && size.y == 0)
+			{
+				ImGui::BeginChild(strId.c_str(), { -1.0, 0.0 }, ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_AlwaysUseWindowPadding);
+			}
+			else
+			{
+				ImGui::BeginChild(strId.c_str(), size, ImGuiChildFlags_AlwaysUseWindowPadding);
+			}
+
+			ImGui::PopStyleVar();
+			ImGui::PushFont(Global::gLargeFont);
+			ImGui::TextUnformatted(group->label.c_str());
+			ImGui::PopFont();
+			ImGui::Separator();
+
+			group->RenderChildren();
+
+			ImGui::EndChild();
+		}
+
+		void Section(UIComponents::Section* section)
+		{
+			ImGuiWindow* window = ImGui::GetCurrentWindow();
+			if (!section || window->SkipItems)
+			{
+				return;
+			}
+
+			ImGuiContext& g = *GImGui;
+
+			ImGuiID id = (ImGuiID) section;
+			ImGuiStyle& style = g.Style;
+
+			ImVec2 pos = window->DC.CursorPos;
+			ImVec2 size(50, 50);
+			ImRect rect(pos, pos + size);
+
+			ImGui::ItemSize(size, style.FramePadding.y);
+			if (!ImGui::ItemAdd(rect, id))
+				return;
+
+			ImDrawList* draw = window->DrawList;
+
+			bool hovered, held;
+			bool pressed = ImGui::ButtonBehavior(rect, id, &hovered, &held, 0);
+
+			if (pressed || Global::lastSectionId == 0)
+			{
+				Global::lastSectionId = id;
+				Global::selectedSection = section;
+			}
+
+			bool selected = Global::lastSectionId == id;
+
+			float* selectLerp = Global::floatContainer.Get(id, 0, 0);
+			*selectLerp = InterpHelper::Lerp(*selectLerp + g.IO.DeltaTime * 5.0f * (selected ? 1.0f : -1.0f));
+
+			ImU32 rectColor = ImLerp(
+				Global::gMenuColorScheme.bgLow,
+				Global::gMenuColorScheme.bgMed,
+				*selectLerp
+			);
+
+			ImU32 lineColor = ImLerp(
+				Global::gMenuColorScheme.bgMed,
+				Global::gMenuColorScheme.primaryMed,
+				*selectLerp
+			);
+
+			draw->AddRectFilled(
+				rect.Min,
+				rect.Max,
+				rectColor,
+				0
+			);
+
+			draw->AddRectFilled(
+				ImLerp(
+					rect.Min + ImVec2(size.x - 2, 0),
+					rect.Min + ImVec2(size.x - 3, 0),
+					*selectLerp
+				),
+				rect.Max,
+				lineColor,
+				0
+			);
+
+			ImGui::PushFont(Global::gIconFont);
+			RenderTextDisabled(
+				!selected,
+				rect.Min,
+				rect.Max,
+				section->icon,
+				nullptr,
+				nullptr,
+				style.ButtonTextAlign,
+				&rect
+			);
+			ImGui::PopFont();
+		}
+
+		bool Checkbox(const char* label, bool* val)
+		{
+			ImGuiWindow* window = ImGui::GetCurrentWindow();
+			if (window->SkipItems)
+				return false;
+
+			ImGui::PushFont(Global::gMediumFont);
+
+			ImGuiContext& g = *GImGui;
+			const ImGuiStyle& style = g.Style;
+			const ImGuiID id = window->GetID(label);
+			const ImVec2 label_size = ImGui::CalcTextSize(label, NULL, true);
+
+			const float square_sz = ImGui::GetFrameHeight();
+			const ImVec2 pos = window->DC.CursorPos;
+			const ImRect total_bb(pos, pos + ImVec2(square_sz + (label_size.x > 0.0f ? style.ItemInnerSpacing.x + label_size.x : 0.0f), label_size.y + style.FramePadding.y * 2.0f));
+			ImGui::ItemSize(total_bb, style.FramePadding.y);
+
+			if (!ImGui::ItemAdd(total_bb, id))
+			{
+				ImGui::PopFont();
+				return false;
+			}
+
+			bool hovered, held;
+			bool pressed = ImGui::ButtonBehavior(total_bb, id, &hovered, &held);
+			if (pressed)
+			{
+				*val = !(*val);
+				ImGui::MarkItemEdited(id);
+			}
+			const ImRect check_bb(pos, pos + ImVec2(square_sz, square_sz));
+
+			ImColor checkmarkTargetColor = Global::gMenuColorScheme.bgLow;
+			ImColor borderTargetColor = Global::gMenuColorScheme.bgLow;
+
+			if (!(*val) && hovered)
+			{
+				checkmarkTargetColor = Global::gMenuColorScheme.primaryMed;
+			}
+			else if (*val && hovered)
+			{
+				checkmarkTargetColor = Global::gMenuColorScheme.primaryHigh;
+				borderTargetColor = Global::gMenuColorScheme.primaryHigh;
+			}
+			else if (*val)
+			{
+				checkmarkTargetColor = Global::gMenuColorScheme.primaryMed;
+				borderTargetColor = Global::gMenuColorScheme.primaryMed;
+			}
+
+			ImColor* checkmarkColor = Global::colorContainer.Get(id, 0, checkmarkTargetColor);
+			ImColor* borderColor = Global::colorContainer.Get(id, 1, borderTargetColor);
+			*checkmarkColor = ImLerp(
+				*checkmarkColor,
+				checkmarkTargetColor,
+				g.IO.DeltaTime * 10
+			);
+
+			*borderColor = ImLerp(
+				*borderColor,
+				borderTargetColor,
+				g.IO.DeltaTime * 10
+			);
+
+			window->DrawList->AddRectFilled(
+				check_bb.Min,
+				check_bb.Max,
+				ImGui::GetColorU32(ImGuiCol_WindowBg),
+				style.FrameRounding
+			);
+
+			window->DrawList->AddRect(
+				check_bb.Min,
+				check_bb.Max,
+				*borderColor,
+				style.FrameRounding,
+				0,
+				1.5f
+			);
+
+			const float pad = ImMax(1.0f, IM_TRUNC(square_sz / 6.0f));
+			ImGui::RenderCheckMark(
+				window->DrawList,
+				check_bb.Min + ImVec2(pad, pad),
+				*checkmarkColor,
+				square_sz - pad * 2.0f
+			);
+
+			ImVec2 label_pos = ImVec2(check_bb.Max.x + style.ItemInnerSpacing.x, check_bb.Min.y + style.FramePadding.y);
+			if (label_size.x > 0.0f)
+				ImGui::RenderText(label_pos, label);
+
+			ImGui::PopFont();
+			return true;
+		}
+
+		bool Button(const char* label, UIComponents::ButtonSizeType sizeType, ImGuiButtonFlags flags = 0)
+		{
+			ImGuiWindow* window = ImGui::GetCurrentWindow();
+			if (window->SkipItems)
+				return false;
+
+			ImGui::PushFont(Global::gMediumFont);
+			ImGui::PushStyleColor(ImGuiCol_Text, Global::gMenuColorScheme.textHigh.Value);
+
+			ImGuiContext& g = *GImGui;
+			const ImGuiStyle& style = g.Style;
+			const ImGuiID id = window->GetID(label);
+			const ImVec2 label_size = ImGui::CalcTextSize(label, NULL, true);
+
+			ImVec2 pos = window->DC.CursorPos;
+			if ((flags & ImGuiButtonFlags_AlignTextBaseLine) && style.FramePadding.y < window->DC.CurrLineTextBaseOffset) // Try to vertically align buttons that are smaller/have no padding so that text baseline matches (bit hacky, since it shouldn't be a flag)
+				pos.y += window->DC.CurrLineTextBaseOffset - style.FramePadding.y;
+			ImVec2 size_arg = sizeType == UIComponents::ButtonSizeType::FLEXIBLE ? ImVec2() : ImVec2(-1, 0);
+			ImVec2 size = ImGui::CalcItemSize(size_arg, label_size.x + style.FramePadding.x * 4.0f, label_size.y + style.FramePadding.y * 4.0f);
+
+			const ImRect bb(pos, pos + size);
+			auto window_dc_backup = window->DC;
+
+			ImGui::ItemSize(size, style.FramePadding.y);
+			if (sizeType == UIComponents::ButtonSizeType::FLEXIBLE &&
+				bb.Max.x + size.x + style.ItemSpacing.x * 2.0f < window->DC.CursorStartPos.x + window->Size.x)
+			{
+				ImGui::SameLine();
+			}
+
+			//if (strcmp(label, "Unlock RGB Pioneer set") == 0)
+			//{
+			//	//if(window->DC.CursorPosPrevLine.x + size.x + style.ItemSpacing.x > window->DC.CursorStartPos.x + window->Size.x)
+			//	IM_DEBUG_BREAK();
+			//}
+
+			if (!ImGui::ItemAdd(bb, id))
+			{
+				ImGui::PopFont();
+				ImGui::PopStyleColor();
+				return false;
+			}
+
+			bool hovered, held;
+			bool pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held, flags);
+
+			// Render
+			ImColor targetColor = Global::gMenuColorScheme.primaryMed;
+			if (held)
+			{
+				targetColor = Global::gMenuColorScheme.primaryHigh;
+			}
+			else if (hovered)
+			{
+				targetColor = Global::gMenuColorScheme.primaryLow;
+			}
+
+			ImColor* lerpColor = Global::colorContainer.Get(id, 0, targetColor);
+			*lerpColor = ImLerp(
+				*lerpColor,
+				targetColor,
+				g.IO.DeltaTime * 10
+			);
+
+			ImGui::RenderFrame(bb.Min, bb.Max, *lerpColor, true, style.FrameRounding);
+			ImGui::RenderTextClipped(bb.Min + style.FramePadding, bb.Max - style.FramePadding, label, NULL, &label_size, style.ButtonTextAlign, &bb);
+
+			ImGui::PopFont();
+			ImGui::PopStyleColor();
+
+			return pressed;
+		}
+
+		bool ToggableButton(const char* label, bool disabled, const ImVec2& size_arg = {}, ImGuiButtonFlags flags = 0)
+		{
+			ImGuiWindow* window = ImGui::GetCurrentWindow();
+			if (window->SkipItems)
+				return false;
+
+			ImGui::PushFont(Global::gMediumFont);
+			ImGui::PushStyleColor(ImGuiCol_Text, Global::gMenuColorScheme.textHigh.Value);
+
+			ImGuiContext& g = *GImGui;
+			const ImGuiStyle& style = g.Style;
+			const ImGuiID id = window->GetID(label);
+			const ImVec2 label_size = ImGui::CalcTextSize(label, NULL, true);
+
+			ImVec2 pos = window->DC.CursorPos;
+			if ((flags & ImGuiButtonFlags_AlignTextBaseLine) && style.FramePadding.y < window->DC.CurrLineTextBaseOffset) // Try to vertically align buttons that are smaller/have no padding so that text baseline matches (bit hacky, since it shouldn't be a flag)
+				pos.y += window->DC.CurrLineTextBaseOffset - style.FramePadding.y;
+			ImVec2 size = ImGui::CalcItemSize(size_arg, label_size.x + style.FramePadding.x * 2.0f, label_size.y + style.FramePadding.y * 2.0f);
+
+			const ImRect bb(pos, pos + size);
+			ImGui::ItemSize(size, style.FramePadding.y);
+			if (!ImGui::ItemAdd(bb, id))
+			{
+				ImGui::PopFont();
+				ImGui::PopStyleColor();
+				return false;
+			}
+
+			bool hovered, held;
+			bool pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held, flags);
+
+			// Render
+			ImColor targetColor = Global::gMenuColorScheme.primaryMed;
+
+			if (disabled)
+			{
+				targetColor = Global::gMenuColorScheme.primaryLow;
+			}
+
+			ImColor* lerpColor = Global::colorContainer.Get(id, 0, targetColor);
+			*lerpColor = ImLerp(
+				*lerpColor,
+				targetColor,
+				g.IO.DeltaTime * 10
+			);
+
+			ImGui::RenderFrame(bb.Min, bb.Max, *lerpColor, true, style.FrameRounding);
+			ImGui::RenderTextClipped(bb.Min + style.FramePadding, bb.Max - style.FramePadding, label, NULL, &label_size, style.ButtonTextAlign, &bb);
+
+			ImGui::PopFont();
+			ImGui::PopStyleColor();
+
+			return pressed && !disabled;
+		}
+
+		bool SliderScalarBar(const char* label, ImGuiDataType data_type, void* p_data, const void* p_min, const void* p_max, const char* format, ImGuiSliderFlags flags)
+		{
+			ImGuiWindow* window = ImGui::GetCurrentWindow();
+			if (window->SkipItems)
+				return false;
+
+			ImGuiContext& g = *GImGui;
+			const ImGuiStyle& style = g.Style;
+			const ImGuiID id = window->GetID(label);
+			const float w = window->Size.x;
+
+			char value_buf[64];
+			const char* value_buf_end = value_buf + ImGui::DataTypeFormatString(value_buf, IM_ARRAYSIZE(value_buf), data_type, p_data, format);
+
+			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(style.ItemSpacing.x, 5));
+			ImGui::PushFont(Global::gMediumFont);
+			ImGui::TextUnformatted(label);
+			ImGui::PopFont();
+
+			const ImVec2 label_size = ImGui::CalcTextSize(value_buf, value_buf_end, true);
+
+			window->DC.CursorPos.x = window->Pos.x - window->Scroll.x + (w - style.WindowPadding.x - label_size.x);
+			window->DC.CursorPos.y = window->DC.CursorPosPrevLine.y + g.FontSize * 0.2f;
+			window->DC.CurrLineSize = window->DC.PrevLineSize;
+			window->DC.CurrLineTextBaseOffset = window->DC.PrevLineTextBaseOffset;
+			window->DC.IsSameLine = true;
+
+			ImGui::PushFont(Global::gRegularFont);
+			ImGui::TextUnformatted(value_buf, value_buf_end);
+			ImGui::PopFont();
+
+			const ImVec2 size(w - style.WindowPadding.x * 2.0f, 25);
+
+			const ImRect frame_bb(
+				window->DC.CursorPos,
+				window->DC.CursorPos + size
+			);
+
+			const ImRect total_bb(
+				frame_bb.Min,
+				frame_bb.Max + ImVec2(style.ItemInnerSpacing.x + label_size.x, 0.0f)
+			);
+
+			const bool temp_input_allowed = (flags & ImGuiSliderFlags_NoInput) == 0;
+			ImGui::ItemSize(total_bb, style.FramePadding.y);
+
+			if (!ImGui::ItemAdd(total_bb, id, &frame_bb, temp_input_allowed ? ImGuiItemFlags_Inputable : 0))
+			{
+				ImGui::PopStyleVar();
+				return false;
+			}
+
+			ImGui::PopStyleVar();
+
+			if (format == NULL)
+				format = ImGui::DataTypeGetInfo(data_type)->PrintFmt;
+
+			//const bool hovered = ImGui::ItemHoverable(frame_bb, id, g.LastItemData.InFlags);
+			bool hovered, held = false;
+			bool pressed = ImGui::ButtonBehavior(frame_bb, id, &hovered, &held, 0);
+			//const bool clicked = hovered && ImGui::IsMouseClicked(0, id);
+
+			if (pressed)
+			{
+				ImGui::SetKeyOwner(ImGuiKey_MouseLeft, id);
+
+				ImGui::SetActiveID(id, window);
+				ImGui::SetFocusID(id, window);
+				ImGui::FocusWindow(window);
+			}
+
+			ImRect grab_bb;
+			ImRect bgRect(
+				frame_bb.Min - ImVec2(style.ItemSpacing.x / 2, 0),
+				frame_bb.Max - ImVec2()
+			);
+
+			const bool value_changed = ImGui::SliderBehavior(
+				bgRect,
+				id,
+				data_type,
+				p_data,
+				p_min,
+				p_max,
+				format,
+				flags,
+				&grab_bb
+			);
+
+			if (value_changed)
+			{
+				ImGui::MarkItemEdited(id);
+			}
+
+			ImColor targetFillerColor = Global::gMenuColorScheme.primaryMed;
+			ImColor targetGrabColor = Global::gMenuColorScheme.primaryHigh;
+
+			if (held)
+			{
+				targetFillerColor = Global::gMenuColorScheme.primaryLow;
+				targetGrabColor = Global::gMenuColorScheme.primaryMed;
+			}
+			else if (hovered)
+			{
+				targetFillerColor = Global::gMenuColorScheme.primaryHigh;
+			}
+
+
+			ImColor* holdFillerColor = Global::colorContainer.Get(id, 0, Global::gMenuColorScheme.primaryMed);
+			ImColor* holdGrabColor = Global::colorContainer.Get(id, 1, Global::gMenuColorScheme.primaryHigh);
+			float* sliderInterp = Global::floatContainer.Get(id, 0, (frame_bb.Max.x - grab_bb.Max.x) / (frame_bb.Max.x - frame_bb.Min.x));
+
+			*holdFillerColor = ImLerp(
+				*holdFillerColor,
+				targetFillerColor,
+				g.IO.DeltaTime * 10
+			);
+
+			*holdGrabColor = ImLerp(
+				*holdGrabColor,
+				targetGrabColor,
+				g.IO.DeltaTime * 10
+			);
+
+			*sliderInterp = ImLerp(
+				*sliderInterp,
+				(frame_bb.Max.x - grab_bb.Max.x) / (frame_bb.Max.x - frame_bb.Min.x),
+				0.25f
+			);
+
+			constexpr float sliderFillerThinness = 8.0f;
+			window->DrawList->AddRectFilled(
+				ImVec2(
+					frame_bb.Min.x,
+					frame_bb.Min.y + sliderFillerThinness
+				),
+				ImVec2(
+					frame_bb.Max.x,
+					frame_bb.Max.y - sliderFillerThinness
+				),
+				ImGui::GetColorU32(ImGuiCol_WindowBg),
+				g.Style.FrameRounding
+			);
+
+			window->DrawList->AddRectFilled(
+				ImVec2(
+					frame_bb.Min.x,
+					frame_bb.Min.y + sliderFillerThinness
+				),
+				ImVec2(
+					frame_bb.Max.x - size.x * (*sliderInterp),
+					frame_bb.Max.y - sliderFillerThinness
+				),
+				*holdFillerColor,
+				g.Style.FrameRounding
+			);
+
+			float sliderGrabThinnessMul = 0.5f;
+			float sliderGrabSize = (frame_bb.Max.y - sliderFillerThinness * sliderGrabThinnessMul) - (frame_bb.Min.y + sliderFillerThinness * sliderGrabThinnessMul);
+			window->DrawList->AddRectFilled(
+				ImVec2(
+					(frame_bb.Max.x - sliderGrabSize - size.x * (*sliderInterp)) + sliderGrabSize * 0.5f - style.WindowPadding.x * 0.5f,
+					frame_bb.Min.y + sliderFillerThinness * sliderGrabThinnessMul
+				),
+				ImVec2(
+					(frame_bb.Max.x - size.x * (*sliderInterp)) + sliderGrabSize * 0.5f - style.WindowPadding.x * 0.5f,
+					frame_bb.Max.y - sliderFillerThinness * sliderGrabThinnessMul
+				),
+				*holdGrabColor,
+				360
+			);
+
+
+			return value_changed;
+		}
+
+		bool SliderInt(const char* label, int* v, int v_min, int v_max, const char* format = "%d", ImGuiSliderFlags flags = 0)
+		{
+			return SliderScalarBar(label, ImGuiDataType_S32, v, &v_min, &v_max, format, flags);
+		}
+
+		bool SliderFloat(const char* label, float* v, float v_min, float v_max, const char* format = "%.3f", ImGuiSliderFlags flags = 0)
+		{
+			return SliderScalarBar(label, ImGuiDataType_Float, v, &v_min, &v_max, format, flags);
+		}
+
+		bool InputString(const char* label, const char* hint, char* buf, int buf_size, const ImVec2& size_arg = { -1, 0 })
+		{
+			ImGuiStyle& style = ImGui::GetStyle();
+			ImGuiWindow* window = ImGui::GetCurrentWindow();
+			if (window->SkipItems)
+				return false;
+
+			ImGuiIO& io = ImGui::GetIO();
+
+			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(style.ItemSpacing.x, 5));
+			ImGui::PushFont(Global::gMediumFont);
+			ImGui::Text(label);
+			ImGui::PopFont();
+
+			ImGui::PushStyleColor(ImGuiCol_FrameBg, Global::gMenuColorScheme.bgLow.Value);
+
+			// ImGui::InputTextEx function was modified to disable label render cause you cant
+			// just paste the body here due to hardcoded used function accessibility.
+			bool value_changed = ImGui::InputTextEx(label, hint, buf, buf_size, size_arg, 0);
+			ImGui::PopStyleColor();
+			ImGui::PopStyleVar();
+			window->DC.CursorPos.y += style.ItemSpacing.y / 2.0f;
+
+			return value_changed;
+		}
+
+		bool InputScalar(const char* label, ImGuiDataType data_type, void* p_data, const char* hint = NULL, const char* format = NULL, 
+			const ImVec2& size_arg = { -1, 0 })
+		{
+			ImGuiContext& g = *GImGui;
+			ImGuiStyle& style = ImGui::GetStyle();
+			ImGuiWindow* window = ImGui::GetCurrentWindow();
+
+			if (window->SkipItems)
+				return false;
+
+			ImGuiIO& io = ImGui::GetIO();
+
+			if (format == NULL)
+				format = ImGui::DataTypeGetInfo(data_type)->PrintFmt;
+
+			char buf[64];
+			ImGui::DataTypeFormatString(buf, IM_ARRAYSIZE(buf), data_type, p_data, format);
+
+			bool value_changed = false;
+			if (InputString(label, hint, buf, IM_ARRAYSIZE(buf)))
+			{
+				value_changed = ImGui::DataTypeApplyFromText(buf, data_type, p_data, format);
+			}
+
+			if (value_changed)
+				ImGui::MarkItemEdited(g.LastItemData.ID);
+
+			window->DC.CursorPos.y += style.ItemSpacing.y / 2.0f;
+			return value_changed;
+		}
+
+		bool InputInt(const char* label, const char* hint, int* v)
+		{
+			return InputScalar(label, ImGuiDataType_S32, v, hint,  "%d");
+		}
+
+		bool BrowserElement(const char* label, bool selected, ImGuiSelectableFlags flags, const ImVec2& size_arg)
+		{
+			ImGuiWindow* window = ImGui::GetCurrentWindow();
+			if (window->SkipItems)
+				return false;
+
+			ImGuiContext& g = *GImGui;
+			const ImGuiStyle& style = g.Style;
+
+			// Submit label or explicit size to ItemSize(), whereas ItemAdd() will submit a larger/spanning rectangle.
+			ImGuiID id = window->GetID(label);
+			ImVec2 label_size = ImGui::CalcTextSize(label, NULL, true);
+			ImVec2 size(size_arg.x != 0.0f ? size_arg.x : label_size.x, size_arg.y != 0.0f ? size_arg.y : label_size.y);
+			ImVec2 pos = window->DC.CursorPos;
+			pos.y += window->DC.CurrLineTextBaseOffset;
+			ImGui::ItemSize(size, 0.0f);
+
+			// Fill horizontal space
+			// We don't support (size < 0.0f) in Selectable() because the ItemSpacing extension would make explicitly right-aligned sizes not visibly match other widgets.
+			const bool span_all_columns = (flags & ImGuiSelectableFlags_SpanAllColumns) != 0;
+			const float min_x = span_all_columns ? window->ParentWorkRect.Min.x : pos.x;
+			const float max_x = span_all_columns ? window->ParentWorkRect.Max.x : window->WorkRect.Max.x;
+			if (size_arg.x == 0.0f || (flags & ImGuiSelectableFlags_SpanAvailWidth))
+				size.x = ImMax(label_size.x, max_x - min_x);
+
+			// Text stays at the submission position, but bounding box may be extended on both sides
+			const ImVec2 text_min = pos + ImVec2(style.FramePadding.x + 3, 0);
+			const ImVec2 text_max(min_x + size.x, pos.y + size.y);
+
+			// Selectables are meant to be tightly packed together with no click-gap, so we extend their box to cover spacing between selectable.
+			ImRect bb(min_x, pos.y, text_max.x, text_max.y);
+			if ((flags & ImGuiSelectableFlags_NoPadWithHalfSpacing) == 0)
+			{
+				const float spacing_x = span_all_columns ? 0.0f : style.ItemSpacing.x;
+				const float spacing_y = style.ItemSpacing.y;
+				const float spacing_L = IM_TRUNC(spacing_x * 0.50f);
+				const float spacing_U = IM_TRUNC(spacing_y * 0.50f);
+				bb.Min.x -= spacing_L;
+				bb.Min.y -= spacing_U;
+				bb.Max.x += (spacing_x - spacing_L);
+				bb.Max.y += (spacing_y - spacing_U);
+			}
+			//if (g.IO.KeyCtrl) { GetForegroundDrawList()->AddRect(bb.Min, bb.Max, IM_COL32(0, 255, 0, 255)); }
+
+			// Modify ClipRect for the ItemAdd(), faster than doing a PushColumnsBackground/PushTableBackgroundChannel for every Selectable..
+			const float backup_clip_rect_min_x = window->ClipRect.Min.x;
+			const float backup_clip_rect_max_x = window->ClipRect.Max.x;
+			if (span_all_columns)
+			{
+				window->ClipRect.Min.x = window->ParentWorkRect.Min.x;
+				window->ClipRect.Max.x = window->ParentWorkRect.Max.x;
+			}
+
+			const bool disabled_item = (flags & ImGuiSelectableFlags_Disabled) != 0;
+			const bool item_add = ImGui::ItemAdd(bb, id, NULL, disabled_item ? ImGuiItemFlags_Disabled : ImGuiItemFlags_None);
+			if (span_all_columns)
+			{
+				window->ClipRect.Min.x = backup_clip_rect_min_x;
+				window->ClipRect.Max.x = backup_clip_rect_max_x;
+			}
+
+			if (!item_add)
+				return false;
+
+			const bool disabled_global = (g.CurrentItemFlags & ImGuiItemFlags_Disabled) != 0;
+			if (disabled_item && !disabled_global) // Only testing this as an optimization
+				ImGui::BeginDisabled();
+
+			// FIXME: We can standardize the behavior of those two, we could also keep the fast path of override ClipRect + full push on render only,
+			// which would be advantageous since most selectable are not selected.
+			if (span_all_columns)
+			{
+				if (g.CurrentTable)
+					ImGui::TablePushBackgroundChannel();
+				else if (window->DC.CurrentColumns)
+					ImGui::PushColumnsBackground();
+				g.LastItemData.StatusFlags |= ImGuiItemStatusFlags_HasClipRect;
+				g.LastItemData.ClipRect = window->ClipRect;
+			}
+
+			// We use NoHoldingActiveID on menus so user can click and _hold_ on a menu then drag to browse child entries
+			ImGuiButtonFlags button_flags = 0;
+			if (flags & ImGuiSelectableFlags_NoHoldingActiveID) { button_flags |= ImGuiButtonFlags_NoHoldingActiveId; }
+			if (flags & ImGuiSelectableFlags_NoSetKeyOwner) { button_flags |= ImGuiButtonFlags_NoSetKeyOwner; }
+			if (flags & ImGuiSelectableFlags_SelectOnClick) { button_flags |= ImGuiButtonFlags_PressedOnClick; }
+			if (flags & ImGuiSelectableFlags_SelectOnRelease) { button_flags |= ImGuiButtonFlags_PressedOnRelease; }
+			if (flags & ImGuiSelectableFlags_AllowDoubleClick) { button_flags |= ImGuiButtonFlags_PressedOnClickRelease | ImGuiButtonFlags_PressedOnDoubleClick; }
+			if ((flags & ImGuiSelectableFlags_AllowOverlap) || (g.LastItemData.InFlags & ImGuiItemFlags_AllowOverlap)) { button_flags |= ImGuiButtonFlags_AllowOverlap; }
+
+			const bool was_selected = selected;
+			bool hovered, held;
+			bool pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held, button_flags);
+
+			// Auto-select when moved into
+			// - This will be more fully fleshed in the range-select branch
+			// - This is not exposed as it won't nicely work with some user side handling of shift/control
+			// - We cannot do 'if (g.NavJustMovedToId != id) { selected = false; pressed = was_selected; }' for two reasons
+			//   - (1) it would require focus scope to be set, need exposing PushFocusScope() or equivalent (e.g. BeginSelection() calling PushFocusScope())
+			//   - (2) usage will fail with clipped items
+			//   The multi-select API aim to fix those issues, e.g. may be replaced with a BeginSelection() API.
+			if ((flags & ImGuiSelectableFlags_SelectOnNav) && g.NavJustMovedToId != 0 && g.NavJustMovedToFocusScopeId == g.CurrentFocusScopeId)
+				if (g.NavJustMovedToId == id)
+					selected = pressed = true;
+
+			// Update NavId when clicking or when Hovering (this doesn't happen on most widgets), so navigation can be resumed with gamepad/keyboard
+			if (pressed || (hovered && (flags & ImGuiSelectableFlags_SetNavIdOnHover)))
+			{
+				if (!g.NavDisableMouseHover && g.NavWindow == window && g.NavLayer == window->DC.NavLayerCurrent)
+				{
+					ImGui::SetNavID(id, window->DC.NavLayerCurrent, g.CurrentFocusScopeId, ImGui::WindowRectAbsToRel(window, bb)); // (bb == NavRect)
+					g.NavDisableHighlight = true;
+				}
+			}
+			if (pressed)
+				ImGui::MarkItemEdited(id);
+
+			// In this branch, Selectable() cannot toggle the selection so this will never trigger.
+			if (selected != was_selected) //-V547
+				g.LastItemData.StatusFlags |= ImGuiItemStatusFlags_ToggledSelection;
+
+			// Render
+			if (hovered)
+			{
+				const ImU32 col = ImGui::GetColorU32(ImGuiCol_ChildBg);
+				ImGui::RenderFrame(bb.Min, bb.Max, col, false, g.Style.FrameRounding);
+			}
+
+
+			ImU32 col = Global::gMenuColorScheme.primaryLow;
+
+			if (selected)
+			{
+				col = Global::gMenuColorScheme.primaryHigh;
+			}
+			if (hovered)
+			{
+				col = Global::gMenuColorScheme.primaryMed;
+			}
+
+			ImGui::RenderFrame(
+				bb.Min,
+				ImVec2(bb.Min.x + 7, bb.Max.y),
+				col,
+				false,
+				0
+			);
+
+			if (g.NavId == id)
+				ImGui::RenderNavHighlight(bb, id, ImGuiNavHighlightFlags_Compact | ImGuiNavHighlightFlags_NoRounding);
+
+			if (span_all_columns)
+			{
+				if (g.CurrentTable)
+					ImGui::TablePopBackgroundChannel();
+				else if (window->DC.CurrentColumns)
+					ImGui::PopColumnsBackground();
+			}
+
+			ImGui::RenderTextClipped(text_min, text_max, label, NULL, &label_size, style.SelectableTextAlign, &bb);
+
+			// Automatically close popups
+			if (pressed && (window->Flags & ImGuiWindowFlags_Popup) && !(flags & ImGuiSelectableFlags_DontClosePopups) && !(g.LastItemData.InFlags & ImGuiItemFlags_SelectableDontClosePopup))
+				ImGui::CloseCurrentPopup();
+
+			if (disabled_item && !disabled_global)
+				ImGui::EndDisabled();
+
+			IMGUI_TEST_ENGINE_ITEM_INFO(id, label, g.LastItemData.StatusFlags);
+			return pressed; //-V1020
+		}
+
+		bool Browser(const char* label, int* index, const std::vector<std::string>* list)
+		{
+			ImGuiContext& g = *GImGui;
+			ImGuiStyle& style = ImGui::GetStyle();
+			ImGuiWindow* window = ImGui::GetCurrentWindow();
+			ImGuiID id = ImGui::GetID(label);
+
+			if (window->SkipItems)
+				return false;
+
+			const std::string& previewValue = list->empty() ? "empty list" : list->at(*index);
+			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(style.ItemSpacing.x, 5));
+			ImGui::PushFont(Global::gMediumFont);
+			ImGui::TextUnformatted(label);
+			ImGui::PopFont();
+
+			float squareRatio = g.FontSize + g.Style.FramePadding.y * 4.0f;
+			ImVec2 pos = window->DC.CursorPos;
+			ImVec2 size(
+				window->Size.x - style.WindowPadding.x * 2.0,
+				squareRatio
+			);
+			ImRect rect(pos, pos + size);
+
+			ImGui::ItemSize(size, style.FramePadding.y);
+			if (!ImGui::ItemAdd(rect, id))
+			{
+				ImGui::PopStyleVar();
+				return false;
+			}
+
+			bool hovered, held;
+			bool pressed = ImGui::ButtonBehavior(rect, id, &hovered, &held);
+			ImGuiID popup_id = ImHashStr(label);
+			bool popup_open = ImGui::IsPopupOpen(popup_id, ImGuiPopupFlags_None);
+			if (pressed && !popup_open)
+			{
+				//ImGui::OpenPopupEx(popup_id, ImGuiPopupFlags_None);
+				ImGui::OpenPopupEx(popup_id, ImGuiPopupFlags_None);
+				popup_open = true;
+			}
+
+			ImColor targetButtonColor = Global::gMenuColorScheme.primaryMed;
+			if (popup_open)
+			{
+				targetButtonColor = Global::gMenuColorScheme.primaryHigh;
+			}
+			else if (hovered)
+			{
+				targetButtonColor = Global::gMenuColorScheme.primaryLow;
+			}
+
+			ImColor* buttonColor = Global::colorContainer.Get(id, 0);
+			*buttonColor = ImLerp(
+				*buttonColor,
+				targetButtonColor,
+				g.IO.DeltaTime * 10
+			);
+
+			window->DrawList->AddRectFilled(
+				rect.Min,
+				rect.Max,
+				Global::gMenuColorScheme.bgLow,
+				style.FrameRounding
+			);
+
+			ImGui::RenderTextClipped(
+				rect.Min + style.FramePadding,
+				rect.Max,
+				previewValue.c_str(),
+				NULL,
+				NULL
+			);
+
+			window->DrawList->AddRectFilled(
+				ImVec2(rect.Max.x - squareRatio, rect.Min.y),
+				rect.Max,
+				*buttonColor,
+				style.FrameRounding
+			);
+
+			ImGui::PushStyleColor(ImGuiCol_Text, ImColor(255, 255, 255).Value);
+			ImGui::SetWindowFontScale(0.75f);
+			ImGui::PushFont(Global::gIconFont);
+			ImGui::RenderTextClipped(
+				ImVec2(rect.Max.x - squareRatio + style.FramePadding.y * 2.0, rect.Min.y - style.FramePadding.y),
+				ImVec2(rect.Max.x - style.FramePadding.y * 2.0, rect.Max.y - style.FramePadding.y * 2.0),
+				ICON_FA_LIST,
+				nullptr,
+				nullptr,
+				ImVec2(0, style.FramePadding.y / 2)
+			);
+			ImGui::PopFont();
+			ImGui::SetWindowFontScale(1.0f);
+			ImGui::PopStyleColor();
+
+			if (!popup_open)
+			{
+				ImGui::PopStyleVar();
+				window->DC.CursorPos.y += style.ItemSpacing.y / 2.0f;
+				return false;
+			}
+
+			std::string searchFrameId = std::string(label).append("-searchFrame");
+			std::string listId = std::string(label).append("-listId");
+
+			const auto popupFlags = ImGuiWindowFlags_Popup | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar |
+				ImGuiChildFlags_AlwaysUseWindowPadding | ImGuiWindowFlags_NoResize | ImGuiChildFlags_AutoResizeY;
+
+			char name[16];
+			ImFormatString(name, IM_ARRAYSIZE(name), "##Combo_%02d", g.BeginComboDepth); // Recycle windows based on depth
+
+			ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding, style.WindowRounding);
+			if (ImGui::Begin(name, NULL, popupFlags))
+			{
+				static char searchBuffer[255];
+				static int totalResultFound = 0;
+
+				if (pressed)
+				{
+					strcpy(searchBuffer, "");
+				}
+
+				ImGui::SetWindowSize(ImVec2(300, 500));
+
+				ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 0);
+				ImGui::BeginChild(searchFrameId.c_str(), { -1.0, 0.0 }, ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_AlwaysUseWindowPadding);
+				{
+					ImGui::PopStyleVar();
+
+					ImGui::PushFont(Global::gLargeFont);
+					ImGui::TextUnformatted(label);
+					ImGui::PopFont();
+					ImGui::Separator();
+					InputString("Search", nullptr, searchBuffer, 255);
+					ImGui::Text("Result found: %i", totalResultFound);
+					ImGui::EndChild();
+
+				}
+				ImGui::PushFont(Global::gMediumFont);
+				Frame(listId.c_str(), { -1, -1 });
+				{
+					bool valueChanged = false;
+					if (strlen(searchBuffer) == 0)
+					{
+						int iterateCount = list->size();// > maxResult ? maxResult : list->size();
+						totalResultFound = iterateCount;
+
+						for (int i = 0; i < iterateCount; i++)
+						{
+							const std::string& val = list->at(i);
+							ImGui::PushID(i);
+							const bool itemSelected = (i == *index);
+							if (BrowserElement(val.c_str(), itemSelected, 0, ImVec2()))
+							{
+								*index = i;
+								valueChanged = true;
+							}
+
+							if (itemSelected)
+							{
+								ImGui::SetItemDefaultFocus();
+							}
+
+							ImGui::PopID();
+						}
+					}
+					else
+					{
+						std::vector<std::pair<int, const std::string&>> queryList = SearchSubstring(list, searchBuffer, 0);
+						totalResultFound = queryList.size();
+
+						for (int i = 0; i < queryList.size(); i++)
+						{
+							std::pair<int, const std::string&> it = queryList.at(i);
+							const std::string& val = it.second;
+
+							ImGui::PushID(i);
+							const bool itemSelected = (it.first == *index);
+							if (BrowserElement(val.c_str(), itemSelected, 0, ImVec2()))
+							{
+								*index = it.first;
+								valueChanged = true;
+							}
+
+							if (itemSelected)
+							{
+								ImGui::SetItemDefaultFocus();
+							}
+
+							ImGui::PopID();
+						}
+					}
+
+					if (valueChanged)
+					{
+						ImGui::CloseCurrentPopup();
+					}
+
+					if (ImGui::IsKeyPressed(ImGuiKey_Escape))
+					{
+						ImGui::CloseCurrentPopup();
+					}
+
+					EndFrame();
+				}
+				ImGui::PopFont();
+				ImGui::EndPopup();
+			}
+
+			ImGui::PopStyleVar(2);
+			window->DC.CursorPos.y += style.ItemSpacing.y / 2.0f;
+			return true;
+		}
+
+		bool Mode(const char* label, int* index, const std::vector<std::string>* modes)
+		{
+			ImGuiStyle& style = ImGui::GetStyle();
+			ImGuiWindow* window = ImGui::GetCurrentWindow();
+			ImGuiIO& io = ImGui::GetIO();
+
+			if (window->SkipItems)
+				return false;
+
+			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(style.ItemSpacing.x, style.ItemSpacing.y / 2.0f));
+			ImGui::PushFont(Global::gMediumFont);
+			ImGui::Text(label);
+			ImGui::PopFont();
+
+			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8, style.FramePadding.y));
+			for (int i = 0; i < modes->size(); i++)
+			{
+				const std::string& modeLabel = modes->at(i);
+
+				bool disable = i == *index;
+				if (ToggableButton(modeLabel.c_str(), disable))
+				{
+					*index = i;
+				}
+
+				if (i < modes->size() - 1)
+				{
+					ImGui::SameLine();
+				}
+			}
+
+			ImGui::PopStyleVar(2);
+			window->DC.CursorPos.y += style.ItemSpacing.y;
+
+			return true;
+		}
+
+		bool TabItemEx(ImGuiTabBar* tab_bar, const char* label, bool* p_open, ImGuiTabItemFlags flags, ImGuiWindow* docked_window)
+		{
+			// Layout whole tab bar if not already done
+			ImGuiContext& g = *GImGui;
+			if (tab_bar->WantLayout)
+			{
+				ImGuiNextItemData backup_next_item_data = g.NextItemData;
+				ImGui::TabBarLayout(tab_bar);
+				g.NextItemData = backup_next_item_data;
+			}
+			ImGuiWindow* window = g.CurrentWindow;
+			if (window->SkipItems)
+				return false;
+
+			const ImGuiStyle& style = g.Style;
+			const ImGuiID id = ImGui::TabBarCalcTabID(tab_bar, label, docked_window);
+
+			// If the user called us with *p_open == false, we early out and don't render.
+			// We make a call to ItemAdd() so that attempts to use a contextual popup menu with an implicit ID won't use an older ID.
+			IMGUI_TEST_ENGINE_ITEM_INFO(id, label, g.LastItemData.StatusFlags);
+			if (p_open && !*p_open)
+			{
+				ImGui::ItemAdd(ImRect(), id, NULL, ImGuiItemFlags_NoNav);
+				return false;
+			}
+
+			IM_ASSERT(!p_open || !(flags & ImGuiTabItemFlags_Button));
+			IM_ASSERT((flags & (ImGuiTabItemFlags_Leading | ImGuiTabItemFlags_Trailing)) != (ImGuiTabItemFlags_Leading | ImGuiTabItemFlags_Trailing)); // Can't use both Leading and Trailing
+
+			// Store into ImGuiTabItemFlags_NoCloseButton, also honor ImGuiTabItemFlags_NoCloseButton passed by user (although not documented)
+			if (flags & ImGuiTabItemFlags_NoCloseButton)
+				p_open = NULL;
+			else if (p_open == NULL)
+				flags |= ImGuiTabItemFlags_NoCloseButton;
+
+			// Acquire tab data
+			ImGuiTabItem* tab = ImGui::TabBarFindTabByID(tab_bar, id);
+			bool tab_is_new = false;
+			if (tab == NULL)
+			{
+				tab_bar->Tabs.push_back(ImGuiTabItem());
+				tab = &tab_bar->Tabs.back();
+				tab->ID = id;
+				tab_bar->TabsAddedNew = tab_is_new = true;
+			}
+			tab_bar->LastTabItemIdx = (ImS16)tab_bar->Tabs.index_from_ptr(tab);
+
+			// Calculate tab contents size
+			ImGui::PushFont(Global::gLargeFont);
+			ImVec2 label_size = ImGui::CalcTextSize(label, nullptr, true);
+			ImVec2 size = ImVec2(
+				label_size.x + style.ItemSpacing.x * 4.0f, 
+				tab_bar->BarRect.Max.y - tab_bar->BarRect.Min.y
+			);
+			tab->Width = size.x;
+			tab->ContentWidth = size.x;
+			tab->RequestedWidth = size.x;
+			tab->BeginOrder = tab_bar->TabsActiveCount++;
+
+			const bool tab_bar_appearing = (tab_bar->PrevFrameVisible + 1 < g.FrameCount);
+			const bool tab_bar_focused = (tab_bar->Flags & ImGuiTabBarFlags_IsFocused) != 0;
+			const bool tab_appearing = (tab->LastFrameVisible + 1 < g.FrameCount);
+			const bool tab_just_unsaved = (flags & ImGuiTabItemFlags_UnsavedDocument) && !(tab->Flags & ImGuiTabItemFlags_UnsavedDocument);
+			const bool is_tab_button = (flags & ImGuiTabItemFlags_Button) != 0;
+			tab->LastFrameVisible = g.FrameCount;
+			tab->Flags = flags;
+
+			// Append name _WITH_ the zero-terminator
+			if (docked_window != NULL)
+			{
+				IM_ASSERT(docked_window == NULL); // master branch only
+			}
+			else
+			{
+				tab->NameOffset = (ImS32)tab_bar->TabsNames.size();
+				tab_bar->TabsNames.append(label, label + strlen(label) + 1);
+			}
+
+			// Update selected tab
+			if (!is_tab_button)
+			{
+				if (tab_appearing && (tab_bar->Flags & ImGuiTabBarFlags_AutoSelectNewTabs) && tab_bar->NextSelectedTabId == 0)
+					if (!tab_bar_appearing || tab_bar->SelectedTabId == 0)
+						ImGui::TabBarQueueFocus(tab_bar, tab); // New tabs gets activated
+				if ((flags & ImGuiTabItemFlags_SetSelected) && (tab_bar->SelectedTabId != id)) // _SetSelected can only be passed on explicit tab bar
+					ImGui::TabBarQueueFocus(tab_bar, tab);
+			}
+
+			// Lock visibility
+			// (Note: tab_contents_visible != tab_selected... because CTRL+TAB operations may preview some tabs without selecting them!)
+			bool tab_contents_visible = (tab_bar->VisibleTabId == id);
+			if (tab_contents_visible)
+				tab_bar->VisibleTabWasSubmitted = true;
+
+			// On the very first frame of a tab bar we let first tab contents be visible to minimize appearing glitches
+			if (!tab_contents_visible && tab_bar->SelectedTabId == 0 && tab_bar_appearing)
+				if (tab_bar->Tabs.Size == 1 && !(tab_bar->Flags & ImGuiTabBarFlags_AutoSelectNewTabs))
+					tab_contents_visible = true;
+
+			// Note that tab_is_new is not necessarily the same as tab_appearing! When a tab bar stops being submitted
+			// and then gets submitted again, the tabs will have 'tab_appearing=true' but 'tab_is_new=false'.
+			if (tab_appearing && (!tab_bar_appearing || tab_is_new))
+			{
+				ImGui::PopFont();
+				ImGui::ItemAdd(ImRect(), id, NULL, ImGuiItemFlags_NoNav);
+				if (is_tab_button)
+					return false;
+				return tab_contents_visible;
+			}
+
+			if (tab_bar->SelectedTabId == id)
+				tab->LastFrameSelected = g.FrameCount;
+
+			// Backup current layout position
+			const ImVec2 backup_main_cursor_pos = window->DC.CursorPos;
+
+			// Layout
+			const bool is_central_section = (tab->Flags & ImGuiTabItemFlags_SectionMask_) == 0;
+			if (is_central_section)
+				window->DC.CursorPos = tab_bar->BarRect.Min + ImVec2(IM_TRUNC(tab->Offset - tab_bar->ScrollingAnim), 0.0f);
+			else
+				window->DC.CursorPos = tab_bar->BarRect.Min + ImVec2(tab->Offset, 0.0f);
+			ImVec2 pos = window->DC.CursorPos;
+			ImRect bb(pos, pos + size);
+
+			// We don't have CPU clipping primitives to clip the CloseButton (until it becomes a texture), so need to add an extra draw call (temporary in the case of vertical animation)
+			const bool want_clip_rect = is_central_section && (bb.Min.x < tab_bar->ScrollingRectMinX || bb.Max.x > tab_bar->ScrollingRectMaxX);
+			if (want_clip_rect)
+				ImGui::PushClipRect(ImVec2(ImMax(bb.Min.x, tab_bar->ScrollingRectMinX), bb.Min.y - 1), ImVec2(tab_bar->ScrollingRectMaxX, bb.Max.y), true);
+
+			ImVec2 backup_cursor_max_pos = window->DC.CursorMaxPos;
+			ImGui::ItemSize(size, style.FramePadding.y);
+			window->DC.CursorMaxPos = backup_cursor_max_pos;
+
+			if (!ImGui::ItemAdd(bb, id))
+			{
+				ImGui::PopFont();
+				if (want_clip_rect)
+					ImGui::PopClipRect();
+				window->DC.CursorPos = backup_main_cursor_pos;
+				return tab_contents_visible;
+			}
+
+			// Click to Select a tab
+			// Allow the close button to overlap
+			ImGuiButtonFlags button_flags = ((is_tab_button ? ImGuiButtonFlags_PressedOnClickRelease : ImGuiButtonFlags_PressedOnClick) | ImGuiButtonFlags_AllowOverlap);
+			if (g.DragDropActive)
+				button_flags |= ImGuiButtonFlags_PressedOnDragDropHold;
+			bool hovered, held;
+			bool pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held, button_flags);
+			if (pressed && !is_tab_button)
+				ImGui::TabBarQueueFocus(tab_bar, tab);
+
+			// Drag and drop: re-order tabs
+			if (held && !tab_appearing && ImGui::IsMouseDragging(0))
+			{
+				if (!g.DragDropActive && (tab_bar->Flags & ImGuiTabBarFlags_Reorderable))
+				{
+					// While moving a tab it will jump on the other side of the mouse, so we also test for MouseDelta.x
+					if (g.IO.MouseDelta.x < 0.0f && g.IO.MousePos.x < bb.Min.x)
+					{
+						ImGui::TabBarQueueReorderFromMousePos(tab_bar, tab, g.IO.MousePos);
+					}
+					else if (g.IO.MouseDelta.x > 0.0f && g.IO.MousePos.x > bb.Max.x)
+					{
+						ImGui::TabBarQueueReorderFromMousePos(tab_bar, tab, g.IO.MousePos);
+					}
+				}
+			}
+
+			// Render tab shape
+			ImDrawList* display_draw_list = window->DrawList;
+			ImGui::RenderNavHighlight(bb, id);
+			ImGui::RenderTextClipped(bb.Min, bb.Max, label, NULL, &label_size, style.ButtonTextAlign, &bb);
+
+			ImGui::PopFont();
+
+			float* selectLerp = Global::floatContainer.Get(id, 0, 1);
+			*selectLerp = InterpHelper::Lerp(*selectLerp + g.IO.DeltaTime * 2 * (tab_contents_visible ? 1.0f : -1.0f));
+
+			ImRect* selectionLineRect = Global::rectContainer.Get(tab_bar->ID, 0);
+			if (tab_contents_visible)
+			{
+				constexpr float lineHeight = 5;
+				selectionLineRect->Min.x = ImLerp(
+					selectionLineRect->Min.x,
+					bb.Min.x,
+					*selectLerp
+				);
+
+				selectionLineRect->Max.x = ImLerp(
+					selectionLineRect->Max.x,
+					bb.Max.x,
+					*selectLerp
+				);
+
+				selectionLineRect->Min.y = bb.Min.y;
+				selectionLineRect->Max.y = bb.Max.y - (size.y - lineHeight);
+
+				window->DrawList->AddRectFilled(
+					selectionLineRect->Min,
+					selectionLineRect->Max,
+					Global::gMenuColorScheme.primaryMed,
+					0
+				);
+			}
+
+			// Select with right mouse button. This is so the common idiom for context menu automatically highlight the current widget.
+			const bool hovered_unblocked = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup);
+			if (hovered_unblocked && (ImGui::IsMouseClicked(1) || ImGui::IsMouseReleased(1)) && !is_tab_button)
+				ImGui::TabBarQueueFocus(tab_bar, tab);
+
+			// Restore main window position so user can draw there
+			if (want_clip_rect)
+				ImGui::PopClipRect();
+			window->DC.CursorPos = backup_main_cursor_pos;
+
+			IM_ASSERT(!is_tab_button || !(tab_bar->SelectedTabId == tab->ID && is_tab_button)); // TabItemButton should not be selected
+			if (is_tab_button)
+				return pressed;
+			return tab_contents_visible;
+		}
+
+		bool BeginTabItem(const char* label, bool* p_open, ImGuiTabItemFlags flags = 0)
+		{
+			ImGuiContext& g = *GImGui;
+			ImGuiWindow* window = g.CurrentWindow;
+			if (window->SkipItems)
+				return false;
+
+			ImGuiTabBar* tab_bar = g.CurrentTabBar;
+			if (tab_bar == NULL)
+			{
+				IM_ASSERT_USER_ERROR(tab_bar, "Needs to be called between BeginTabBar() and EndTabBar()!");
+				return false;
+			}
+			IM_ASSERT(!(flags & ImGuiTabItemFlags_Button));
+
+			bool ret = TabItemEx(tab_bar, label, p_open, flags, NULL);
+			if (ret && !(flags & ImGuiTabItemFlags_NoPushId))
+			{
+				ImGuiTabItem* tab = &tab_bar->Tabs[tab_bar->LastTabItemIdx];
+				ImGui::PushOverrideID(tab->ID); 
+			}
+			return ret;
+		}
+
+		void EndTabItem()
+		{
+			ImGui::EndTabItem();
+		}
+
+		bool BeginTabBar(const char* str_id, float height, ImGuiTabBarFlags flags = 0)
+		{
+			ImGuiContext& g = *GImGui;
+			ImGuiWindow* window = g.CurrentWindow;
+			if (window->SkipItems)
+				return false;
+
+			ImGuiID id = window->GetID(str_id);
+			ImGuiTabBar* tab_bar = g.TabBars.GetOrAddByKey(id);
+
+			ImRect tab_bar_bb = ImRect(
+				window->DC.CursorPos.x,
+				window->DC.CursorPos.y,
+				window->WorkRect.Max.x,
+				window->DC.CursorPos.y + height
+			);
+			tab_bar->ID = id;
+			tab_bar->SeparatorMinX = tab_bar->BarRect.Min.x - IM_TRUNC(window->WindowPadding.x * 0.5f);
+			tab_bar->SeparatorMaxX = tab_bar->BarRect.Max.x + IM_TRUNC(window->WindowPadding.x * 0.5f);
+			return ImGui::BeginTabBarEx(tab_bar, tab_bar_bb, ImGuiTabBarFlags_None);
+		}
+	}
+
+	namespace TagService
+	{
+		std::unordered_map<std::string, std::vector< UIComponents::IComponent*>*> taggedComponents;
+
+		std::optional<std::vector< UIComponents::IComponent*>*> GetTaggedComponents(const char* tag)
+		{
+			auto it = taggedComponents.find(std::string(tag));
+
+			if (it == taggedComponents.end())
+			{
+				return std::nullopt;
+			}
+
+			return it->second;
+		}
+
+		void TagComponent(const char* tag, UIComponents::IComponent* component)
+		{
+			auto key = std::string(tag);
+			auto it = taggedComponents.find(key);
+
+			if (it == taggedComponents.end())
+			{
+				auto alllocatedList = new std::vector<UIComponents::IComponent*>;
+				alllocatedList->push_back(component);
+				taggedComponents.insert({ key, alllocatedList });
+			}
+			else
+			{
+				it->second->push_back(component);
+			}
+		}
+
+		void IterateTaggedComponents(const char* tag, std::function<void(UIComponents::IComponent*)> func)
+		{
+			auto comps = TagService::GetTaggedComponents(tag);
+			if (comps.has_value())
+			{
+				for (auto& v : *comps.value())
+				{
+					func(v);
+				}
+			}
+		}
+
+		void ToggleTagVisibility(const char* tag, bool toggle)
+		{
+			IterateTaggedComponents(tag, [&](UIComponents::IComponent* comp)
+			{
+				comp->visible = toggle;
+			});
+		}
+	}
+
+	void RenderGroupFrame(UIComponents::Tab* tab)
+	{
+		if (tab == nullptr) return;
+
+		std::string leftBodyId = tab->label + "-body-left";
+		std::string rightBodyId = tab->label + "-body-right";
+
+		if (tab->splitType == UIComponents::GroupSplitType::NO_SPLIT)
+		{	
+			tab->RenderChildren();
+		}
+		else if(tab->splitType == UIComponents::GroupSplitType::HALF)
+		{
+			using UIComponents::GroupPlacementType;
+
+			ImVec2 itemSpacing = ImGui::GetStyle().ItemSpacing;
+			ImVec2 containerSize = ImGui::GetWindowSize();
+
+			ImVec2 leftBodySize((containerSize.x / 2) - itemSpacing.x * 2, 0.0);
+			ImVec2 rightBodySize(-1.0, 0.0);
+
+			std::vector<UIComponents::Group*> leftGroupsList;
+			std::vector<UIComponents::Group*> rightGroupsList;
+
+			UIComponents::GroupPlacementType autoPlacementType = GroupPlacementType::LEFT;
+
+			for (size_t i = 0; i < tab->children.size(); i++)
+			{
+				UIComponents::Group* group = (UIComponents::Group*) tab->children.at(i);
+
+				switch (group->placementType)
+				{
+					case GroupPlacementType::LEFT:
+					{
+						leftGroupsList.push_back(group);
+						autoPlacementType = GroupPlacementType::RIGHT;
+						break;
+					}
+					case GroupPlacementType::RIGHT:
+					{
+						rightGroupsList.push_back(group);
+						autoPlacementType = GroupPlacementType::LEFT;
+						break;
+					}
+					case GroupPlacementType::AUTO:
+					{
+						if (autoPlacementType == GroupPlacementType::LEFT)
+						{
+							leftGroupsList.push_back(group);
+							autoPlacementType = GroupPlacementType::RIGHT;
+						}
+						else if (autoPlacementType == GroupPlacementType::RIGHT)
+						{
+							rightGroupsList.push_back(group);
+							autoPlacementType = GroupPlacementType::LEFT;
+						}
+						break;
+					}
+				}
+			}
+
+			Widgets::Frame(leftBodyId.c_str(), leftBodySize, ImGuiChildFlags_AutoResizeY);
+			{
+				for (UIComponents::Group* queue : leftGroupsList)
+				{
+					Widgets::Group(queue);
+				}
+
+				ImGui::EndChild();
+			}
+			ImGui::SameLine();
+
+			Widgets::Frame(rightBodyId.c_str(), rightBodySize, ImGuiChildFlags_AutoResizeY);
+			{
+				for (UIComponents::Group* queue : rightGroupsList)
+				{
+					Widgets::Group(queue);
+				}
+
+				Widgets::EndFrame();
+			}
+		}
+	}
+
+	void MainWindow(UIComponents::MainWindow* windowComponent)
+	{
+		auto WindowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar;
+		if (ImGui::Begin("#MainWindow", nullptr, WindowFlags))
+		{
+			ImVec2 itemSpacing = ImGui::GetStyle().ItemSpacing;
+			ImGui::SetWindowSize(windowComponent->windowSize);
+
+			if(Widgets::Frame("#Selection", { -1, -1 }, 0));
+			{
+
+				ImGuiStyle& style = ImGui::GetStyle();
+				ImGuiWindow* window = ImGui::GetCurrentWindow();
+				ImVec2 parentSize = ImGui::GetWindowSize();
+
+				ImVec2 logoSectionSize(50, 50);
+				ImVec2 tabColumnSize(logoSectionSize.x, parentSize.y - logoSectionSize.x - itemSpacing.y);
+
+				Widgets::Frame("#Logo", logoSectionSize);
+				{
+					//ImGui::Image(Global::gMenuLogo, logoSectionSize);
+					//ImGui::SetWindowFontScale(2.0f);
+					ImGui::SetCursorPosY(ImGui::GetStyle().FramePadding.y * 2.0f);
+					ImGui::PushFont(Global::gExtraLargeFont);
+					ImGui::TextUnformatted("Nzi");
+					ImGui::PopFont();
+					//ImGui::SetWindowFontScale(1.0f);
+					Widgets::EndFrame();
+				}
+
+				//ImVec2 columnPos = ImGui::GetWindowPos();
+				//ImVec2 columnSize = ImGui::GetWindowSize();
+
+				const ImVec2 sectionColumnSeperatorStart = ImVec2(
+					window->DC.CursorPos.x + 50 - 2,
+					window->DC.CursorPos.y + logoSectionSize.y + style.WindowPadding.y
+				);
+
+				const ImVec2 sectionColumnSeperatorEnd = ImVec2(
+					window->DC.CursorPos.x + 50,
+					window->DC.CursorPos.y + window->Size.y
+				);
+
+				ImGui::GetWindowDrawList()->AddRectFilled(
+					sectionColumnSeperatorStart,
+					sectionColumnSeperatorEnd,
+					ImGui::GetColorU32(ImGuiCol_ChildBg),
+					0
+				);
+
+				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
+				ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0);
+
+				//windowComponent->RenderChildren();
+
+				ImGui::PopStyleVar(2);
+
+				ImGui::SameLine();
+				window->DC.CursorPos.y = window->DC.CursorStartPos.y;
+				if (Widgets::Frame("#MainBody", { -1, -1 }, 0))
+				{
+					if (Widgets::BeginTabBar("#TabBar", 50))
+					{
+						if (Global::selectedSection)
+							Global::selectedSection->RenderChildren();
+
+						ImGui::EndTabBar();
+					}
+				}
+				Widgets::EndFrame();
+
+			}
+			Widgets::EndFrame();
+			ImGui::End();
+		}
+	}
+
+	void SaveColorScheme(const std::string& path)
+	{
+		char colorSchemeBuffer[sizeof(MenuColorScheme)];
+		memcpy(colorSchemeBuffer, &Global::gMenuColorScheme, sizeof(MenuColorScheme));
+
+		std::ofstream wStream(path, std::ios::binary);
+		if (!wStream.is_open())
+		{
+			throw std::runtime_error("No such file.");
+		}
+
+		wStream.write(colorSchemeBuffer, sizeof(MenuColorScheme));
+		wStream.close();
+	}
+
+	MenuColorScheme ReadColorScheme(const std::string& path)
+	{
+		char colorSchemeBuffer[sizeof(MenuColorScheme)];
+		memcpy(colorSchemeBuffer, &Global::gMenuColorScheme, sizeof(MenuColorScheme));
+
+		std::ifstream rStream(path, std::ios::binary);
+		if (!rStream.is_open())
+		{
+			throw std::runtime_error("No such file.");
+		}
+
+		rStream.read(colorSchemeBuffer, sizeof(MenuColorScheme));
+		rStream.close();
+
+		return *reinterpret_cast<MenuColorScheme*>(colorSchemeBuffer);
+	}
+
+	void ManageDefaultTheme()
+	{
+		ImGuiStyle& style = ImGui::GetStyle();
+		style.Colors[ImGuiCol_TableBorderLight] = ImColor();
+		style.Colors[ImGuiCol_TableBorderStrong] = ImColor();
+		style.Colors[ImGuiCol_WindowBg] = Global::gMenuColorScheme.bgLow;
+		style.Colors[ImGuiCol_ChildBg] = Global::gMenuColorScheme.bgMed;
+		style.Colors[ImGuiCol_PopupBg] = Global::gMenuColorScheme.bgLow;
+		style.Colors[ImGuiCol_TitleBgCollapsed] = Global::gMenuColorScheme.bgLow;
+		style.Colors[ImGuiCol_TitleBgActive] = Global::gMenuColorScheme.bgLow;
+		style.Colors[ImGuiCol_Header] = Global::gMenuColorScheme.bgLow;
+		style.Colors[ImGuiCol_HeaderActive] = Global::gMenuColorScheme.bgLow;
+		style.Colors[ImGuiCol_HeaderHovered] = Global::gMenuColorScheme.bgLow;
+		style.Colors[ImGuiCol_ScrollbarBg] = ImColor();
+		style.Colors[ImGuiCol_ScrollbarGrab] = Global::gMenuColorScheme.bgHigh;
+		style.Colors[ImGuiCol_ScrollbarGrabHovered] = Global::gMenuColorScheme.primaryMed;
+		style.Colors[ImGuiCol_ScrollbarGrabActive] = Global::gMenuColorScheme.primaryMed;
+		style.Colors[ImGuiCol_Button] = Global::gMenuColorScheme.primaryMed;
+		style.Colors[ImGuiCol_ButtonHovered] = Global::gMenuColorScheme.primaryHigh;
+		style.Colors[ImGuiCol_ButtonActive] = Global::gMenuColorScheme.primaryLow;
+		style.Colors[ImGuiCol_Text] = Global::gMenuColorScheme.textMed;
+	}
+
+	ImFont* LoadFont(ImGuiIO& io, const std::string& filepath, float fontSize, const ImFontConfig* fontCfg = NULL, const ImWchar* glyphRanges = NULL)
+	{
+		return io.Fonts->AddFontFromFileTTF(filepath.c_str(), fontSize, fontCfg, glyphRanges);
+	}
+
+	void QueueNotification(NotificationType notifType, const std::string& message)
+	{
+		switch (notifType)
+		{
+			case NotificationType::INFO:
+			{
+				ImGui::InsertNotification({ ImGuiToastType::Info, 3000, message.c_str()});
+				break;
+			}
+			case NotificationType::WARN:
+			{
+				ImGui::InsertNotification({ ImGuiToastType::Warning, 3000, message.c_str() });
+				break;
+			}
+			case NotificationType::ERROR:
+			{
+				ImGui::InsertNotification({ ImGuiToastType::Error, 3000, message.c_str() });
+				break;
+			}
+			default:
+			{
+				break;
+			}
+		}
+	}
+
+	void OnLoad()
+	{
+		ImGuiIO& io = ImGui::GetIO();
+		ImGuiStyle& style = ImGui::GetStyle();
+		style.WindowRounding = 10;
+		style.ChildRounding = 10;
+		style.FrameRounding = 8;
+		style.TabRounding = 10;
+
+		style.WindowPadding = ImVec2(10.0, 10.0);
+		style.ItemSpacing = ImVec2(10.0, 10.0);
+
+		ImFontConfig iconConfig;
+		iconConfig.MergeMode = true;
+		iconConfig.PixelSnapH = true;
+		iconConfig.OversampleH = 3;
+		iconConfig.OversampleV = 3;
+
+		static const ImWchar iconRanges[] = {
+			ICON_MIN_FA,
+			ICON_MAX_FA,
+			0
+		};
+
+		Global::gRegularFont = UIFramework::LoadFont(io, Global::assetsPath + "\\fonts\\BuilderSans-Regular.ttf", 18.0f);
+		Global::gMediumFont = UIFramework::LoadFont(io, Global::assetsPath + "\\fonts\\BuilderSans-Bold.ttf", 20.0f);
+		Global::gLargeFont = UIFramework::LoadFont(io, Global::assetsPath + "\\fonts\\BuilderSans-Bold.ttf", 22.0f);
+		Global::gExtraLargeFont = UIFramework::LoadFont(io, Global::assetsPath + "\\fonts\\BuilderSans-ExtraBold.ttf", 40.0f);
+		Global::gIconFont = UIFramework::LoadFont(io, Global::assetsPath + "\\fonts\\FontAwesome.ttf", 23.0f, &iconConfig, iconRanges);
+
+		ManageDefaultTheme();
+	}
+
+	void OnUpdate()
+	{
+		Global::onUpdateCallback();
+
+		//ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 5.f);
+		//ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(25.f / 255.f, 25.f / 255.f, 25.f / 255.f, 100.f / 255.f));
+		//RenderNotifications();
+		//ImGui::PopStyleVar(1);
+		//ImGui::PopStyleColor(1);
+
+		//ImGui::RenderNotifications();
+	}
+
+	void INIT(const std::string& assetsPath, MenuColorScheme colorScheme, const std::function<void()>& onUpdateCallback)
+	{
+		Global::onUpdateCallback = onUpdateCallback;
+		Global::assetsPath = assetsPath;
+		Global::gMenuColorScheme = colorScheme;
+
+		UIBackend::START(OnLoad, OnUpdate);
+	}
+}
+
+namespace UIComponents
+{
+	void IRender::Render()
+	{
+
+	}
+
+	void IComponent::RenderChildren()
+	{
+		if (!this->visible)
+		{
+			return;
+		}
+
+		for (IRender* child : children)
+		{
+			if (child->visible)
+			{
+				child->Render();
+			}
+		}
+	}
+
+	void IComponent::AddChild(IComponent* child)
+	{
+		// you shouldn't be adding yourself bruh
+		if (this == child)
+		{
+			return;
+		}
+
+		children.push_back(child);
+	}
+
+	void IComponent::AddTag(const char* tagname)
+	{
+		if (tagname == nullptr) return;
+		UIFramework::TagService::TagComponent(tagname, this);
+	}
+
+	IComponent::~IComponent()
+	{
+		// TODO: Handle children deconstruction
+	}
+
+	void IConfigurable::HandleConfigLoad()
+	{
+
+	}
+
+	void IConfigurable::HandleConfigSave()
+	{
+
+	}
+
+	MainWindow::MainWindow(ImVec2 windowSize)
+	{
+		this->windowSize = windowSize;
+	}
+
+	void MainWindow::Render()
+	{
+		if (this->visible)
+		{
+			UIFramework::MainWindow(this);
+		}
+	}
+
+	Section::Section(MainWindow* parentWindow, const char* icon)
+	{
+		this->icon = icon;
+		parentWindow->AddChild(this);
+	}
+
+	void Section::Render()
+	{
+		UIFramework::Widgets::Section(this);
+	}
+
+	Tab::Tab(Section* parentTab, const char* label, GroupSplitType splitType)
+	{
+		this->splitType = splitType;
+		this->label = label;
+		parentTab->AddChild(this);
+	}
+
+	void Tab::Render()
+	{
+		//ImGui::Text("Nigger %p\n%s\n", (void*)this, std::to_string(std::stacktrace::current()).c_str());
+		//UIFramework::RenderGroupFrame(this);
+
+		if (UIFramework::Widgets::BeginTabItem(this->label.c_str(), nullptr))
+		{
+			std::string id = label + "-body";
+			UIFramework::Widgets::Frame(id.c_str(), { -1, -1 });
+			{
+				UIFramework::RenderGroupFrame(this);
+				UIFramework::Widgets::EndFrame();
+			}
+			UIFramework::Widgets::EndTabItem();
+		}
+	}
+
+	Group::Group(Tab* parentTab, const char* label, GroupPlacementType placementType)
+	{
+		this->label = label;
+		this->placementType = placementType;
+		parentTab->AddChild(this);
+	}
+
+	Group::Group(Tab* parentTab, const char* label, ImVec2 intialSize, GroupPlacementType placementType) 
+		: intialSize(intialSize)
+	{
+		this->label = label;
+		this->placementType = placementType;
+		parentTab->AddChild(this);
+	}
+
+	void Group::Render()
+	{
+		UIFramework::Widgets::Group(this, this->intialSize);
+	}
+
+	Text::Text(Group* parentGroup, const char* text)
+	{
+		this->text = text;
+		parentGroup->AddChild(this);
+	}
+
+	Text::Text(Group* parentGroup, const char* text, const char* tag)
+	{
+		this->text = text;
+		this->AddTag(tag);
+		parentGroup->AddChild(this);
+	}
+
+	void Text::Render()
+	{
+		ImGui::TextUnformatted(text.c_str());
+	}
+
+	Checkbox::Checkbox(Group* parentGroup, const char* label, bool defaultValue)
+	{
+		this->label = label;
+		this->value = defaultValue;
+		parentGroup->AddChild(this);
+	}
+
+	Checkbox::Checkbox(Group* parentGroup, const char* label, const char* tag, bool defaultValue)
+	{
+		this->label = label;
+		this->value = defaultValue;
+		this->AddTag(tag);
+		parentGroup->AddChild(this);
+	}
+
+	void Checkbox::Render()
+	{
+		bool previousValue = value;
+		UIFramework::Widgets::Checkbox(label.c_str(), &value);
+
+		if (previousValue != value)
+		{
+			for (auto& event : onToggleEventEntry)
+			{
+				event(value);
+			}
+		}
+	}
+
+	bool Checkbox::IsActive() const
+	{
+		return value;
+	}
+
+	void Checkbox::OnToggle(const std::function<void(bool value)>& callback)
+	{
+		onToggleEventEntry.push_back(callback);
+	}
+
+	Button::Button(Group* parentGroup, const char* label, ButtonSizeType buttonSizeType)
+	{
+		this->label = label;
+		this->buttonSizeType = buttonSizeType;
+		parentGroup->AddChild(this);
+	}
+
+	Button::Button(Group* parentGroup, const char* label, const char* tag, ButtonSizeType buttonSizeType)
+	{
+		this->label = label;
+		this->buttonSizeType = buttonSizeType;
+		this->AddTag(tag);
+		parentGroup->AddChild(this);
+	}
+
+	void Button::Render()
+	{
+		if (UIFramework::Widgets::Button(label.c_str(), buttonSizeType))
+		{
+			for (auto& event : onClickEventEntry)
+			{
+				event();
+			}
+		}
+	}
+
+	void Button::OnClick(const std::function<void()>& callback)
+	{
+		onClickEventEntry.push_back(callback);
+	}
+
+	IntSlider::IntSlider(Group* parentGroup, const char* label, int min, int max, int defaultValue)
+	{
+		this->label = label;
+		this->min = min;
+		this->max = max;
+		this->value = defaultValue;
+		parentGroup->AddChild(this);
+	}
+
+	IntSlider::IntSlider(Group* parentGroup, const char* label, const char* tag, int min, int max, int defaultValue)
+	{
+		this->label = label;
+		this->min = min;
+		this->max = max;
+		this->value = defaultValue;
+		this->AddTag(tag);
+		parentGroup->AddChild(this);
+	}
+
+	void IntSlider::Render()
+	{
+		UIFramework::Widgets::SliderInt(label.c_str(), &value, min, max);
+	}
+
+	FloatSlider::FloatSlider(Group* parentGroup, const char* label, float min, float max, float defaultValue)
+	{
+		this->label = label;
+		this->min = min;
+		this->max = max;
+		this->value = defaultValue;
+		parentGroup->AddChild(this);
+	}
+
+	FloatSlider::FloatSlider(Group* parentGroup, const char* label, const char* tag, float min, float max, float defaultValue)
+	{
+		this->label = label;
+		this->min = min;
+		this->max = max;
+		this->value = defaultValue;
+		this->AddTag(tag);
+		parentGroup->AddChild(this);
+	}
+
+	void FloatSlider::Render()
+	{
+		UIFramework::Widgets::SliderFloat(label.c_str(), &value, min, max);
+	}
+
+	StringInput::StringInput(Group* parentGroup, const char* label, const char* defaultValue, size_t maxLength,
+		const char* hint, ImVec2 sizeArg)
+	{
+		this->label = label;
+		this->maxLength = maxLength;
+		this->sizeArg = sizeArg;
+		this->value = std::unique_ptr<char[]>(new char[maxLength]);
+		std::copy(defaultValue, defaultValue + maxLength, value.get());
+		parentGroup->AddChild(this);
+	}
+
+	StringInput::StringInput(Group* parentGroup, const char* label, const char* tag, const char* defaultValue, size_t maxLength,
+		const char* hint, ImVec2 sizeArg)
+	{
+		this->label = label;
+		this->maxLength = maxLength;
+		this->sizeArg = sizeArg;
+		this->value = std::unique_ptr<char[]>(new char[maxLength]);
+		std::copy(defaultValue, defaultValue + maxLength, value.get());
+		this->AddTag(tag);
+		parentGroup->AddChild(this);
+	}
+
+	void StringInput::Render()
+	{
+		UIFramework::Widgets::InputString(label.c_str(), hint.c_str(), value.get(), maxLength, sizeArg);
+	}
+
+	IntInput::IntInput(Group* parentGroup, const char* label, int defaultValue, int min, int max, const char* hint, ImVec2 sizeArg)
+	{
+		this->label = label;
+		this->value = defaultValue;
+		this->min = min;
+		this->max = max;
+		this->hint = hint;
+		parentGroup->AddChild(this);
+	}
+
+	IntInput::IntInput(Group* parentGroup, const char* label, const char* tag, int defaultValue, int min, int max, const char* hint, ImVec2 sizeArg)
+	{
+		this->label = label;
+		this->value = defaultValue;
+		this->min = min;
+		this->max = max;
+		this->hint = hint;
+		this->AddTag(tag);
+		parentGroup->AddChild(this);
+	}
+
+	void IntInput::Render()
+	{
+		value = std::clamp(value, min, max);
+		UIFramework::Widgets::InputInt(label.c_str(), hint.c_str(), &value);
+	}
+
+	std::string StringInput::GetValue()
+	{
+		return { this->value.get(), this->value.get() + this->maxLength };
+	}
+
+	Browser::Browser(Group* parentGroup, const char* label, const std::vector<std::string>& list, int defaultIndex)
+	{
+		this->label = label;
+		this->list = list;
+		this->index = defaultIndex;
+
+		parentGroup->AddChild(this);
+	}
+
+	Browser::Browser(Group* parentGroup, const char* label, const char* tag, const std::vector<std::string>& list, int defaultIndex)
+	{
+		this->label = label;
+		this->list = list;
+		this->index = defaultIndex;
+		this->AddTag(tag);
+		parentGroup->AddChild(this);
+	}
+
+	void Browser::Render()
+	{
+		UIFramework::Widgets::Browser(label.c_str(), &index, &list);
+	}
+
+	Mode::Mode(Group* parentGroup, const char* label, const std::vector<std::string>& modes, int defaultIndex)
+	{
+		this->label = label;
+		this->modes = modes;
+		this->index = defaultIndex;
+
+		parentGroup->AddChild(this);
+	}
+
+	Mode::Mode(Group* parentGroup, const char* label, const char* tag, const std::vector<std::string>& modes, int defaultIndex)
+	{
+		this->label = label;
+		this->modes = modes;
+		this->index = defaultIndex;
+		this->AddTag(tag);
+		parentGroup->AddChild(this);
+	}
+
+	void Mode::Render()
+	{
+		UIFramework::Widgets::Mode(label.c_str(), &index, &modes);
+	}
+
+	ColorPicker::ColorPicker(Group* parentGroup, const char* label, const ImColor& defaultColor)
+	{
+		this->label = label;
+		this->SetColor(defaultColor);
+		parentGroup->AddChild(this);
+	}
+
+	ImColor ColorPicker::GetColor()
+	{
+		return ImColor(colorBuffer[0], colorBuffer[1], colorBuffer[2], colorBuffer[3]);
+	}
+
+	void ColorPicker::SetColor(const ImColor& color)
+	{
+		this->colorBuffer[0] = color.Value.x;
+		this->colorBuffer[1] = color.Value.y;
+		this->colorBuffer[2] = color.Value.z;
+		this->colorBuffer[3] = color.Value.w;
+	}
+
+	void ColorPicker::Render()
+	{
+		ImGui::ColorPicker4(label.c_str(), colorBuffer);
+	}
+}

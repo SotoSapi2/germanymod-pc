@@ -196,7 +196,7 @@ namespace IL2CPP
 
 				bool isGeneric = method->IsGeneric();
 
-				outPut << method->GetFlagsAsString();
+				outPut << method->GetFlagsAsString() << " ";
 				Type* returnType = method->GetReturnType();
 				if (returnType->IsPassByReference())
 				{
@@ -342,7 +342,7 @@ namespace IL2CPP
 					outPut << ", " << extends[i];
 				}
 			}
-			outPut << "{" << std::endl;
+			outPut << std::endl << "{" << std::endl;
 
 			if (generatePattern)
 			{

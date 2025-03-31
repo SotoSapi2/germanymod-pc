@@ -47,7 +47,7 @@ namespace IL2CPP
 
 		MethodInfo* GetMethodByPatternNullable(const SignaturePattern& pattern, int indexOffset = 0) const;
 
-		bool CompareFieldPattern(const FieldPattern* fieldPattern) const;
+		bool CompareFieldPattern(const FieldPattern& fieldPattern) const;
 
 		bool HasMethods() const;
 

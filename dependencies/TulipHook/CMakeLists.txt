@@ -1,0 +1,47 @@
+cmake_minimum_required(VERSION 3.25)
+
+# fuck all this i only needs your assembler
+
+#[[
+set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT Embedded)
+cmake_policy(SET CMP0141 NEW)
+
+project(TulipHookRoot LANGUAGES CXX C)
+
+include(cmake/CPM.cmake)
+
+option(TULIP_LINK_SOURCE "Link to TulipHook source files, including external libs" OFF)
+
+if(TULIP_LINK_SOURCE OR PROJECT_IS_TOP_LEVEL)
+	if(ANDROID OR UNIX OR APPLE)
+		add_subdirectory(libraries/dobby)
+	endif()
+	add_subdirectory(src)
+endif()
+
+if(PROJECT_IS_TOP_LEVEL AND NOT TULIP_DONT_BUILD_TESTS)
+	add_subdirectory(test)
+endif()
+
+if (NOT TARGET GeodeResult)
+	CPMAddPackage("gh:geode-sdk/result@1.3.0")
+endif()
+
+add_library(TulipHookInclude INTERFACE)
+target_include_directories(TulipHookInclude INTERFACE
+	${TulipHookRoot_SOURCE_DIR}/include
+)
+
+target_link_libraries(TulipHookInclude INTERFACE GeodeResult)
+]]
+
+file(
+	GLOB_RECURSE 
+	GLOB
+	CONFIGURE_DEPENDS 
+	"${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp" 
+	"${CMAKE_CURRENT_SOURCE_DIR}/src/*.c"
+)
+
+add_library(TulipHook STATIC ${GLOB})
+target_include_directories(TulipHook PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")

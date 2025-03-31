@@ -1,5 +1,6 @@
 #pragma once
 #include "../Main.hpp"
+#include <type_traits>
 
 namespace IL2CPP
 {
@@ -24,13 +25,37 @@ namespace IL2CPP
 		}
 
 		template<typename T>
-		inline T* GetFieldPtr(const std::string& fieldName, int indexOffset = 0)
+		inline const T& GetFieldRef(const std::string& fieldName, int indexOffset = 0) const
+		{
+			return *(T*)GetFieldPtr(fieldName, indexOffset);
+		}
+
+		template<typename T>
+		inline const T& GetFieldRef(size_t index) const
+		{
+			return *(T*)GetFieldPtr(index);
+		}
+
+		template<typename T>
+		inline T GetFieldPtr(const std::string& fieldName, int indexOffset = 0)
+		{
+			return *(T*)GetFieldPtr(fieldName, indexOffset);
+		}
+
+		template<typename T>
+		inline T GetFieldPtr(size_t index)
+		{
+			return *(T*)GetFieldPtr(index);
+		}
+
+		template<typename T>
+		inline const T* GetFieldPtr(const std::string& fieldName, int indexOffset = 0) const
 		{
 			return (T*)GetFieldPtr(fieldName, indexOffset);
 		}
 
 		template<typename T>
-		inline T* GetFieldPtr(size_t index)
+		inline const T* GetFieldPtr(size_t index) const
 		{
 			return (T*)GetFieldPtr(index);
 		}
@@ -42,7 +67,7 @@ namespace IL2CPP
 		}
 
 		template<typename T>
-		static Object* BoxValue(Class* klass, T* value)
+		static Object* BoxValue(const Class* klass, T value)
 		{
 			if (klass == nullptr)
 			{
@@ -51,10 +76,20 @@ namespace IL2CPP
 				);
 			}
 
-			return (Object*) IMPORT::il2cpp_value_box(
-				(IMPORT::Il2CppClass*) klass, 
-				value
-			);
+			if constexpr (!std::is_pointer<T>::value)
+			{
+				return (Object*)IMPORT::il2cpp_value_box(
+					(IMPORT::Il2CppClass*)klass,
+					&value
+				);
+			}
+			else 
+			{
+				return (Object*)IMPORT::il2cpp_value_box(
+					(IMPORT::Il2CppClass*)klass,
+					value
+				);
+			}
 		}
 	};
 }

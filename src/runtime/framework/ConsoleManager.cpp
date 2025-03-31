@@ -3,6 +3,8 @@
 #include <cstdio>
 #include <Logger.hpp>
 #include "../entrypoint.hpp"
+#include <io.h>
+#include <fcntl.h>
 
 namespace ConsoleManager
 {
@@ -16,10 +18,9 @@ namespace ConsoleManager
 
 	void AllocateConsole()
 	{
+
 		AllocConsole();
-		//SetConsoleCP(CP_UTF8);
-		//SetConsoleOutputCP(936);
-		SetConsoleTitle("Skidding-tool Logs");
+		SetConsoleTitle("Logs");
 		SetConsoleCtrlHandler(OnConsoleClose, TRUE);
 		f1 = freopen("CONIN$", "rb", stdin);
 		f2 = freopen("CONOUT$", "wb", stdout);
@@ -28,13 +29,18 @@ namespace ConsoleManager
 
 	void InitializeLogger()
 	{
-		std::wstring loaderPath = GetLoaderPath();
-		Logger::SetLogfilePath(loaderPath, L"" PROJECT_NAME);
+		Logger::SetLogfilePath(
+			Logger::DebugOutputType::Stdout, 
+			GetLoaderPath() + L"\\Logs.txt", 
+			std::ios_base::app
+		);
 	}
 
 	void INIT()
 	{
+		#ifdef _DEBUG
 		AllocateConsole();
+		#endif
 		InitializeLogger();
 	}
 }

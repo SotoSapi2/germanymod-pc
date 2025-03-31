@@ -1,14 +1,39 @@
 #include <Windows.h>
 #include <imgui.h>
+#include <Logger.hpp>
 #include "../util/HookingUtil.hpp"
+#include "utils/MemPatcher.hpp"
+#include "import/PointerFunctions.hpp"
 
 namespace MouseFix
 {
 	bool isMouseShown = false;
 
+	void ToggleGameClickEvent(bool toggle)
+	{
+		using namespace IL2CPP::ClassMapping;
+		static void* ptr = GetClass("UICamera")->GetMethod("ProcessTouch")->GetPointer();
+
+		if (toggle)
+		{
+			MemPatcher::Nop(ptr);
+		}
+		else
+		{
+			MemPatcher::Restore(ptr);
+		}
+	}
+
 	void ShowMouse(bool toggle)
 	{
 		ImGui::GetIO().MouseDrawCursor = toggle;
+		ShowCursor(toggle);
+
+		if (isMouseShown != toggle)
+		{
+			ToggleGameClickEvent(toggle);
+		}
+
 		isMouseShown = toggle;
 	}
 
@@ -53,19 +78,27 @@ namespace MouseFix
 		$CallOrig(Update, _this);
 	}
 
+	//$Hook(void, set_fullScreenMode, (int fullScreenMode))
+	//{
+	//	LOG_INFO("fullScreenMode %i", fullScreenMode);
+	//	$CallOrig(set_fullScreenMode, fullScreenMode);
+	//}
+
 	void INIT()
 	{
 		using namespace IL2CPP::ClassMapping;
+
+		Screen::SetfullScreenMode(2);
 
 		$RegisterHook(
 			ClipCursorHOOK, 
 			ClipCursor
 		);
 
-		$RegisterHook(
-			ProcessTouch,
-			GetClass("UICamera")->GetMethod("ProcessTouch"),
-		);
+	/*	$RegisterHook(
+			set_fullScreenMode,
+			GetClass("Screen")->GetMethod("set_fullScreenMode"),
+		);*/
 
 		$RegisterHook(
 			Update, 

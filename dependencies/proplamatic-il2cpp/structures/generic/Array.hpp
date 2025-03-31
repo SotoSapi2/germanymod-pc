@@ -11,8 +11,7 @@ namespace IL2CPP
 		T vector[32];
 
 		public:
-		template<typename T>
-		static Array<T>* Create(Class* klass, size_t size)
+		static Array* Create(const Class* klass, size_t size)
 		{
 			if (klass == nullptr)
 			{
@@ -21,7 +20,7 @@ namespace IL2CPP
 				);
 			}
 
-			return (Array<T>*) IMPORT::il2cpp_array_new(
+			return (Array*) IMPORT::il2cpp_array_new(
 				(IMPORT::Il2CppClass*) klass, 
 				size
 			);

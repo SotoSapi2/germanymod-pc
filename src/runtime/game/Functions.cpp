@@ -15,18 +15,18 @@ namespace PlayerMoveC
 
 	IL2CPP::Object* GetSkinName(IL2CPP::Object* player)
 	{
-		return player->GetFieldRef<IL2CPP::Object*>("mySkinName");
+		return player->GetFieldPtr<IL2CPP::Object*>("mySkinName");
 	}
 
 	IL2CPP::Object* GetPlayerDamageable(IL2CPP::Object* player)
 	{
-		return player->GetFieldRef<IL2CPP::Object*>("mySkinName", -5);
+		return player->GetFieldPtr<IL2CPP::Object*>("mySkinName", -5);
 	}
 
 	IL2CPP::Object* GetPlayerCamera(IL2CPP::Object* player)
 	{
-		auto firstPerson = GetSkinName(player)->GetFieldRef<IL2CPP::Object*>("firstPersonControl");
-		auto cam = firstPerson->GetFieldRef<IL2CPP::Object*>("playerCamera");
+		auto firstPerson = GetSkinName(player)->GetFieldPtr<IL2CPP::Object*>("firstPersonControl");
+		auto cam = firstPerson->GetFieldPtr<IL2CPP::Object*>("playerCamera");
 		return cam;
 	}
 
@@ -49,6 +49,43 @@ namespace PlayerMoveC
 	bool IsEnemyTo(IL2CPP::Object* player, IL2CPP::Object* target)
 	{
 		return PlayerDamageable::IsEnemyTo(GetPlayerDamageable(player), target);
+	}
+}
+
+namespace Rocket
+{
+	void Create(const std::string& prefab, IL2CPP::Object* owner, IL2CPP::Object* ownerWepSounds, bool longLife, Vector3 pos)
+	{
+		using namespace IL2CPP::Wrapper;
+		using namespace IL2CPP::ClassMapping;
+
+		static IL2CPP::Class* rocket_class = GetClass("Rocket");
+		static IL2CPP::Class* rocketStack_class = GetClass("RocketStack");
+
+		static Method<IL2CPP::Object* (IL2CPP::Object*)> RocketInit = rocketStack_class->GetMethod(0x1);
+
+		static Method<void(IL2CPP::Object* obj, IL2CPP::Object* owner, IL2CPP::Object* wepSounds,
+			IL2CPP::String* wepName, float impulse, float power, int smoke,
+			IL2CPP::Object* optional1, int optional2)> SendRocket = rocket_class->GetMethod(0x17);
+
+		IL2CPP::Object* rocketStack = rocketStack_class->GetField(0x0)->GetValue<IL2CPP::Object*>(nullptr);
+
+		IL2CPP::Object* rocketObject = RocketInit(rocketStack);
+
+		if (rocketObject == nullptr)
+		{
+			return;
+		}	
+
+		Transform::SetPosition(GameObject::GetTransform(rocketObject), pos);
+		IL2CPP::Object* rocketComponent = GameObject::GetComponent(rocketObject, IL2CPP::String::Create("Rocket"));
+
+		if (longLife)
+		{
+			GameObject::SetName(rocketObject, IL2CPP::String::Create("ThugHunting"));
+		}
+
+		SendRocket(rocketComponent, owner, ownerWepSounds, IL2CPP::String::Create(prefab), 0.0f, 0.0f, 0, nullptr, 0);
 	}
 }
 
@@ -104,7 +141,7 @@ namespace ContentKeyRegister
 		}
 	}
 
-	bool IsKeyBannable(IL2CPP::String* key)
+	bool IsKeyBannable(const std::string& key)
 	{
 		static const std::vector<std::string> bannedKeys = {
 			"new_well_pistol",
@@ -166,15 +203,19 @@ namespace ContentKeyRegister
 		};
 
 		// ik this is a dumb check but this barely affect overall performance anyways
-		std::string keyStr = key->ToString();
 		for (const std::string& v : bannedKeys)
 		{
-			if (keyStr == v)
+			if (key == v)
 			{
 				return true;
 			}
 		}
 
 		return false;
+	}
+
+	bool IsKeyBannable(IL2CPP::String* key)
+	{
+		return IsKeyBannable(key->ToString());
 	}
 }

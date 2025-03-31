@@ -1,3 +1,12 @@
+/*
+TODO:
+- Fix flickering components when you load subtab for the first time. This bug most likey a ImGui bug.
+- Put more effort for flexible Button type.
+- Rewrite and finish notification system. (imgui_notify.h suck ass)
+- Clean up and refactor this choatic mess.
+- Hanging every Zack Zuckerberg slaves' on a rope for who contributing inventing React.
+*/
+
 #pragma once
 #define _USE_MATH_DEFINES
 #include <string>
@@ -79,7 +88,7 @@ namespace Themes
 
 namespace UIFramework
 {
-	namespace Global
+	namespace Vars
 	{
 		extern ImFont* gRegularFont;
 		extern ImFont* gMediumFont;
@@ -92,14 +101,23 @@ namespace UIFramework
 
 	namespace TagService
 	{
-		std::optional<std::vector<IComponent*>*> GetTaggedComponents(const char* tag);
+		std::optional<std::vector< UIComponents::IComponent*>*> GetTaggedComponents(const char* tag);
 
-		void TagComponent(const char* tag, IComponent* component);
+		void TagComponent(const char* tag, UIComponents::IComponent* component);
 
-		void IterateTaggedComponents(const char* tag, std::function<void(IComponent*)> func);
+		void IterateTaggedComponents(const char* tag, std::function<void(UIComponents::IComponent*)> func);
 
 		void ToggleTagVisibility(const char* tag, bool toggle);
 	}
+
+	namespace ConfigManager
+	{
+		bool LoadConfig(const std::wstring& path);
+
+		bool SaveConfig(const std::wstring& path);
+	}
+
+	void DisclaimerWindow(const ImVec2& size, const std::function<void()>& onClose);
 
 	void QueueNotification(NotificationType notifType, const std::string& message);
 

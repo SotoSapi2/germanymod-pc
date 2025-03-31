@@ -12,7 +12,11 @@ namespace IL2CPP
 		public:
 		static String* Create(const char* str);
 
+		static String* Create(const wchar_t* str, int32_t len);
+
 		static String* Create(const std::string& str);
+
+		static String* Create(const std::wstring& str);
 
 		bool Equals(String* str);
 

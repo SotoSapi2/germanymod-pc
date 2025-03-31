@@ -3,17 +3,18 @@
 
 namespace Menu
 {
+    using namespace UIComponents;
     extern bool gMenuShown;
 
     void INIT();
     
 	namespace Gameplay
 	{
-		extern Tab TAB;
+		extern Section SECTION;
 
 		namespace General
 		{
-			extern SubTab SUBTAB;
+			extern Tab TAB;
 
 			namespace Player
 			{
@@ -23,8 +24,9 @@ namespace Menu
 				extern Checkbox Godmode;
 				extern Checkbox FirerateHack;
 				extern FloatSlider Firerate;
-				extern Checkbox NoCatDelay;
 				extern Checkbox NoFixedDelay;
+
+				
 			}
 
 			namespace Bullet
@@ -100,7 +102,7 @@ namespace Menu
 
 		namespace ServerMods
 		{
-			extern SubTab SUBTAB;
+			extern Tab TAB;
 
 			namespace Modifier
 			{
@@ -156,11 +158,36 @@ namespace Menu
 
 	namespace Account
 	{
-		extern Tab TAB;
+		extern Section SECTION;
 
 		namespace Unlocker
 		{
-			extern SubTab SUBTAB;
+			extern Tab TAB;
+
+			namespace WeaponUnlocker
+			{
+				extern Group GROUP;
+
+				extern Text NOTE;
+
+				extern Mode UnlockMode;
+
+				extern IntSlider FromIndexInput;
+				extern IntSlider ToIndexInput;
+
+				extern Browser WeaponBrowser;
+
+				extern IntInput WeaponLevel;
+				extern Browser WeaponRarity;
+
+				extern Button UnlockButton;
+				extern Button RemoveButton;
+
+				extern Button UnlockRGBSet;
+				extern Button UnlockSecret;
+
+				
+			}
 
 			namespace WeaponSkinUnlocker
 			{
@@ -178,31 +205,35 @@ namespace Menu
 				
 			}
 
-			namespace WeaponUnlocker
+			namespace GadgetUnlocker
 			{
 				extern Group GROUP;
 
-				extern Text NOTE;
-
 				extern Mode UnlockMode;
 
-				extern IntSlider FromIndexInput;
-				extern IntSlider ToIndexInput;
+				extern Browser GadgetBrowser;
 
-				extern Browser WeaponBrowser;
-
-				extern IntSlider WeaponLevel;
-				extern Browser WeaponRarity;
+				extern IntInput GadgetLevel;
 
 				extern Button UnlockButton;
-				extern Button RemoveButton;
 
-				extern Button UnlockRGBSet;
-				extern Button UnlockSecret;
+				extern Button UnlockAllButton;
 
 				
 			}
 
+			namespace ModuleUnlocker
+			{
+				extern Group GROUP;
+
+				extern IntInput ModuleAmount;
+				extern IntInput UpgradeAmount;
+
+				extern Button UnlockModule;
+				extern Button UpgradeModule;
+
+				
+			}
 
 			namespace RoyaleUnlocker
 			{
@@ -214,21 +245,6 @@ namespace Menu
 				extern IntSlider ToIndexInput;
 
 				extern Browser RoyalesBrowser;
-
-				extern Button UnlockButton;
-
-				
-			}
-
-			namespace GadgetUnlocker
-			{
-				extern Group GROUP;
-
-				extern Mode UnlockMode;
-
-				extern Button UnlockAllButton;
-
-				extern Browser GadgetBrowser;
 
 				extern Button UnlockButton;
 
@@ -250,17 +266,6 @@ namespace Menu
 				
 			}
 
-			namespace ModuleUnlocker
-			{
-				extern Group GROUP;
-
-				extern IntInput ModuleAmount;
-				extern IntInput UpgradeAmount;
-
-				extern Button UnlockModule;
-				extern Button UpgradeModule;
-			}
-
 			namespace PixelPassUnlocker
 			{
 				extern Group GROUP;
@@ -269,24 +274,28 @@ namespace Menu
 				extern Button AddPassXP;
 
 				extern Button UnlockPixelPass;
+
+				
 			}
 
 			namespace MiscUnlocker
 			{
 				extern Group GROUP;
 
-				extern Button UnlockWears;
+				extern Button UnlockWearButton;
 				extern Button UnlockPets;
 				extern Button UnlockGraffiti;
 				extern Button UnlockLobbyItems;
 				extern Button GetAllParts;
 				extern Button GetVeteranBadge;
+
+				
 			}
 		}
 
 		namespace Adder
 		{
-			extern SubTab SUBTAB;
+			extern Tab TAB;
 			namespace XpEditor
 			{
 				extern Group GROUP;
@@ -295,6 +304,8 @@ namespace Menu
 
 				extern IntInput XpAmount;
 				extern Button AddXp;
+
+				
 			}
 
 			namespace CurrencyAdder
@@ -303,7 +314,7 @@ namespace Menu
 
 				extern Browser CurrencyBrowser;
 				extern IntInput CurrencyAmount;
-				extern Button AddXp;
+				extern Button AddCurrency;
 
 				
 			}
@@ -333,7 +344,7 @@ namespace Menu
 
 		namespace Stats
 		{
-			extern SubTab SUBTAB;
+			extern Tab TAB;
 
 			namespace GlobalWin
 			{
@@ -342,7 +353,10 @@ namespace Menu
 				extern const std::vector<std::string> gamemodes;
 
 				extern Browser Gamemode;
+				extern IntInput Amount;
 				extern Button AddStat;
+
+				
 			}
 
 			namespace MonthlyMatch
@@ -350,15 +364,22 @@ namespace Menu
 				extern Group GROUP;
 
 				extern Checkbox MatchIsWin;
+				extern IntInput Amount;
 				extern Button AddStat;
+
+				
 			}
 
 			namespace Kill
 			{
 				extern Group GROUP;
 
+				extern IntInput KillAmount;
+				extern IntInput DeathAmount;
 				extern IntInput HeadshotAmount;
 				extern Button AddStat;
+
+				
 			}
 
 			namespace Winstreak
@@ -368,23 +389,27 @@ namespace Menu
 				extern IntInput KillstreakAmount;
 				extern IntInput WinstreakAmount;
 				extern Button AddStat;
+
+				
 			}
 		}
 	}
 
 	namespace Misc
 	{
-		extern Tab TAB;
+		extern Section SECTION;
 
 		namespace Bypass
 		{
-			extern SubTab SUBTAB;
+			extern Tab TAB;
 
 			namespace Chat
 			{
 				extern Group GROUP;
 
 				extern Checkbox BypassChatFilter;
+
+				
 			}
 
 			namespace Armory
@@ -392,6 +417,8 @@ namespace Menu
 				extern Group GROUP;
 
 				extern Checkbox AllowShovel;
+
+				
 			}
 
 			namespace Misc
@@ -399,20 +426,26 @@ namespace Menu
 				extern Group GROUP;
 				extern Button ForceReload;
 				extern Button SkipTutorial;
+
+				
 			}
 
 			namespace Analytics
 			{
 				extern Group GROUP;
 
-				extern Checkbox AnalyticsBypass;
+				extern Text NOTE;
+
+				//extern Checkbox AnalyticsBypass;
 				extern Checkbox DeeperAnalyticsBypass;
+
+				
 			}
 		}
 
 		namespace Skin
 		{
-			extern SubTab SUBTAB;
+			extern Tab TAB;
 
 			namespace CustomSkinImporter
 			{
@@ -420,6 +453,7 @@ namespace Menu
 				extern Text NOTE;
 
 				extern Button ImportSkin;
+				
 			}
 
 			namespace SkinStealer
@@ -427,26 +461,28 @@ namespace Menu
 				extern Group GROUP;
 				extern Text NOTE;
 				extern IntInput TargetID;
-				extern Button AddChest;
+				extern Button Steal;
+
+				
 			}
 
-			namespace ClanIconStealer
-			{
-				extern Group GROUP;
-				extern Text NOTE;
-				extern IntInput TargetID;
-				extern Button AddChest;
-			}
+			//namespace ClanIconStealer
+			//{
+			//	extern Group GROUP;
+			//	extern Text NOTE;
+			//	extern IntInput TargetID;
+			//	extern Button Steal;
+			//}
 		}
 	}
 
 	namespace Settings
 	{
-		extern Tab TAB;
+		extern Section SECTION;
 
 		namespace Menu
 		{
-			extern SubTab SUBTAB;
+			extern Tab TAB;
 
 			namespace MenuCustomization
 			{
@@ -462,22 +498,34 @@ namespace Menu
 				
 			}
 
-			namespace MouseFix
-			{
-				extern Group GROUP;
+			//namespace MouseFix
+			//{
+			//	extern Group GROUP;
 
-				extern Checkbox DisableGameClickEvent;
-				extern Checkbox DisableCameraMovement;
-			}
+			//	extern Checkbox DisableGameClickEvent;
+			//	//extern Checkbox DisableCameraMovement;
+			//}
 
 			namespace Config
 			{
 				extern Group GROUP;
 
-				extern std::string currentConfigPath;
-				extern Checkbox DefaultConfig;
-				extern Button SelectConfig;
+				extern Button LoadConfig;
+				extern Button SaveConfig;
+
+				
 			}
+		}
+
+		namespace Credit
+		{
+			extern Tab TAB;
+
+			extern Group GROUP;
+			extern Text NOTE;
+			extern Button OpenDC;
+
+			
 		}
 	}
 	

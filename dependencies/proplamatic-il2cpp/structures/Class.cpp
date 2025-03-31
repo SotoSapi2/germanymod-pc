@@ -30,7 +30,7 @@ namespace IL2CPP
 			ForceInitializeClass();
 		}
 
-		return (Class*)this->implementedInterfaces[index];
+		return (Class*) this->implementedInterfaces[index];
 	}
 
 	std::string Class::GetNamespace() const
@@ -66,7 +66,7 @@ namespace IL2CPP
 			ForceInitializeClass();
 		}
 
-		return (FieldInfo*)&this->fields[index];
+		return (FieldInfo*) &this->fields[index];
 	}
 
 	FieldInfo* Class::GetField(const std::string& fieldName, int32_t indexOffset) const
@@ -121,7 +121,7 @@ namespace IL2CPP
 			throw Exception::IndexOutOfBounds(index, MethodCount());
 		}
 
-		return (MethodInfo*)this->methods[index];
+		return (MethodInfo*) this->methods[index];
 	}
 
 	MethodInfo* Class::GetMethod(const std::string& methodName) const
@@ -302,9 +302,9 @@ namespace IL2CPP
 		}
 	}
 
-	bool Class::CompareFieldPattern(const FieldPattern* fieldPattern) const
+	bool Class::CompareFieldPattern(const FieldPattern& fieldPattern) const
 	{
-		if (fieldPattern->size() != FieldCount())
+		if (fieldPattern.size() != FieldCount())
 		{
 			return false;
 		}
@@ -315,7 +315,7 @@ namespace IL2CPP
 		{
 			Class* fieldClass = this->GetField(i)->GetType()->GetClass();
 
-			const char* currentPattern = fieldPattern->at(i);
+			const char* currentPattern = fieldPattern[i];
 
 			if (currentPattern == nullptr)
 			{

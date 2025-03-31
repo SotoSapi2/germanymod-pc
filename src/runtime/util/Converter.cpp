@@ -1,5 +1,8 @@
 #include "Converter.hpp"
 #include <codecvt>
+#include <algorithm>
+#include <cctype>
+#include <string>
 
 namespace Convert
 {
@@ -15,5 +18,11 @@ namespace Convert
 	{
 		static std::wstring_convert<convert_type, wchar_t> converter;
 		return converter.from_bytes(t_str);
+	}
+
+	std::string LowercaseString(std::string copy)
+	{
+		//std::transform(copy.begin(), copy.end(), copy.begin(), std::tolower);
+		return copy;
 	}
 }

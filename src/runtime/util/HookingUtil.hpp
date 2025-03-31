@@ -16,10 +16,10 @@ namespace Hooks                 \
 {                               \
 	returnType name param;      \
 }                               \
-returnType Hooks::##name param  
+returnType Hooks::name param  
 
 #define $CallOrig(name, ...)   \
-HookOrigs::##name (__VA_ARGS__)
+HookOrigs::name (__VA_ARGS__)
 
 #define $RegisterHook(name, ptr) \
 AttachHook(ptr, (void*)Hooks::name, (void**)&HookOrigs::name)

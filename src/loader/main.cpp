@@ -1,3 +1,4 @@
+#include "main.hpp"
 #include <iostream>
 #include <string>
 
@@ -9,12 +10,13 @@
 #include <cstdlib>
 #include <Logger.hpp>
 #include <WinReg.hpp>
+#include "Test.hpp"
 
 #define GameName "Pixel Gun 3D"
 #define ExecutableName "Pixel Gun 3D.exe"
 #define SteamGameID "2524890"
 
-inline std::wstring GetPath(const std::wstring& str)
+std::wstring GetPath(const std::wstring& str)
 {
 	size_t pos = str.find_last_of(L"\\/");
 	if (pos != std::string::npos)
@@ -34,7 +36,7 @@ void GetLoaderPath(std::wstring& str)
 	str = GetPath(rawPath);
 }
 
-bool CheckGameAlreadyRan()
+bool IsExecutableRunning(const char* executableName)
 {
 	PROCESSENTRY32 pe32;
 	pe32.dwSize = sizeof(PROCESSENTRY32);
@@ -50,7 +52,7 @@ bool CheckGameAlreadyRan()
 	{
 		do
 		{
-			if (strcmp(pe32.szExeFile, ExecutableName) == 0)
+			if (strcmp(pe32.szExeFile, executableName) == 0)
 			{
 				return true;
 			}
@@ -68,7 +70,7 @@ bool CheckGameAlreadyRan()
 	return false;
 }
 
-void WaitForGame(DWORD& outProcessId)
+void WaitForProcess(const char* executableName, DWORD& outProcessId)
 {
 	while (true)
 	{
@@ -86,7 +88,7 @@ void WaitForGame(DWORD& outProcessId)
 		{
 			do
 			{
-				if (strcmp(pe32.szExeFile, ExecutableName) == 0)
+				if (strcmp(pe32.szExeFile, executableName) == 0)
 				{
 					outProcessId = pe32.th32ProcessID;
 					return;
@@ -204,7 +206,7 @@ void InjectModule(HANDLE processHandle, const std::wstring& modulePath)
 	};
 }
 
-inline void GuardCriticalAsset(const std::wstring& filepath, const char* filename)
+void GuardCriticalAsset(const std::wstring& filepath, const char* filename)
 {
 	if (!std::filesystem::exists(filepath))
 	{
@@ -218,13 +220,20 @@ inline void GuardCriticalAsset(const std::wstring& filepath, const char* filenam
 	}
 }
 
+
 int main(int argc, const char* argv[])
 {
 	std::wstring loaderPath;
 	GetLoaderPath(loaderPath);
 
-	Logger::SetLogfilePath(loaderPath, L"" PROJECT_NAME);
-	Logger::ClearLogfile();
+	Logger::SetLogfilePath(
+		Logger::DebugOutputType::Stdout, 
+		loaderPath + L"\\Logs.txt",
+		std::ios_base::trunc
+	);
+
+	//Testing::Start();
+	//return 0;
 
 	std::wstring runtimePath = loaderPath + L"\\" RUNTIME_DLL_FILENAME;
 	GuardCriticalAsset(runtimePath, RUNTIME_DLL_FILENAME);
@@ -232,7 +241,15 @@ int main(int argc, const char* argv[])
 	winreg::RegKey key{HKEY_CURRENT_USER, L"SOFTWARE\\" PROJECT_NAME};
 	key.SetStringValue(L"LoaderPath", loaderPath);
 
-	if (!CheckGameAlreadyRan())
+	LOG_INFO(
+		"Keybinds to open the menu:\n"
+		"- F1\n"
+		"- Fn + F1\n"
+		"- Right Ctrl\n"
+		"- Right Alt\n"
+	);
+
+	if (!IsExecutableRunning(ExecutableName))
 	{
 		LOG_INFO("Launching %s... (Open manually if stuck)", GameName);
 		ShellExecute(0, 0, "steam://rungameid/" SteamGameID, 0, 0, SW_SHOW);
@@ -243,7 +260,7 @@ int main(int argc, const char* argv[])
 	}
 
 	DWORD gamePID = 0;
-	WaitForGame(gamePID);
+	WaitForProcess(ExecutableName, gamePID);
 	HANDLE pgHandle = OpenProcess(PROCESS_VM_OPERATION | PROCESS_VM_WRITE, false, gamePID);
 
 	if (pgHandle == nullptr)
@@ -252,6 +269,15 @@ int main(int argc, const char* argv[])
 		InjectionProplam();
 		return 0;
 	}
+
+	#if defined(_DEBUG)
+	//DebugActiveProcess(gamePID);
+	ShellExecute(0, "open", "vsjitdebugger.exe", std::format("-p {0}", gamePID).c_str(), 0, SW_SHOW);
+	while (IsExecutableRunning("vsjitdebugger.exe"))
+	{
+		Sleep(100);
+	}
+	#endif
 
 	try
 	{

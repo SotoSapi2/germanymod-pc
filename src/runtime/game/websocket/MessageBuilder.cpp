@@ -20,6 +20,7 @@ namespace MessageBuilder
 	{
 		return 
 		{
+			{"h", json::object()},
 			{"i", RandHex()},
 			{"id", CommandID::Snapshot},
 			{"p", {{"c", arr}}}

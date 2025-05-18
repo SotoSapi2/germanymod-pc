@@ -25,6 +25,54 @@ namespace GameplayMain
 
 	bool dontDespawnBot = false;
 
+        void HandleSoftSilent()
+        {
+	if (!gPlayerMoveCList || !gMyPlayerMoveC) return;
+	constexpr float maxraycastdistance = 100.0f;
+	bool lbuttonDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+	IL2CPP::Object* cam = Camera::GetMain();
+	if (!cam) return;
+	IL2CPP::Object* camTransform = Component::GetTransform(cam);
+	if (!camTransform) return;
+	if (!lbuttonDown) return;
+	Vector3 screenCenter(Screen::GetWidth() * 0.5f, Screen::GetHeight() * 0.5f, 0.0f);
+	IL2CPP::Object* myPlrTransform = PlayerMoveC::GetTransform(gMyPlayerMoveC);
+	if (!myPlrTransform) return;
+	Vector3 myPos = Transform::GetPosition(myPlrTransform);
+	IL2CPP::Object* targetTransform = nullptr;
+	float minDistance = FLT_MAX;
+	float currentFOV = General::Aim::AimbotFOV.value;
+	Vector3 aimOffset = General::Aim::AimHead.value ? Vector3(0.0f, 0.55f, 0.0f) : Vector3(0.0f, 0.0f, 0.0f);
+	gPlayerMoveCList->ForEach([&](IL2CPP::Object* player)
+		{
+			if (!player) return;
+			if (PlayerMoveC::IsDead(player) || PlayerMoveC::IsMine(player) || !PlayerMoveC::IsEnemyTo(gMyPlayerMoveC, player))
+				return;
+			Vector3 pos = PlayerMoveC::GetPosition(player);
+			Vector3 plrScreenPos = Camera::WorldToScreenPoint(cam, pos);
+			if (plrScreenPos.Z <= 0) return;
+			float distance = Vector3::Distance(screenCenter, plrScreenPos);
+			if (distance >= minDistance || distance > currentFOV) return;
+			Vector3 direction = Vector3::Normalized(pos - myPos);
+			Ray ray = { myPos, direction };
+			RaycastHit info;
+			if (Physics::Raycast(ray, &info, maxraycastdistance))
+			{
+				IL2CPP::Object* bodyCollider = player->GetFieldRef<IL2CPP::Object*>("_bodyAimCollider");
+				if (info.collider == GameObject::GetInstanceID(bodyCollider))
+				{
+					minDistance = distance;
+					targetTransform = PlayerMoveC::GetTransform(player);
+				}
+			}
+		});
+	if (targetTransform && minDistance < currentFOV)
+	{
+		Vector3 targetPos = Transform::GetPosition(targetTransform) + aimOffset;
+		Transform::LookAtVec(camTransform, targetPos);
+	}
+      }
+
 	void HandleAimbot()
 	{
 		float deltaTime = Time::DeltaTime();
@@ -258,6 +306,11 @@ namespace GameplayMain
 			if (General::Aim::Aimbot.value && gPlayerMoveCList != nullptr)
 			{
 				HandleAimbot();
+			}
+
+			if (General::Aim::SoftSilentAim.value && gPlayerMoveCList != nullptr)
+			{
+				HandleSoftSilent();
 			}
 
 			if (gPhotonViewList != nullptr)

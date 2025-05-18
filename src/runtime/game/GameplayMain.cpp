@@ -198,7 +198,7 @@ namespace GameplayMain
 			Vector3 aimPos = targetPos + aimOffset;
 
 			Transform::LookAtVec(camTransform, aimPos);
-			Transform::SetPosition(myPlrTransform, targetPos + Vector3(0, 0, 2.5));
+			Transform::SetPosition(myPlrTransform, targetPos + Vector3(0, 0, General::Player::GotoPlayersDistance.value));
 		}
 	}
 

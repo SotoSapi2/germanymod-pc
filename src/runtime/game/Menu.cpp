@@ -45,11 +45,13 @@ namespace Menu
 				FloatSlider Firerate(&GROUP, "Firerate", "Player_firerate", 0, 50);
 				Checkbox NoFixedDelay(&GROUP, "No switch delay (must be enabled in lobby)");
 				Checkbox GotoPlayers(&GROUP, "Teleport kill");
+				FloatSlider GotoPlayersDistance(&GROUP, "Teleport kill distance", "Teleport_kill", 0, 10, 1.0f);
 
 				#pragma region MenuFunctions
 				void Update()
 				{
 					TagService::ToggleTagVisibility("Player_firerate", FirerateHack.value);
+					TagService::ToggleTagVisibility("Teleport_kill", GotoPlayers.value);
 				}
 				#pragma endregion
 			}

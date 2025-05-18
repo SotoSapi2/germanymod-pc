@@ -26,6 +26,7 @@ namespace Menu
 				extern FloatSlider Firerate;
 				extern Checkbox NoFixedDelay;
 				extern Checkbox GotoPlayers;
+				extern FloatSlider GotoPlayersDistance;
 
 				
 			}
@@ -71,7 +72,6 @@ namespace Menu
 				extern Checkbox Triggerbot;
 				extern Checkbox Aimbot;
 				extern Checkbox SoftSilentAim;
-
 
 				extern FloatSlider AimbotSmoothing;
 				extern FloatSlider AimbotFOV;

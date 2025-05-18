@@ -93,6 +93,7 @@ namespace Menu
 
 				Checkbox Triggerbot(&GROUP, "Triggerbot");
 				Checkbox Aimbot(&GROUP, "Aimbot");
+                                Checkbox SoftSilentAim(&GROUP, "Soft Silent Aim");
 
 				FloatSlider AimbotSmoothing(&GROUP, "Smoothing", "Aimbot_options", 0.0f, 1, 0.0);
 				FloatSlider AimbotFOV(&GROUP, "FOV", "Aimbot_options", 0.0f, 1000, 180);
@@ -103,7 +104,7 @@ namespace Menu
 				void Update()
 				{
 					TagService::ToggleTagVisibility("Killaura_optional", !InfKillauraRadius.value);
-					TagService::ToggleTagVisibility("Aimbot_options", Aimbot.value);
+					TagService::ToggleTagVisibility("Aimbot_options", Aimbot.value + SoftSilentAim.value);
 				}
 				#pragma endregion
 			}

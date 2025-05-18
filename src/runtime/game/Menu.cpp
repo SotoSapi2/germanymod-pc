@@ -1793,7 +1793,7 @@ namespace Menu
 			gMenuShown = !gMenuShown;
 		}
 
-		if (Gameplay::General::Aim::Aimbot.value && Gameplay::General::Aim::FOVCircle.value)
+		if (Gameplay::General::Aim::Aimbot.value + Gameplay::General::Aim::SoftSilentAim.value && Gameplay::General::Aim::FOVCircle.value)
 		{
 			auto screenCenter = Vector2(Screen::GetWidth() / 2, Screen::GetHeight() / 2);
 			background->AddCircle(

@@ -69,6 +69,8 @@ namespace Menu
 
 				extern Checkbox Triggerbot;
 				extern Checkbox Aimbot;
+				extern Checkbox SoftSilentAim;
+
 
 				extern FloatSlider AimbotSmoothing;
 				extern FloatSlider AimbotFOV;

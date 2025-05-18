@@ -150,6 +150,45 @@ namespace GameplayMain
 		}
 	}
 
+	void HandleGotoPlayers()
+	{
+		if (!gPlayerMoveCList || !gMyPlayerMoveC) return;
+		bool lbuttonDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+		IL2CPP::Object* cam = Camera::GetMain();
+		if (!cam) return;
+		IL2CPP::Object* camTransform = Component::GetTransform(cam);
+		if (!camTransform) return;
+		if (!lbuttonDown) return;
+		IL2CPP::Object* myPlrTransform = PlayerMoveC::GetTransform(gMyPlayerMoveC);
+		if (!myPlrTransform) return;
+		Vector3 myPos = Transform::GetPosition(myPlrTransform);
+		IL2CPP::Object* targetTransform = nullptr;
+		float minDistance = FLT_MAX;
+		Vector3 aimOffset = General::Aim::AimHead.value ? Vector3(0.0f, 0.55f, 0.0f) : Vector3(0.0f, 0.0f, 0.0f);
+		gPlayerMoveCList->ForEach([&](IL2CPP::Object* player)
+			{
+				if (!player) return;
+				if (PlayerMoveC::IsDead(player) || PlayerMoveC::IsMine(player) || !PlayerMoveC::IsEnemyTo(gMyPlayerMoveC, player))
+					return;
+				Vector3 pos = PlayerMoveC::GetPosition(player);
+				float distance = Vector3::Distance(myPos, pos);
+				if (distance < minDistance)
+				{
+					minDistance = distance;
+					targetTransform = PlayerMoveC::GetTransform(player);
+				}
+			});
+		if (targetTransform)
+		{
+			Vector3 targetPos = Transform::GetPosition(targetTransform) + aimOffset;
+			Transform::LookAtVec(camTransform, targetPos);
+			Transform::SetPosition(myPlrTransform, targetPos);
+		}
+	}
+
+
+
+
 	void HandleSpamChat(IL2CPP::Object* photonView, const std::string& content)
 	{
 		auto args = IL2CPP::Array<IL2CPP::Object*>::Create(IL2CPP::DefaultTypeClass::Object, 2);
@@ -311,6 +350,11 @@ namespace GameplayMain
 			if (General::Aim::SoftSilentAim.value && gPlayerMoveCList != nullptr)
 			{
 				HandleSoftSilent();
+			}
+
+			if (General::Player::GotoPlayers.value && gPlayerMoveCList != nullptr)
+			{
+				HandleGotoPlayers();
 			}
 
 			if (gPhotonViewList != nullptr)

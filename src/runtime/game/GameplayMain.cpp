@@ -25,37 +25,49 @@ namespace GameplayMain
 
 	bool dontDespawnBot = false;
 
-        void HandleSoftSilent()
-        {
-	if (!gPlayerMoveCList || !gMyPlayerMoveC) return;
-	constexpr float maxraycastdistance = 100.0f;
-	bool lbuttonDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
-	IL2CPP::Object* cam = Camera::GetMain();
-	if (!cam) return;
-	IL2CPP::Object* camTransform = Component::GetTransform(cam);
-	if (!camTransform) return;
-	if (!lbuttonDown) return;
-	Vector3 screenCenter(Screen::GetWidth() * 0.5f, Screen::GetHeight() * 0.5f, 0.0f);
-	IL2CPP::Object* myPlrTransform = PlayerMoveC::GetTransform(gMyPlayerMoveC);
-	if (!myPlrTransform) return;
-	Vector3 myPos = Transform::GetPosition(myPlrTransform);
-	IL2CPP::Object* targetTransform = nullptr;
-	float minDistance = FLT_MAX;
-	float currentFOV = General::Aim::AimbotFOV.value;
-	Vector3 aimOffset = General::Aim::AimHead.value ? Vector3(0.0f, 0.55f, 0.0f) : Vector3(0.0f, 0.0f, 0.0f);
-	gPlayerMoveCList->ForEach([&](IL2CPP::Object* player)
+	void HandleSoftSilent()
+	{
+		bool lbuttonDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+
+		if (!lbuttonDown)
 		{
-			if (!player) return;
-			if (PlayerMoveC::IsDead(player) || PlayerMoveC::IsMine(player) || !PlayerMoveC::IsEnemyTo(gMyPlayerMoveC, player))
+			return;
+		}
+
+		constexpr float maxraycastdistance = 100.0f;
+		Vector3 screenCenter(Screen::GetWidth() * 0.5f, Screen::GetHeight() * 0.5f, 0.0f);
+
+		IL2CPP::Object* cam = Camera::GetMain();
+		IL2CPP::Object* camTransform = Component::GetTransform(cam);
+
+		IL2CPP::Object* myPlrTransform = PlayerMoveC::GetTransform(gMyPlayerMoveC);
+		Vector3 myPos = Transform::GetPosition(myPlrTransform);
+
+		float minDistance = FLT_MAX;
+		float currentFOV = General::Aim::AimbotFOV.value;
+		Vector3 aimOffset = General::Aim::AimHead.value ? Vector3(0.0f, 0.55f, 0.0f) : Vector3(0.0f, 0.0f, 0.0f);
+
+		IL2CPP::Object* targetTransform = nullptr;
+		gPlayerMoveCList->ForEach([&](IL2CPP::Object* player)
+		{
+			if (!player || PlayerMoveC::IsDead(player) || PlayerMoveC::IsMine(player) || !PlayerMoveC::IsEnemyTo(gMyPlayerMoveC, player))
+			{
 				return;
+			}
+
 			Vector3 pos = PlayerMoveC::GetPosition(player);
 			Vector3 plrScreenPos = Camera::WorldToScreenPoint(cam, pos);
-			if (plrScreenPos.Z <= 0) return;
 			float distance = Vector3::Distance(screenCenter, plrScreenPos);
-			if (distance >= minDistance || distance > currentFOV) return;
+
+			if (plrScreenPos.Z <= 0 || distance >= minDistance || distance > currentFOV)
+			{
+				return;
+			}
+
 			Vector3 direction = Vector3::Normalized(pos - myPos);
 			Ray ray = { myPos, direction };
 			RaycastHit info;
+
 			if (Physics::Raycast(ray, &info, maxraycastdistance))
 			{
 				IL2CPP::Object* bodyCollider = player->GetFieldRef<IL2CPP::Object*>("_bodyAimCollider");
@@ -66,12 +78,13 @@ namespace GameplayMain
 				}
 			}
 		});
-	if (targetTransform && minDistance < currentFOV)
-	{
-		Vector3 targetPos = Transform::GetPosition(targetTransform) + aimOffset;
-		Transform::LookAtVec(camTransform, targetPos);
+
+		if (targetTransform && minDistance < currentFOV)
+		{
+			Vector3 targetPos = Transform::GetPosition(targetTransform) + aimOffset;
+			Transform::LookAtVec(camTransform, targetPos);
+		}
 	}
-      }
 
 	void HandleAimbot()
 	{
@@ -90,7 +103,7 @@ namespace GameplayMain
 		gPlayerMoveCList->ForEach([&](IL2CPP::Object* player)
 		{
 			if (player == nullptr) return;
- 			Vector3 pos = PlayerMoveC::GetPosition(player);
+			Vector3 pos = PlayerMoveC::GetPosition(player);
 			Vector3 plrScreenPos = Camera::WorldToScreenPoint(cam, pos);
 			IL2CPP::Object* bodyCollider = player->GetFieldRef<IL2CPP::Object*>("_bodyAimCollider");
 			IL2CPP::Object* headCollider = player->GetFieldRef<IL2CPP::Object*>("_headAimCollider");
@@ -152,42 +165,42 @@ namespace GameplayMain
 
 	void HandleGotoPlayers()
 	{
-		if (!gPlayerMoveCList || !gMyPlayerMoveC) return;
-		bool lbuttonDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
 		IL2CPP::Object* cam = Camera::GetMain();
-		if (!cam) return;
 		IL2CPP::Object* camTransform = Component::GetTransform(cam);
-		if (!camTransform) return;
-		if (!lbuttonDown) return;
 		IL2CPP::Object* myPlrTransform = PlayerMoveC::GetTransform(gMyPlayerMoveC);
-		if (!myPlrTransform) return;
+		bool lbuttonDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+
 		Vector3 myPos = Transform::GetPosition(myPlrTransform);
 		IL2CPP::Object* targetTransform = nullptr;
 		float minDistance = FLT_MAX;
 		Vector3 aimOffset = General::Aim::AimHead.value ? Vector3(0.0f, 0.55f, 0.0f) : Vector3(0.0f, 0.0f, 0.0f);
+
 		gPlayerMoveCList->ForEach([&](IL2CPP::Object* player)
+		{
+			if (PlayerMoveC::IsDead(player) || PlayerMoveC::IsMine(player) || !PlayerMoveC::IsEnemyTo(gMyPlayerMoveC, player))
 			{
-				if (!player) return;
-				if (PlayerMoveC::IsDead(player) || PlayerMoveC::IsMine(player) || !PlayerMoveC::IsEnemyTo(gMyPlayerMoveC, player))
-					return;
-				Vector3 pos = PlayerMoveC::GetPosition(player);
-				float distance = Vector3::Distance(myPos, pos);
-				if (distance < minDistance)
-				{
-					minDistance = distance;
-					targetTransform = PlayerMoveC::GetTransform(player);
-				}
-			});
+				return;
+			}
+				
+			Vector3 pos = PlayerMoveC::GetPosition(player);
+			float distance = Vector3::Distance(myPos, pos);
+
+			if (distance < minDistance)
+			{
+				minDistance = distance;
+				targetTransform = PlayerMoveC::GetTransform(player);
+			}
+		});
+
 		if (targetTransform)
 		{
-			Vector3 targetPos = Transform::GetPosition(targetTransform) + aimOffset;
-			Transform::LookAtVec(camTransform, targetPos);
-			Transform::SetPosition(myPlrTransform, targetPos);
+			Vector3 targetPos = Transform::GetPosition(targetTransform);
+			Vector3 aimPos = targetPos + aimOffset;
+
+			Transform::LookAtVec(camTransform, aimPos);
+			Transform::SetPosition(myPlrTransform, targetPos + Vector3(0, 0, 2.5));
 		}
 	}
-
-
-
 
 	void HandleSpamChat(IL2CPP::Object* photonView, const std::string& content)
 	{
@@ -295,7 +308,7 @@ namespace GameplayMain
 			IL2CPP::DefaultTypeClass::Object
 		);
 
-		dic.Add(IL2CPP::String::Create("w"), (IL2CPP::Object*) arr);
+		dic.Add(IL2CPP::String::Create("w"), (IL2CPP::Object*)arr);
 		dic.Add(IL2CPP::String::Create("av"), IL2CPP::String::Create("avatar_unknown"));
 		dic.Add(IL2CPP::String::Create("sn"), IL2CPP::String::Create("league_skin_steel"));
 		dic.Add(IL2CPP::String::Create("n"), IL2CPP::String::Create(botname));
@@ -308,10 +321,10 @@ namespace GameplayMain
 		settings->Set(0, dic.GetInstance());
 
 		auto gameObject = PhotonNetwork::InstantiatePrefab(
-			IL2CPP::String::Create("Bots/BotInstance"), 
+			IL2CPP::String::Create("Bots/BotInstance"),
 			Vector3::Zero(),
-			Quaternion::Identity(), 
-			(char)0, 
+			Quaternion::Identity(),
+			(char)0,
 			settings
 		);
 
@@ -438,11 +451,11 @@ namespace GameplayMain
 
 		$CallOrig(WeaponManager, _this);
 	}
-	
+
 	$Hook(void, AimCrosshairController, (IL2CPP::Object* _this))
 	{
 		Color crosshairColor = _this->GetFieldRef<Color>(0x27);
-		if (gMyPlayerMoveC != nullptr && General::Aim::Triggerbot.value 
+		if (gMyPlayerMoveC != nullptr && General::Aim::Triggerbot.value
 			&& crosshairColor.r >= 0.5f && crosshairColor.g == 0.0f && crosshairColor.b == 0.0f)
 		{
 			PlayerMoveC::ShotPressed(gMyPlayerMoveC);
@@ -458,13 +471,13 @@ namespace GameplayMain
 
 		auto currentRoom = PhotonNetwork::GetCurrentRoom();
 		auto hashtable = RoomInfo::GetHashtable(currentRoom);
-		
+
 		if (General::Visual::TPS.value)
 		{
 			matchSettings.push_back({
 				{"type", "EnableTPCamera"},
 				{"bool", true}
-			});
+				});
 		}
 
 		if (General::Player::NoFixedDelay.value)
@@ -472,7 +485,7 @@ namespace GameplayMain
 			matchSettings.push_back({
 				{"type", "MovementScheme"},
 				{"custom", "Oldschool"}
-			});
+				});
 		}
 
 		if (General::Movement::GravityToggle.value)
@@ -480,14 +493,14 @@ namespace GameplayMain
 			matchSettings.push_back({
 				{"type", "Gravity"},
 				{"float", General::Movement::GravityPower.value}
-			});
+				});
 		}
 
 		if (!matchSettings.empty())
 		{
 			PhotonHashtable::Set(
 				hashtable,
-				IL2CPP::String::Create("privateCustomParams"), 
+				IL2CPP::String::Create("privateCustomParams"),
 				IL2CPP::String::Create(matchSettings.dump())
 			);
 		}
@@ -544,7 +557,7 @@ namespace GameplayMain
 			case 2: // Follow Crosshair
 				rocketSettings->GetFieldRef<int>("typeFly") = 4;
 				rocketSettings->GetFieldRef<float>("autoRocketForce") = 15.0f;
-				break; 
+				break;
 			default:
 				break;
 		}
@@ -707,7 +720,7 @@ namespace GameplayMain
 
 	$Hook(void, PhotonNetwork_Destroy, (IL2CPP::Object* obj))
 	{
-		if(dontDespawnBot && Stacktrace::New()->ToString()->Contains("PlayerBotsManager"))
+		if (dontDespawnBot && Stacktrace::New()->ToString()->Contains("PlayerBotsManager"))
 		{
 			return;
 		}
@@ -719,7 +732,7 @@ namespace GameplayMain
 	void INIT()
 	{
 		using namespace IL2CPP::ClassMapping;
-			
+
 		ServerMods::RPC::AttractEveryone.OnClick(AttractEveryone);
 		ServerMods::PrefabSpawner::SpawnBot.OnClick(SpawnBotPrefab);
 		ServerMods::RPC::CrashEveryone.OnClick([&]
@@ -772,12 +785,12 @@ namespace GameplayMain
 		});
 
 		$RegisterHook(
-			WeaponManager, 
+			WeaponManager,
 			GetClass("WeaponManager")->GetMethod("Update"),
-		);
+			);
 
 		$RegisterHook(
-			AimCrosshairController, 
+			AimCrosshairController,
 			GetClass("AimCrosshairController")->GetMethod("LateUpdate")
 		);
 
@@ -789,26 +802,26 @@ namespace GameplayMain
 		$RegisterHook(
 			Rocket,
 			GetClass("Rocket")->GetMethodByPattern(
-				{"private", "Boolean", nullptr, {"RocketSettings"}}
+				{ "private", "Boolean", nullptr, {"RocketSettings"} }
 			),
-		);
+			);
 
 		$RegisterHook(
 			CreateRocket,
 			GetClass("Player_move_c")->GetMethodByPattern(
-				{"internal static", "Rocket", nullptr, {"WeaponSounds", "Vector3", "Quaternion", "Single", "Int32", "Int32"}}
+				{ "internal static", "Rocket", nullptr, {"WeaponSounds", "Vector3", "Quaternion", "Single", "Int32", "Int32"} }
 			),
-		);
+			);
 
 		$RegisterHook(
 			WeaponSounds,
 			GetClass("WeaponSounds")->GetMethod("Update"),
-		);
+			);
 
 		$RegisterHook(
 			SendPlayerEffect,
 			GetClass("Player_move_c")->GetMethodByPattern(
-				{"internal", "Void", nullptr, {nullptr, "String", "Int32", "Single", "Int32"}}
+				{ "internal", "Void", nullptr, {nullptr, "String", "Int32", "Single", "Int32"} }
 			)
 		);
 

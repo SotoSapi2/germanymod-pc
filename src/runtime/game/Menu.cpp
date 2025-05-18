@@ -44,8 +44,7 @@ namespace Menu
 				Checkbox FirerateHack(&GROUP, "Hack Firerate (kickable)");
 				FloatSlider Firerate(&GROUP, "Firerate", "Player_firerate", 0, 50);
 				Checkbox NoFixedDelay(&GROUP, "No switch delay (must be enabled in lobby)");
-				Checkbox GotoPlayers(&GROUP, "Goto Players");
-
+				Checkbox GotoPlayers(&GROUP, "Teleport kill");
 
 				#pragma region MenuFunctions
 				void Update()
@@ -95,7 +94,7 @@ namespace Menu
 
 				Checkbox Triggerbot(&GROUP, "Triggerbot");
 				Checkbox Aimbot(&GROUP, "Aimbot");
-                                Checkbox SoftSilentAim(&GROUP, "Soft Silent Aim");
+				Checkbox SoftSilentAim(&GROUP, "Soft Silent Aim");
 
 				FloatSlider AimbotSmoothing(&GROUP, "Smoothing", "Aimbot_options", 0.0f, 1, 0.0);
 				FloatSlider AimbotFOV(&GROUP, "FOV", "Aimbot_options", 0.0f, 1000, 180);
@@ -883,7 +882,7 @@ namespace Menu
 					"Colonel",
 					"General",
 					"Emperor"
-					}, 10);
+				}, 10);
 				IntInput ClanRankXP(&GROUP, "Clan Rank XP", 130000);
 
 				Button SetClanRank(&GROUP, "Set Clan Rank");

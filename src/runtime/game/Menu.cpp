@@ -44,6 +44,8 @@ namespace Menu
 				Checkbox FirerateHack(&GROUP, "Hack Firerate (kickable)");
 				FloatSlider Firerate(&GROUP, "Firerate", "Player_firerate", 0, 50);
 				Checkbox NoFixedDelay(&GROUP, "No switch delay (must be enabled in lobby)");
+				Checkbox GotoPlayers(&GROUP, "Goto Players");
+
 
 				#pragma region MenuFunctions
 				void Update()

@@ -49,5 +49,5 @@ namespace AccountCommands
 
 	void AddMatchStat(bool isWinning);
 
-	void CustomSkin(const std::string& name, const std::string& base64);
+	void CustomCape(const std::string& base64);
 }

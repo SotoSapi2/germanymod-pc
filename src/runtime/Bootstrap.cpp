@@ -2,6 +2,7 @@
 #include "framework/ConsoleManager.hpp"
 #include "framework/FileDialogService.hpp"
 #include "framework/GdiPlusManager.hpp"
+#include "framework/TaskScheduler.hpp"
 #include "game/import/ClassFinder.hpp"
 #include "game/import/PointerFunctions.hpp"
 #include "game/Menu.hpp"
@@ -36,6 +37,7 @@ namespace Bootstrap
 		ConsoleManager::INIT();
 		GdiplusManager::INIT();
 		FileDialogService::INIT();
+		TaskScheduler::INIT();
 		IL2CPP::INIT();
 
 		bool errowShown = false;
@@ -53,10 +55,12 @@ namespace Bootstrap
 		}
 
 		MouseFix::INIT();
+		#ifndef NO_FEATURE
 		Global::INIT();
 		AntiAnalytics::INIT();
 		GameplayMain::INIT();
 		WebsocketCore::INIT();
+		#endif // !NO_FEATURE
 
 		Menu::INIT();
 	}

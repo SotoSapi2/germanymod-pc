@@ -462,12 +462,12 @@ namespace AccountCommands
 		helper.SendPackage();
 	}
 
-	void CustomSkin(const std::string& name, const std::string& base64)
+	void CustomCape(const std::string& base64)
 	{
 		WebsocketCore::ProgressUpdaterHelper helper;
 		helper.AddCommand(CommandID::UpdateCustomSkin, json::object({
-			{"i", GetTickCount64()},
-			{"c", name}
+			{"i", -1},
+			{"c", base64}
 		}));
 		helper.SendPackage();
 	}

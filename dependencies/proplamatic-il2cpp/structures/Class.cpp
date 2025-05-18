@@ -347,7 +347,7 @@ namespace IL2CPP
 
 	bool Class::IsEnum() const
 	{
-		return IMPORT::il2cpp_class_is_enum(this); //this->enumtype;
+		return IMPORT::il2cpp_class_is_enum(this);
 	}
 
 	uint32_t Class::GetFlags() 

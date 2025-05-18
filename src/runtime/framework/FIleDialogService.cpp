@@ -64,7 +64,7 @@ namespace FileDialogService
 		ofn.lpstrInitialDir = nullptr;
 		ofn.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
 
-		ShowWindow(GetActiveWindow(), SW_SHOWMINIMIZED);
+		ShowCursor(true);
 		if (!GetOpenFileNameW(&ofn)) return std::nullopt;
 		return ofn.lpstrFile;
 	}
@@ -87,6 +87,7 @@ namespace FileDialogService
 		ofn.lpstrInitialDir = nullptr;
 		ofn.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
 
+		ShowCursor(true);
 		if (!GetSaveFileNameW(&ofn)) return std::nullopt;
 		return ofn.lpstrFile;
 	}
@@ -101,7 +102,7 @@ namespace FileDialogService
 
 		pFileDialog->SetOptions(FOS_PICKFOLDERS);
 
-		ShowWindow(GetActiveWindow(), SW_SHOWMINIMIZED);
+		ShowCursor(true);
 		if (FAILED(pFileDialog->Show(NULL)))
 		{
 			return std::nullopt;

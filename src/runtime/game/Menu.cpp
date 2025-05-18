@@ -12,7 +12,9 @@
 #include "websocket/WebsocketCore.hpp"
 #include "utils/MemPatcher.hpp"
 #include "Global.hpp"
+#include "../framework/TaskScheduler.hpp"
 
+#include <obfuscator.h>
 #include <base64.h>
 
 #undef ERROR // DUMB WINDOWS MACRO :middle_finger:
@@ -713,11 +715,13 @@ namespace Menu
 
 							IL2CPP::Object* nigger = IL2CPP::Class::Create(GetClass("XPNiggaSex"));
 							ctor(nigger);
+							nigger->GetFieldRef<int>(0x0) = rand() % 27;
+							nigger->GetFieldRef<IL2CPP::String*>(0x1) = IL2CPP::String::Create("nigger");
 
 							ExperienceController::AddExperience(
 								expControllerInstance,
 								XpAmount.value,
-								6549877,
+								ExpObtainCause::DevFpsManager,
 								nullptr,
 								nigger
 							);
@@ -1169,6 +1173,7 @@ namespace Menu
 				Group GROUP(&TAB, "Armory");
 
 				Checkbox AllowShovel(&GROUP, "Allow to use shovel");
+				Checkbox AllowSandbox(&GROUP, "Allow to use any weapons on sandbox");
 
 				#pragma region MenuFunctions
 				void Load()
@@ -1260,6 +1265,19 @@ namespace Menu
 		{
 			Tab TAB(&SECTION, "Skin importer & stealer");
 
+			void ShowErrorMsgBox(const char* msg)
+			{
+				ShowWindow(GetActiveWindow(), SW_SHOWMINIMIZED);
+				MessageBoxA(
+					nullptr,
+					msg,
+					"Error!",
+					MB_OK | MB_ICONERROR
+				);
+
+				return;
+			}
+
 			namespace CustomSkinImporter
 			{
 				Group GROUP(&TAB, "Custom Skin Importer");
@@ -1272,72 +1290,102 @@ namespace Menu
 				);
 
 				Button ImportSkin(&GROUP, "Import Skin");
+
 				#pragma region MenuFunctions
-				void ShowErrorMsgBox(const char* msg)
+				void OnClick()
 				{
-					ShowWindow(GetActiveWindow(), SW_SHOWMINIMIZED);
-					MessageBoxA(
-						nullptr,
-						msg,
-						"Error!",
-						MB_OK | MB_ICONERROR
+					IL2CPP::AttachCurrentThread();
+					std::optional<std::wstring> pathOpt = FileDialogService::GetFilepathLoad(L"Skin Texture (.png)\0*.png");
+					if (!pathOpt.has_value()) return;
+
+					Gdiplus::Bitmap textureBitmap(pathOpt.value().c_str());
+					std::vector<BYTE> outBuffer;
+
+					bool isSizeValid = textureBitmap.GetWidth() == 64 && textureBitmap.GetHeight() == 32;
+					bool isConvertable = textureBitmap.GetWidth() == 64 && textureBitmap.GetHeight() == 64;
+
+					if (!isSizeValid && !isConvertable)
+					{
+						ShowErrorMsgBox(
+							"You loaded texture with invalid size.\n"
+							"Make sure to check the texture size is correct then try again."
+						);
+						return;
+					}
+
+					if (isConvertable)
+					{
+						bool success = GdiplusManager::CropPng(
+							&textureBitmap,
+							Gdiplus::Rect(0, 0, 64, 32),
+							Gdiplus::Size(64, 32),
+							&outBuffer
+						);
+
+						if (!success)
+						{
+							ShowErrorMsgBox("Unable to crop texture due to Gdiplus failure.");
+							return;
+						}
+					}
+					else
+					{
+						GdiplusManager::ReadBitmapBytes(&textureBitmap, GdiplusManager::pngClsid, &outBuffer);
+					}
+
+					std::wstring skinName = pathOpt.value().substr(pathOpt.value().find_last_of(L"/\\") + 1);
+					ProgressUpdater::UpdateCustomSkin(
+						ProgressUpdater::GetInstance(),
+						GetTickCount64(),
+						IL2CPP::String::Create(skinName),
+						IL2CPP::String::Create(base64_encode(outBuffer.data(), outBuffer.size()))
 					);
 
-					return;
+					WebsocketCore::Reload();
 				}
 
 				void Load()
 				{
-					ImportSkin.OnClick([&]
+					ImportSkin.OnClickAsync(OnClick);
+				}
+				#pragma endregion
+			}
+
+			namespace CustomCapeImporter
+			{
+				Group GROUP(&TAB, "Custom Cape Importer", UIComponents::GroupPlacementType::RIGHT);
+				Text NOTE(&GROUP,"Supported Cape Resolution: 12x16.");
+
+				Button ImportCape(&GROUP, "Import Cape");
+
+				#pragma region MenuFunctions
+				void OnClick()
+				{
+					IL2CPP::AttachCurrentThread();
+					std::optional<std::wstring> pathOpt = FileDialogService::GetFilepathLoad(L"Skin Texture (.png)\0*.png");
+					if (!pathOpt.has_value()) return;
+
+
+					Gdiplus::Bitmap textureBitmap(pathOpt.value().c_str());
+					std::vector<BYTE> outBuffer;
+
+					bool isSizeValid = textureBitmap.GetWidth() == 12 && textureBitmap.GetHeight() == 16;
+					if (!isSizeValid)
 					{
-						std::optional<std::wstring> pathOpt = FileDialogService::GetFilepathLoad(L"Skin Texture (.png)\0*.png");
-						if (!pathOpt.has_value()) return;
-
-						Gdiplus::Bitmap textureBitmap(pathOpt.value().c_str());
-						std::vector<BYTE> outBuffer;
-
-						bool isSizeValid = textureBitmap.GetWidth() == 64 && textureBitmap.GetHeight() == 32;
-						bool isConvertable = textureBitmap.GetWidth() == 64 && textureBitmap.GetHeight() == 64;
-
-						if (!isSizeValid && !isConvertable)
-						{
-							ShowErrorMsgBox(
-								"You loaded texture with invalid size.\n"
-								"Make sure to check the texture size is correct then try again."
-							);
-							return;
-						}
-
-						if (isConvertable)
-						{
-							bool success = GdiplusManager::CropPng(
-								&textureBitmap,
-								Gdiplus::Rect(0, 0, 64, 32),
-								Gdiplus::Size(64, 32),
-								&outBuffer
-							);
-
-							if (!success)
-							{
-								ShowErrorMsgBox("Unable to crop texture due to Gdiplus failure.");
-								return;
-							}
-						}
-						else
-						{
-							GdiplusManager::ReadBitmapBytes(&textureBitmap, GdiplusManager::pngClsid, &outBuffer);
-						}
-
-						std::wstring skinName = pathOpt.value().substr(pathOpt.value().find_last_of(L"/\\") + 1);
-						ProgressUpdater::UpdateCustomSkin(
-							ProgressUpdater::GetInstance(),
-							GetTickCount64(),
-							IL2CPP::String::Create(skinName),
-							IL2CPP::String::Create(base64_encode(outBuffer.data(), outBuffer.size()))
+						ShowErrorMsgBox(
+							"You loaded texture with invalid size.\n"
+							"Make sure to check the texture size is correct then try again."
 						);
+						return;
+					}
 
-						WebsocketCore::Reload();
-					});
+					AccountCommands::CustomCape(base64_encode(outBuffer.data(), outBuffer.size()));
+					WebsocketCore::Reload();
+				}
+
+				void Load()
+				{
+					ImportCape.OnClickAsync(OnClick);
 				}
 				#pragma endregion
 			}
@@ -1381,19 +1429,22 @@ namespace Menu
 					}
 				}
 
+				void OnClick()
+				{
+					IL2CPP::AttachCurrentThread();
+					std::optional<std::wstring> pathOpt = FileDialogService::SelectFolder();
+					if (!pathOpt.has_value()) return;
+
+					currentSavePath = pathOpt.value();
+					auto data = nlohmann::json::object({
+						{"player_id", std::to_string(TargetID.value)}
+					});
+					WebsocketCore::QueuePackage("get_progress", data, ParseSlotData);
+				}
+
 				void Load()
 				{
-					Steal.OnClick([&]
-					{
-						std::optional<std::wstring> pathOpt = FileDialogService::SelectFolder();
-						if (!pathOpt.has_value()) return;
-
-						currentSavePath = pathOpt.value();
-						auto data = nlohmann::json::object({ 
-							{"player_id", std::to_string(TargetID.value)}
-						});
-						WebsocketCore::QueuePackage("get_progress", data, ParseSlotData);
-					});
+					Steal.OnClickAsync(OnClick);
 				}
 				#pragma endregion
 			}
@@ -1481,14 +1532,14 @@ namespace Menu
 
 				void Load()
 				{
-					LoadConfig.OnClick([&]
+					LoadConfig.OnClickAsync([&]
 					{
 						std::optional<std::wstring> pathOpt = FileDialogService::GetFilepathLoad(fileConfigFilter);
 						if (!pathOpt.has_value()) return;
 						UIFramework::ConfigManager::LoadConfig(pathOpt.value());
 					});
 
-					SaveConfig.OnClick([&]
+					SaveConfig.OnClickAsync([&]
 					{
 						std::optional<std::wstring> pathOpt = FileDialogService::GetFilepathSave(fileConfigFilter);
 						if (!pathOpt.has_value()) return;
@@ -1504,12 +1555,12 @@ namespace Menu
 			Tab TAB(&SECTION, "Credits & info", UIComponents::GroupSplitType::NO_SPLIT);
 
 			Group GROUP(&TAB, "Credits & info", {-1, -1});
-			Text NOTE(&GROUP,
-				"Nazi Mod version: v5.0.0\n"
+			Text NOTE(&GROUP, OBF(
+				"Nazi Mod version: v5.2.3\n"
 				"\n"
 
 				"Cheat developers:\n"
-				"- @soto_sapi1\n"
+				"- @soto_sapi2\n"
 				"\n"
 
 				"Special credits:\n"
@@ -1539,7 +1590,8 @@ namespace Menu
 				"Paste credits:\n"
 				"- ZygiskPG: https://github.com/fedes1to/ZygiskPG\n"
 				"- Stardust: https://github.com/fedes1to/Stardust-PG3D-Menu\n"
-			);
+			));
+
 			Button OpenDC(&GROUP, "Nazi Mod Discord server");
 
 			#pragma region MenuFunctions
@@ -1547,7 +1599,7 @@ namespace Menu
 			{
 				OpenDC.OnClick([&]
 				{
-					ShellExecuteA(0, 0, "https://discord.gg/Y3gj2Rszq6", 0, 0, SW_SHOW);
+					ShellExecuteA(0, 0, OBF("https://discord.gg/Y3gj2Rszq6"), 0, 0, SW_SHOW);
 				});
 			}
 			#pragma endregion
@@ -1698,8 +1750,9 @@ namespace Menu
 
 				void Load()
 				{
-					DumpItemRecord.OnClick([&]
+					DumpItemRecord.OnClickAsync([&]
 					{
+						IL2CPP::AttachCurrentThread();
 						std::optional<std::wstring> pathOpt = FileDialogService::GetFilepathSave(L"Select a file (.txt)\0*.txt");
 
 						if (!pathOpt.has_value()) return;
@@ -1729,11 +1782,47 @@ namespace Menu
 		static bool iUnderstand = false;
 		static bool errorShown = false;
 
+		auto background = ImGui::GetBackgroundDrawList();
+
 		if (ImGui::IsKeyPressed(ImGuiKey_F1) || ImGui::IsKeyPressed(ImGuiKey_RightCtrl) || ImGui::IsKeyPressed(ImGuiKey_RightAlt))
 		{
 			Account::Unlocker::WeaponUnlocker::WeaponLevel.value = Global::gPlayerLevel;
 			gMenuShown = !gMenuShown;
 		}
+
+		if (Gameplay::General::Aim::Aimbot.value && Gameplay::General::Aim::FOVCircle.value)
+		{
+			auto screenCenter = Vector2(Screen::GetWidth() / 2, Screen::GetHeight() / 2);
+			background->AddCircle(
+				ImVec2(screenCenter.X, screenCenter.Y),
+				Gameplay::General::Aim::AimbotFOV.value,
+				ImColor(255, 0, 0),
+				64,
+				2.0f
+			);
+		}
+
+		auto watermarkText = OBF("Get Nazi Mod for free - discord.gg/Y3gj2Rszq6");
+		auto watermarkSize = ImGui::CalcTextSize(watermarkText);
+		ImVec2 padding = ImGui::GetStyle().WindowPadding;
+		auto watermarkPos = ImVec2(padding.x, Screen::GetHeight() - watermarkSize.y - padding.y);
+
+		ImGui::PushFont(UIFramework::Vars::gLargeFont);
+
+		static float rainbowHue = 0.0f;
+		rainbowHue += 0.005f; // Adjust this value for the speed of the rainbow effect
+		if (rainbowHue > 1.0f)
+			rainbowHue -= 1.0f;
+
+		ImColor rainbowColor = ImColor::HSV(rainbowHue, 1.0f, 1.0f);
+
+		background->AddText(
+			watermarkPos,
+			rainbowColor,
+			watermarkText
+		);
+
+		ImGui::PopFont();
 
 		MouseFix::ShowMouse(gMenuShown);
 
@@ -1741,19 +1830,6 @@ namespace Menu
 		{
 			UIFramework::DisclaimerWindow(ImVec2(900, 600), [&] {iUnderstand = true; });
 			return;
-		}
-
-		if (Gameplay::General::Aim::Aimbot.value && Gameplay::General::Aim::FOVCircle.value)
-		{
-			auto background = ImGui::GetBackgroundDrawList();
-			auto screenCenter = Vector2(Screen::GetWidth() / 2, Screen::GetHeight() / 2);
-			background->AddCircle(
-				ImVec2(screenCenter.X, screenCenter.Y), 
-				Gameplay::General::Aim::AimbotFOV.value, 
-				ImColor(255, 0, 0), 
-				64, 
-				2.0f
-			);
 		}
 
 		if (gMenuShown)
@@ -1778,6 +1854,7 @@ namespace Menu
 
 	void INIT()
 	{
+		#ifndef NO_FEATURE
 		Account::Unlocker::WeaponSkinUnlocker::Load();
 		Account::Unlocker::WeaponUnlocker::Load();
 		Account::Unlocker::RoyaleUnlocker::Load();
@@ -1802,14 +1879,18 @@ namespace Menu
 		Misc::Bypass::Misc::Load();
 		Misc::Bypass::Analytics::Load();
 		Misc::Skin::CustomSkinImporter::Load();
+		Misc::Skin::CustomCapeImporter::Load();
 		Misc::Skin::SkinStealer::Load();
 		Settings::Menu::MenuCustomization::Load();
 		Settings::Menu::Config::Load();
 		Settings::Credit::Load();
+		#endif // !NO_FEAUTES
 
 		#ifdef _DEBUG
 		Debug::DebugTab::ItemRecord::Load();
+		#ifdef NO_FEATURE
 		Debug::DebugTab::Squad::Load();
+		#endif 
 		Debug::DebugTab::Dumper::Load();
 		#endif 
 

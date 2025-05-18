@@ -14,7 +14,7 @@ struct DictionaryBuilder
 
 	static DictionaryBuilder Create(const std::string& first, const std::string& second);
 
-	static DictionaryBuilder Create(IL2CPP::Class* first, IL2CPP::Class* second);
+	static DictionaryBuilder Create(const IL2CPP::Class* first, const IL2CPP::Class* second);
 
 	//static DictionaryBuilder FromObject(Il2CppObject* obj);
 

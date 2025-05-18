@@ -144,6 +144,7 @@ namespace UIComponents
 	public:
 		ButtonSizeType buttonSizeType;
 		std::vector<std::function<void()>> onClickEventEntry;
+		std::vector<std::function<void()>> onClickAsyncEventEntry;
 
 		Button(Group* parentGroup, const char* label, ButtonSizeType buttonSizeType = ButtonSizeType::FLEXIBLE);
 
@@ -152,6 +153,7 @@ namespace UIComponents
 		void Render() override;
 
 		virtual void OnClick(const std::function<void()>& callback);
+		virtual void OnClickAsync(const std::function<void()>& callback);
 	};
 
 	class IntSlider : public IComponent, public IConfigurable

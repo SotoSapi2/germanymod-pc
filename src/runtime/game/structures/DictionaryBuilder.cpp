@@ -31,7 +31,7 @@ DictionaryBuilder DictionaryBuilder::Create(const std::string& first, const std:
 	);
 }
 
-DictionaryBuilder DictionaryBuilder::Create(IL2CPP::Class* first, IL2CPP::Class* second)
+DictionaryBuilder DictionaryBuilder::Create(const IL2CPP::Class* first, const IL2CPP::Class* second)
 {
 	return Create(
 		IL2CPP::String::Create(first->GetFullName()),

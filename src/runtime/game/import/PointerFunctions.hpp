@@ -223,7 +223,7 @@ namespace ExperienceController
 {
 	extern Pointer<int(IL2CPP::Object* experienceController)> GetCurrentLevel;
 
-	extern Pointer<void(IL2CPP::Object* experienceController, int value, int reason, IL2CPP::Object* dictionary, IL2CPP::Object* sex)> AddExperience;
+	extern Pointer<void(IL2CPP::Object* experienceController, int value, ExpObtainCause reason, IL2CPP::Object* dictionary, IL2CPP::Object* sex)> AddExperience;
 }
 
 namespace LobbyGiverClass
@@ -243,7 +243,7 @@ namespace GadgetManager
 
 namespace WearClass
 {
-	extern Pointer<void* (int _enum, IL2CPP::String* str)> AddWear;
+	extern Pointer<void* (CategoryNames categoryName, IL2CPP::String* str)> AddWear;
 
 	extern Pointer<int(IL2CPP::String* id)> WearIndex;
 }

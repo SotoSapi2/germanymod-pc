@@ -3,8 +3,6 @@
 
 namespace IL2CPP
 {
-
-
 	std::string SignaturePattern::ToString() const
 	{
 		std::stringstream out;

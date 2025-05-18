@@ -468,7 +468,7 @@ namespace ExperienceController
 		0x6
 	);
 
-	Pointer<void(IL2CPP::Object* experienceController, int value, int reason, IL2CPP::Object* dictionary, IL2CPP::Object* sex)> AddExperience(
+	Pointer<void(IL2CPP::Object* experienceController, int value, ExpObtainCause reason, IL2CPP::Object* dictionary, IL2CPP::Object* sex)> AddExperience(
 		"ExperienceController",
 		0x1c
 	);
@@ -500,9 +500,9 @@ namespace GadgetManager
 
 namespace WearClass
 {
-	Pointer<void* (int _enum, IL2CPP::String* str)> AddWear(
+	Pointer<void* (CategoryNames categoryName, IL2CPP::String* str)> AddWear(
 		"WearClass",
-		0x25
+		{"internal static", "Void", nullptr, {"ENUM", "String"}}
 	);
 
 	Pointer<int(IL2CPP::String* id)> WearIndex(

@@ -22,6 +22,8 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+set(DISABLE_CHEAT_FEATURE OFF)
+
 add_compile_definitions(
 	RUNTIME_DLL_FILENAME="${RUNTIME_NAME}.dll" 
 	PROJECT_NAME="${PROJECT_NAME}"
@@ -34,6 +36,10 @@ add_compile_definitions(
     $<$<CONFIG:Release>:OE_RELEASE>
     $<$<CONFIG:MinSizeRel>:OE_RELEASE>
 )
+
+if(DISABLE_CHEAT_FEATURE)
+	add_compile_definitions(NO_FEATURE)
+endif()
 
 add_custom_target(
 	assets ALL

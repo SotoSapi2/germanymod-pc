@@ -390,6 +390,57 @@ enum class CommandID
 	AnalyticsProgress = 777 // Index: 0x17f Offset: 0x0
 };
 
+enum CategoryNames
+{
+	PrimaryCategory = 0, // Index: 0x1 Offset: 0x0
+	BackupCategory = 1, // Index: 0x2 Offset: 0x0
+	MeleeCategory = 2, // Index: 0x3 Offset: 0x0
+	SpecilCategory = 3, // Index: 0x4 Offset: 0x0
+	SniperCategory = 4, // Index: 0x5 Offset: 0x0
+	PremiumCategory = 5, // Index: 0x6 Offset: 0x0
+	HatsCategory = 6, // Index: 0x7 Offset: 0x0
+	ArmorCategory = 7, // Index: 0x8 Offset: 0x0
+	SkinsCategory = 8, // Index: 0x9 Offset: 0x0
+	CapesCategory = 9, // Index: 0xa Offset: 0x0
+	BootsCategory = 10, // Index: 0xb Offset: 0x0
+	GearCategory = 11, // Index: 0xc Offset: 0x0
+	MaskCategory = 12, // Index: 0xd Offset: 0x0
+	SkinsCategoryEditor = 1000, // Index: 0xe Offset: 0x0
+	SkinsCategoryMale = 1100, // Index: 0xf Offset: 0x0
+	SkinsCategoryFemale = 1200, // Index: 0x10 Offset: 0x0
+	SkinsCategorySpecial = 1300, // Index: 0x11 Offset: 0x0
+	SkinsCategoryPremium = 1400, // Index: 0x12 Offset: 0x0
+	LeagueWeaponSkinsCategory = 2000, // Index: 0x13 Offset: 0x0
+	LeagueHatsCategory = 2100, // Index: 0x14 Offset: 0x0
+	LeagueSkinsCategory = 2200, // Index: 0x15 Offset: 0x0
+	ThrowingCategory = 12500, // Index: 0x16 Offset: 0x0
+	ToolsCategoty = 13000, // Index: 0x17 Offset: 0x0
+	SupportCategory = 13500, // Index: 0x18 Offset: 0x0
+	PetsCategory = 25000, // Index: 0x19 Offset: 0x0
+	EggsCategory = 30000, // Index: 0x1a Offset: 0x0
+	BestWeapons = 35000, // Index: 0x1b Offset: 0x0
+	BestWear = 40000, // Index: 0x1c Offset: 0x0
+	BestGadgets = 45000, // Index: 0x1d Offset: 0x0
+	WeaponCraftCategory = 110000, // Index: 0x1e Offset: 0x0
+	EventCraftCategory = 135000, // Index: 0x1f Offset: 0x0
+	SetsCraftCategory = 140000, // Index: 0x20 Offset: 0x0
+	RoyaleCraftCategory = 141000, // Index: 0x21 Offset: 0x0
+	AvatarCategory = 150000, // Index: 0x22 Offset: 0x0
+	GlidersRoyaleCategory = 160000, // Index: 0x23 Offset: 0x0
+	ShovelsRoyaleCategory = 170000, // Index: 0x24 Offset: 0x0
+	HatsRoyaleCategory = 180000, // Index: 0x25 Offset: 0x0
+	RoyaleAvatarsCategory = 190000, // Index: 0x26 Offset: 0x0
+	TrailRoyaleCategory = 200000, // Index: 0x27 Offset: 0x0
+	TransportRoyaleCategory = 210000, // Index: 0x28 Offset: 0x0
+	ItemModule = 220000, // Index: 0x29 Offset: 0x0
+	ItemModulesChest = 230000, // Index: 0x2a Offset: 0x0
+	WeaponSkinsCategory = 240000, // Index: 0x2b Offset: 0x0
+	GraffitiCategory = 250000, // Index: 0x2c Offset: 0x0
+	ArmorSkinCategory = 260000, // Index: 0x2d Offset: 0x0
+	WearSkinCategory = 270000, // Index: 0x2e Offset: 0x0
+	None = 9990000 // Index: 0x2f Offset: 0x0
+};
+
 enum class OfferItemType
 {
 	None = 0,
@@ -720,6 +771,29 @@ enum class EventEnum // TypeDefIndex: 9067
 	BossSpawned = 238,
 	NewPlayerFillSafe = 239,
 	SetPlayerWantedRPC = 240
+};
+
+enum class ExpObtainCause
+{
+	None = 0,
+	AddLevelIfNeededOnInit = 1,
+	DecreaseExpIfCurrentLevelMoreThanInConfig = 2,
+	RewardForTraining = 3,
+	MultiplayerMatchReward = 4,
+	CampaignLevelComplete = 5,
+	SurvivalMatchReward = 6,
+	GetCampaignBonusCoin = 7,
+	GetCampaignBonusSpeedRunCoin = 8,
+	VeteranChestOpen = 9,
+	ClassicArenaMatchReward = 10,
+	Inapp = 11,
+	CardRouletteObtainReward = 12,
+	GameOffer = 14,
+	TemplateEventPurchaseCell = 15,
+	DevConsole = 6549877,
+	DevFpsManager = 6628428,
+	DevCodeKey = 6793202,
+	DevButtons = 6813527
 };
 
 struct AnalyticsParamater 

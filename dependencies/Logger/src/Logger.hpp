@@ -41,7 +41,7 @@ namespace Logger
 #define LOG_TEST()          Logger::Log(Logger::LogTag::None, "[TEST PASSED] %s:%i", __FUNCTION__, __LINE__)
 #define LOG_NOTAG(str, ...) Logger::Log(Logger::LogTag::None, str, __VA_ARGS__)
 #define LOG_INFO(str, ...)  Logger::Log(Logger::LogTag::Info, str, __VA_ARGS__)
-#define LOG_WARN(str, ...)  Logger::Log(Logger::LogTag::Warn, str, __VA_ARGS__)
+#define LOG_WARN(str, ...)  Logger::Log(Logger::LogTag::Warning, str, __VA_ARGS__)
 #define LOG_ERROR(str, ...) Logger::Log(Logger::LogTag::Error, str, __VA_ARGS__)
 
 #define LOG_INFO_IF(ifTrue, str, ...)   if(ifTrue) LOG_INFO(str, __VA_ARGS__)

@@ -363,13 +363,13 @@ namespace IL2CPP
 			}
 
 			std::stringstream imageOutput;
+			imageOutput << "// image: " << imageToDump->GetName() << std::endl;
 
 			for (size_t i = 0; i < imageToDump->ClassCount(); i++)
 			{
 				Class* klass = imageToDump->GetClass(i);
 				Type* type = klass->GetType();
 
-				imageOutput << imageToDump->GetName() << std::endl;
 				imageOutput << GenerateType(type, generatePattern);
 			}
 

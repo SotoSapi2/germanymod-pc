@@ -577,6 +577,16 @@ namespace GameplayMain
 		$CallOrig(SendPlayerEffect, _this, player, source, effectIndex, duration, senderPixelID);
 	}
 
+	$Hook(bool, isAvailable, (int filterMaps))
+	{
+		if (Menu::Misc::Bypass::Armory::AllowSandbox.IsActive())
+		{
+			return true;
+		}
+
+		return false;
+	}
+
 	#pragma region PatchesHooks
 	$Hook(float, FireRateModifier, (IL2CPP::Object* _this))
 	{
@@ -713,6 +723,11 @@ namespace GameplayMain
 		$RegisterHook(
 			get_SpeedModifier,
 			GetClass("ItemRecord")->GetMethod("get_SpeedModifier")
+		);
+
+		$RegisterHook(
+			isAvailable,
+			GetClass("ItemRecord")->GetMethod(0x56)
 		);
 
 		$RegisterHook(

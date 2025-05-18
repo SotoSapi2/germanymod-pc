@@ -181,7 +181,7 @@ namespace Menu
 				extern Browser WeaponRarity;
 
 				extern Button UnlockButton;
-				extern Button RemoveButton;
+				//extern Button RemoveButton;
 
 				extern Button UnlockRGBSet;
 				extern Button UnlockSecret;
@@ -200,6 +200,7 @@ namespace Menu
 
 				extern Browser WeaponSkinBrowser;
 
+				extern Button UnlockDlcButton;
 				extern Button UnlockButton;
 
 				
@@ -236,8 +237,10 @@ namespace Menu
 			}
 
 			namespace RoyaleUnlocker
-			{
+			{	
 				extern Group GROUP;
+
+				extern Text NOTE;
 
 				extern Mode UnlockMode;
 
@@ -346,6 +349,17 @@ namespace Menu
 		{
 			extern Tab TAB;
 
+			namespace ClanRank
+			{
+				extern Group GROUP;
+				extern Browser ClanRankBrowser;
+				extern IntInput ClanRankXP;
+
+				extern Button SetClanRank;
+
+				
+			}
+
 			namespace GlobalWin
 			{
 				extern Group GROUP;
@@ -392,6 +406,44 @@ namespace Menu
 
 				
 			}
+
+
+		}
+
+		namespace ClanStuff
+		{
+			extern Tab TAB;
+
+			namespace ClanID
+			{
+				extern Group GROUP;
+				extern Text NOTE;
+
+				extern IntInput Input;
+			}
+
+			namespace PlaceableUnlocker
+			{
+
+				extern Group GROUP;
+				extern Mode UnlockMode;
+
+				extern Browser PlaceableBrowser;
+				extern IntInput PlaceableAmount;
+
+				extern Button UnlockPlaceable;
+				extern Button UnlockAllPlaceable;
+
+				
+			}
+
+			namespace Misc
+			{
+				extern Group GROUP;
+				extern Button PromoteClan;
+
+				
+			}
 		}
 	}
 
@@ -417,6 +469,7 @@ namespace Menu
 				extern Group GROUP;
 
 				extern Checkbox AllowShovel;
+				extern Checkbox AllowSandbox;
 
 				
 			}
@@ -424,6 +477,10 @@ namespace Menu
 			namespace Misc
 			{
 				extern Group GROUP;
+
+				extern Text NOTE;
+
+				extern Checkbox SafeMode;
 				extern Button ForceReload;
 				extern Button SkipTutorial;
 
@@ -433,8 +490,6 @@ namespace Menu
 			namespace Analytics
 			{
 				extern Group GROUP;
-
-				extern Text NOTE;
 
 				//extern Checkbox AnalyticsBypass;
 				extern Checkbox DeeperAnalyticsBypass;
@@ -523,6 +578,7 @@ namespace Menu
 
 			extern Group GROUP;
 			extern Text NOTE;
+
 			extern Button OpenDC;
 
 			

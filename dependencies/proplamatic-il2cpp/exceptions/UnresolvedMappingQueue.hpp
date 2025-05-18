@@ -18,7 +18,7 @@ namespace IL2CPP
 				InitializeException(
 					IL2CPP_NAMEOF(UnresolvedMappingQueue), 
 					std::format(
-						"{0} class mapping queue(s) are failed to be resolved.\n"
+						"{0} class mapping queue(s) failed to be resolved.\n"
 						"Unresolved queue(s):"
 						"{1}",
 						totalOfUnresolvedQueue,

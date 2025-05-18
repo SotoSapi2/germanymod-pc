@@ -41,6 +41,8 @@ TODO:
 #include <Logger.hpp>
 #include <json.hpp>
 #include <windows.h>
+#include <obfuscator.h>
+#include "TaskScheduler.hpp"
 
 #define IS_ODD(x) (x % 2 == 1)
 
@@ -1652,7 +1654,7 @@ namespace UIFramework
 				ImGui::PopFont();
 				ImGui::Separator();
 
-				ImGui::TextUnformatted(
+				ImGui::TextUnformatted(OBF(
 					"Please, read carefuly!\n\n"
 
 					"Our cheat (Nazi Mod) is provided to you completely free of charge.\n"
@@ -1662,18 +1664,19 @@ namespace UIFramework
 
 					"Additionally, we emphasize that our cheat is exclusively distributed through our official Discord server.\n"
 					"Any download links or sources claiming to offer our cheat outside of our Discord server could potentially contain malware or other\n"
-					"malicious software.We do not recommend obtaining our cheat from any other source apart from our official Discord server.\n\n"
+					"malicious software. We do not recommend obtaining our cheat from any other source apart from our official Discord server.\n\n"
 
 					"tdlr: Nazi Mod is free. If you bought this cheat from someone, you're cooked.\n"
 					"If you find Nazi Mod from any source other than our Discord server, it might be a malware or virus.\n\n"
 
 					"Thank you for your understanding!"
-				);
-				if (Widgets::Button("Nazi Mod Discord server (.gg/Y3gj2Rszq6)", UIComponents::ButtonSizeType::FLEXIBLE))
+				));
+
+				if (Widgets::Button(OBF("Nazi Mod Discord server (.gg/Y3gj2Rszq6)"), UIComponents::ButtonSizeType::FLEXIBLE))
 				{
-					ShellExecuteA(0, 0, "https://discord.gg/Y3gj2Rszq6", 0, 0, SW_SHOW);
+					ShellExecuteA(0, 0, OBF("https://discord.gg/Y3gj2Rszq6"), 0, 0, SW_SHOW);
 				}
-				if (Widgets::Button("I understand.", UIComponents::ButtonSizeType::FLEXIBLE))
+				if (Widgets::Button(OBF("I understand."), UIComponents::ButtonSizeType::FLEXIBLE))
 				{
 					onClose();
 				}
@@ -2025,12 +2028,22 @@ namespace UIComponents
 			{
 				event();
 			}
+
+			for (auto& event : onClickAsyncEventEntry)
+			{
+				TaskScheduler::RunAsync(event);
+			}
 		}
 	}
 
 	void Button::OnClick(const std::function<void()>& callback)
 	{
 		onClickEventEntry.push_back(callback);
+	}
+
+	void Button::OnClickAsync(const std::function<void()>& callback)
+	{
+		onClickAsyncEventEntry.push_back(callback);
 	}
 
 	IntSlider::IntSlider(Group* parentGroup, const char* label, int min, int max, int defaultValue) : IConfigurable()

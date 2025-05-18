@@ -32,11 +32,7 @@ namespace WebsocketCore
 
 	void QueuePackage(const std::string& msgType, const json& package, const std::function<void(json& response)>& onReceive)
 	{
-		if (!WSManagerInstance)
-		{
-			assert(WSManagerInstance && "Queuing WebSocket package before WebSocketManager got initialized.");
-			return;
-		}
+		assert(WSManagerInstance && "Queuing WebSocket package when WebSocketManager is not initialized.");
 
 		int requestId = WSManagerInstance->GetFieldRef<int>(0x4);
 		commandQueue.push_back(new SocketQueue(

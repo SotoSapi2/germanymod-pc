@@ -321,13 +321,13 @@ namespace HttpService
 			}
 
 			HttpHandle handle(hInternet, this->m_url + path, method, this->port);
-			handle.SendRequest(data, BuilderHeaders(additonalHeaders));
+			handle.SendRequest(data, BuildHeaders(additonalHeaders));
 
 			return Response{handle.GetStatusCode(), handle.ReadResponseContent()};
 		}
 
 		private:
-		std::string BuilderHeaders(const std::map<std::string, std::string>& additionalHeaders = {})
+		std::string BuildHeaders(const std::map<std::string, std::string>& additionalHeaders = {})
 		{
 			std::stringstream headerStream;
 

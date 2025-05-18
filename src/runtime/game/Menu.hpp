@@ -25,6 +25,7 @@ namespace Menu
 				extern Checkbox FirerateHack;
 				extern FloatSlider Firerate;
 				extern Checkbox NoFixedDelay;
+				extern Checkbox GotoPlayers;
 
 				
 			}

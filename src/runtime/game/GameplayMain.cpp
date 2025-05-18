@@ -579,10 +579,10 @@ namespace GameplayMain
 
 	$Hook(bool, isAvailable, (int filterMaps))
 	{
-		if (Menu::Misc::Bypass::Armory::AllowSandbox.IsActive())
-		{
-			return true;
-		}
+		//if (Menu::Misc::Bypass::Armory::AllowSandbox.IsActive())
+		//{
+		//	return true;
+		//}
 
 		return false;
 	}
@@ -725,10 +725,10 @@ namespace GameplayMain
 			GetClass("ItemRecord")->GetMethod("get_SpeedModifier")
 		);
 
-		$RegisterHook(
-			isAvailable,
-			GetClass("ItemRecord")->GetMethod(0x56)
-		);
+		//$RegisterHook(
+		//	isAvailable,
+		//	GetClass("ItemRecord")->GetMethod(0x56)
+		//);
 
 		$RegisterHook(
 			PhotonNetwork_Destroy,

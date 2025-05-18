@@ -319,7 +319,7 @@ namespace Menu
 			{
 				Group GROUP(&TAB, "Weapon Skin Unlocker");
 
-				Mode UnlockMode(&GROUP, "Unlock mode", { "Automatic", "Manual", "Misc"});
+				Mode UnlockMode(&GROUP, "Unlock mode", { "Automatic", "Manual", "Misc" });
 
 				IntSlider FromIndexInput(&GROUP, "From index ", "WepSkinUnlock_auto", 0, 1);
 				IntSlider ToIndexInput(&GROUP, "To index ", "WepSkinUnlock_auto", 0, 1);
@@ -361,7 +361,7 @@ namespace Menu
 
 					UnlockDlcButton.OnClick([&]
 					{
-						AccountCommands::UnlockDlcWeaponSkin(); 
+						AccountCommands::UnlockDlcWeaponSkin();
 						WebsocketCore::Reload();
 					});
 				}
@@ -471,7 +471,7 @@ namespace Menu
 			}
 
 			namespace RoyaleUnlocker
-			{	
+			{
 				Group GROUP(&TAB, "Royale Cosmetic Unlocker");
 
 				Text NOTE(&GROUP,
@@ -512,8 +512,8 @@ namespace Menu
 						else if (UnlockMode.index == 1)
 						{
 							ProgressUpdater::AddRoyale(
-								IL2CPP::String::Create(RoyalesBrowser.list[RoyalesBrowser.index]), 
-								true, 
+								IL2CPP::String::Create(RoyalesBrowser.list[RoyalesBrowser.index]),
+								true,
 								Global::offerwallParam
 							);
 						}
@@ -551,7 +551,7 @@ namespace Menu
 						ArmorBrowser.list.push_back(key->ToString());
 					});
 
-					UnlockAllArmors.OnClick([&] 
+					UnlockAllArmors.OnClick([&]
 					{
 						for (auto v : ArmorBrowser.list)
 						{
@@ -735,10 +735,10 @@ namespace Menu
 			{
 				Group GROUP(&TAB, "Currency Adder");
 
-				Browser CurrencyBrowser(&GROUP, "Currency browser", { 
+				Browser CurrencyBrowser(&GROUP, "Currency browser", {
 					"GemsCurrency_1", "Coins_1", "LotteryKey", "ClanSilver", "ClanLootBoxPoints",
 					"Coupons", "PixelPassCurrency"
-				});
+					});
 				IntInput CurrencyAmount(&GROUP, "Currency amount");
 				Button AddCurrency(&GROUP, "Add Currency");
 
@@ -781,7 +781,7 @@ namespace Menu
 			{
 				Group GROUP(&TAB, "Chest Adder");
 
-				Browser ChestBrowser(&GROUP, "Chest browser", {"novice chest", "medium chest", "winner chest", "war hero chest"});
+				Browser ChestBrowser(&GROUP, "Chest browser", { "novice chest", "medium chest", "winner chest", "war hero chest" });
 				IntInput ChestAmount(&GROUP, "Chest amount");
 				Button AddChest(&GROUP, "Add Chest");
 
@@ -880,7 +880,7 @@ namespace Menu
 					"Colonel",
 					"General",
 					"Emperor"
-				}, 10);
+					}, 10);
 				IntInput ClanRankXP(&GROUP, "Clan Rank XP", 130000);
 
 				Button SetClanRank(&GROUP, "Set Clan Rank");
@@ -1162,7 +1162,7 @@ namespace Menu
 						}
 					});
 
-					if(BypassChatFilter.value)
+					if (BypassChatFilter.value)
 						MemPatcher::ReturnFalse(ScanMatInWold_ptr);
 				}
 				#pragma endregion
@@ -1209,7 +1209,7 @@ namespace Menu
 				void Load()
 				{
 					ForceReload.OnClick(WebsocketCore::Reload);
-					SkipTutorial.OnClick([&] 
+					SkipTutorial.OnClick([&]
 					{
 						TutorialClass::Fill(TutorialClass::GetInstance());
 						TrainingController::FinishTraining();
@@ -1265,6 +1265,7 @@ namespace Menu
 		{
 			Tab TAB(&SECTION, "Skin importer & stealer");
 
+			#pragma region MenuFunctions
 			void ShowErrorMsgBox(const char* msg)
 			{
 				ShowWindow(GetActiveWindow(), SW_SHOWMINIMIZED);
@@ -1277,6 +1278,7 @@ namespace Menu
 
 				return;
 			}
+			#pragma endregion
 
 			namespace CustomSkinImporter
 			{
@@ -1354,7 +1356,7 @@ namespace Menu
 			namespace CustomCapeImporter
 			{
 				Group GROUP(&TAB, "Custom Cape Importer", UIComponents::GroupPlacementType::RIGHT);
-				Text NOTE(&GROUP,"Supported Cape Resolution: 12x16.");
+				Text NOTE(&GROUP, "Supported Cape Resolution: 12x16.");
 
 				Button ImportCape(&GROUP, "Import Cape");
 
@@ -1438,7 +1440,7 @@ namespace Menu
 					currentSavePath = pathOpt.value();
 					auto data = nlohmann::json::object({
 						{"player_id", std::to_string(TargetID.value)}
-					});
+						});
 					WebsocketCore::QueuePackage("get_progress", data, ParseSlotData);
 				}
 
@@ -1504,7 +1506,7 @@ namespace Menu
 				#pragma region MenuFunctions
 				void Load()
 				{
-					SetTheme.OnClick([&] 
+					SetTheme.OnClick([&]
 					{
 						UIFramework::Vars::gMenuColorScheme = colorSchemeList[Themes.index];
 					});
@@ -1554,7 +1556,7 @@ namespace Menu
 		{
 			Tab TAB(&SECTION, "Credits & info", UIComponents::GroupSplitType::NO_SPLIT);
 
-			Group GROUP(&TAB, "Credits & info", {-1, -1});
+			Group GROUP(&TAB, "Credits & info", { -1, -1 });
 			Text NOTE(&GROUP, OBF(
 				"Nazi Mod version: v5.2.3\n"
 				"\n"

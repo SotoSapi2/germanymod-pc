@@ -237,7 +237,7 @@ namespace Menu
 			}
 
 			namespace RoyaleUnlocker
-			{	
+			{
 				extern Group GROUP;
 
 				extern Text NOTE;
@@ -502,12 +502,25 @@ namespace Menu
 		{
 			extern Tab TAB;
 
+			
+
 			namespace CustomSkinImporter
 			{
 				extern Group GROUP;
 				extern Text NOTE;
 
 				extern Button ImportSkin;
+
+				
+			}
+
+			namespace CustomCapeImporter
+			{
+				extern Group GROUP;
+				extern Text NOTE;
+
+				extern Button ImportCape;
+
 				
 			}
 

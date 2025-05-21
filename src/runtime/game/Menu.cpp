@@ -107,7 +107,7 @@ namespace Menu
 				void Update()
 				{
 					TagService::ToggleTagVisibility("Killaura_optional", !InfKillauraRadius.value);
-					TagService::ToggleTagVisibility("Aimbot_options", Aimbot.value + SoftSilentAim.value + SilentRocket.value);
+					TagService::ToggleTagVisibility("Aimbot_options", Aimbot.value || SoftSilentAim.value || SilentRocket.value);
 				}
 				#pragma endregion
 			}

@@ -68,7 +68,7 @@ file(
 	"${SRC}/loader/*.c"
 )
 
-add_executable(${INJECTOR_NAME} ${INJECTOR_GLOB})
+add_executable(${INJECTOR_NAME} ${INJECTOR_GLOB} )
 target_link_libraries(${INJECTOR_NAME} PRIVATE 
 	logger TulipHook
 )

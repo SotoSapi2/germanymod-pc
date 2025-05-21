@@ -43,12 +43,14 @@ namespace Menu
 				Checkbox FirerateHack(&GROUP, "Hack Firerate (kickable)");
 				FloatSlider Firerate(&GROUP, "Firerate", "Player_firerate", 0, 50);
 				Checkbox NoFixedDelay(&GROUP, "No switch delay (must be enabled in lobby)");
-				Checkbox GotoPlayers(&GROUP, "Goto Players");
+				Checkbox GotoPlayers(&GROUP, "Teleport kill");
+				FloatSlider GotoPlayersDistance(&GROUP, "Teleport kill distance", "Teleport_kill", 0, 10, 1.0f);
 
 				#pragma region MenuFunctions
 				void Update()
 				{
 					TagService::ToggleTagVisibility("Player_firerate", FirerateHack.value);
+					TagService::ToggleTagVisibility("Teleport_kill", GotoPlayers.value);
 				}
 				#pragma endregion
 			}
@@ -124,10 +126,10 @@ namespace Menu
 				Checkbox Gravity(&GROUP, "Gravity");
 				Checkbox Ricochet(&GROUP, "Ricochet");
 				Checkbox RainRocket(&GROUP, "RainRocket");
-				Checkbox thredeeboxrocket(&GROUP, "3D Box Rocket");
-				Checkbox penis(&GROUP, "Penis Rocket");
+				Checkbox Box3DRocket(&GROUP, "3D Box Rocket");
+				Checkbox PenisRocket(&GROUP, "Penis Rocket");
 				Checkbox TextToRocket(&GROUP, "Text To Rocket");
-				StringInput Menu::Gameplay::General::Rocket::rocketTextInput = StringInput(&GROUP, "Rocket Text", "NAZI MOD ON TOP", 64);
+				StringInput RocketTextInput(&GROUP, "Rocket Text", "NAZI MOD ON TOP");
 			}
 
 			namespace Visual
@@ -1243,7 +1245,7 @@ namespace Menu
 			{
 				Group GROUP(&TAB, "Analytics");
 
-				//Checkbox AnalyticsBypass(&GROUP, "Analytics bypass", true);
+				Checkbox AnalyticsBypass(&GROUP, "Analytics bypass", true);
 				Checkbox DeeperAnalyticsBypass(&GROUP, "Analytics bypass");
 
 				#pragma region MenuFunctions
@@ -1274,6 +1276,7 @@ namespace Menu
 		{
 			Tab TAB(&SECTION, "Skin importer & stealer");
 
+			#pragma region MenuFunctions
 			void ShowErrorMsgBox(const char* msg)
 			{
 				ShowWindow(GetActiveWindow(), SW_SHOWMINIMIZED);
@@ -1286,6 +1289,7 @@ namespace Menu
 
 				return;
 			}
+			#pragma endregion
 
 			namespace CustomSkinImporter
 			{

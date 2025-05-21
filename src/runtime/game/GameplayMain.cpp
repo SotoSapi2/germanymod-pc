@@ -8,6 +8,7 @@
 #include "structures/DictionaryBuilder.hpp"
 #include "structures/Stacktrace.hpp"
 #include <sstream>
+#include "DumpsterFire.hpp"
 #include "utils/MemPatcher.hpp"
 
 namespace GameplayMain
@@ -24,48 +25,60 @@ namespace GameplayMain
 
 	bool dontDespawnBot = false;
 
-
 	void HandleSoftSilent()
 	{
-		if (!gPlayerMoveCList || !gMyPlayerMoveC) return;
-		constexpr float maxraycastdistance = 100.0f;
 		bool lbuttonDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
-		IL2CPP::Object* cam = Camera::GetMain();
-		if (!cam) return;
-		IL2CPP::Object* camTransform = Component::GetTransform(cam);
-		if (!camTransform) return;
-		if (!lbuttonDown) return;
+
+		if (!lbuttonDown)
+		{
+			return;
+		}
+
+		constexpr float maxRaycastDistance = 100.0f;
 		Vector3 screenCenter(Screen::GetWidth() * 0.5f, Screen::GetHeight() * 0.5f, 0.0f);
+
+		IL2CPP::Object* cam = Camera::GetMain();
+		IL2CPP::Object* camTransform = Component::GetTransform(cam);
+
 		IL2CPP::Object* myPlrTransform = PlayerMoveC::GetTransform(gMyPlayerMoveC);
-		if (!myPlrTransform) return;
 		Vector3 myPos = Transform::GetPosition(myPlrTransform);
-		IL2CPP::Object* targetTransform = nullptr;
+
 		float minDistance = FLT_MAX;
 		float currentFOV = General::Aim::AimbotFOV.value;
 		Vector3 aimOffset = General::Aim::AimHead.value ? Vector3(0.0f, 0.55f, 0.0f) : Vector3(0.0f, 0.0f, 0.0f);
+
+		IL2CPP::Object* targetTransform = nullptr;
 		gPlayerMoveCList->ForEach([&](IL2CPP::Object* player)
+		{
+			if (!player || PlayerMoveC::IsDead(player) || PlayerMoveC::IsMine(player) || !PlayerMoveC::IsEnemyTo(gMyPlayerMoveC, player))
 			{
-				if (!player) return;
-				if (PlayerMoveC::IsDead(player) || PlayerMoveC::IsMine(player) || !PlayerMoveC::IsEnemyTo(gMyPlayerMoveC, player))
-					return;
-				Vector3 pos = PlayerMoveC::GetPosition(player);
-				Vector3 plrScreenPos = Camera::WorldToScreenPoint(cam, pos);
-				if (plrScreenPos.Z <= 0) return;
-				float distance = Vector3::Distance(screenCenter, plrScreenPos);
-				if (distance >= minDistance || distance > currentFOV) return;
-				Vector3 direction = Vector3::Normalized(pos - myPos);
-				Ray ray = { myPos, direction };
-				RaycastHit info;
-				if (Physics::Raycast(ray, &info, maxraycastdistance))
+				return;
+			}
+
+			Vector3 pos = PlayerMoveC::GetPosition(player);
+			Vector3 plrScreenPos = Camera::WorldToScreenPoint(cam, pos);
+			float distance = Vector3::Distance(screenCenter, plrScreenPos);
+
+			if (plrScreenPos.Z <= 0 || distance >= minDistance || distance > currentFOV)
+			{
+				return;
+			}
+
+			Vector3 direction = Vector3::Normalized(pos - myPos);
+			Ray ray = { myPos, direction };
+			RaycastHit info;
+
+			if (Physics::Raycast(ray, &info, maxRaycastDistance))
+			{
+				IL2CPP::Object* bodyCollider = player->GetFieldRef<IL2CPP::Object*>("_bodyAimCollider");
+				if (info.collider == GameObject::GetInstanceID(bodyCollider))
 				{
-					IL2CPP::Object* bodyCollider = player->GetFieldRef<IL2CPP::Object*>("_bodyAimCollider");
-					if (info.collider == GameObject::GetInstanceID(bodyCollider))
-					{
-						minDistance = distance;
-						targetTransform = PlayerMoveC::GetTransform(player);
-					}
+					minDistance = distance;
+					targetTransform = PlayerMoveC::GetTransform(player);
 				}
-			});
+			}
+		});
+
 		if (targetTransform && minDistance < currentFOV)
 		{
 			Vector3 targetPos = Transform::GetPosition(targetTransform) + aimOffset;
@@ -75,40 +88,42 @@ namespace GameplayMain
 
 	void HandleGotoPlayers()
 	{
-		if (!gPlayerMoveCList || !gMyPlayerMoveC) return;
-		bool lbuttonDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
 		IL2CPP::Object* cam = Camera::GetMain();
-		if (!cam) return;
 		IL2CPP::Object* camTransform = Component::GetTransform(cam);
-		if (!camTransform) return;
-		if (!lbuttonDown) return;
 		IL2CPP::Object* myPlrTransform = PlayerMoveC::GetTransform(gMyPlayerMoveC);
-		if (!myPlrTransform) return;
+		bool lbuttonDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+
 		Vector3 myPos = Transform::GetPosition(myPlrTransform);
 		IL2CPP::Object* targetTransform = nullptr;
 		float minDistance = FLT_MAX;
 		Vector3 aimOffset = General::Aim::AimHead.value ? Vector3(0.0f, 0.55f, 0.0f) : Vector3(0.0f, 0.0f, 0.0f);
+
 		gPlayerMoveCList->ForEach([&](IL2CPP::Object* player)
+		{
+			if (PlayerMoveC::IsDead(player) || PlayerMoveC::IsMine(player) || !PlayerMoveC::IsEnemyTo(gMyPlayerMoveC, player))
 			{
-				if (!player) return;
-				if (PlayerMoveC::IsDead(player) || PlayerMoveC::IsMine(player) || !PlayerMoveC::IsEnemyTo(gMyPlayerMoveC, player))
-					return;
-				Vector3 pos = PlayerMoveC::GetPosition(player);
-				float distance = Vector3::Distance(myPos, pos);
-				if (distance < minDistance)
-				{
-					minDistance = distance;
-					targetTransform = PlayerMoveC::GetTransform(player);
-				}
-			});
+				return;
+			}
+
+			Vector3 pos = PlayerMoveC::GetPosition(player);
+			float distance = Vector3::Distance(myPos, pos);
+
+			if (distance < minDistance)
+			{
+				minDistance = distance;
+				targetTransform = PlayerMoveC::GetTransform(player);
+			}
+		});
+
 		if (targetTransform)
 		{
-			Vector3 targetPos = Transform::GetPosition(targetTransform) + aimOffset;
-			Transform::LookAtVec(camTransform, targetPos);
-			Transform::SetPosition(myPlrTransform, targetPos);
+			Vector3 targetPos = Transform::GetPosition(targetTransform);
+			Vector3 aimPos = targetPos + aimOffset;
+
+			Transform::LookAtVec(camTransform, aimPos);
+			Transform::SetPosition(myPlrTransform, targetPos + Vector3(0, 0, General::Player::GotoPlayersDistance.value));
 		}
 	}
-
 
 	void HandleAimbot()
 	{
@@ -316,47 +331,58 @@ namespace GameplayMain
 
 		dontDespawnBot = true;
 	}
-	void Flyhack()
+
+	void HandleFlyhack()
 	{
 		float flySpeed = Menu::Gameplay::General::Movement::Flyspeed.value;
-		if (!gMyPlayerMoveC) return;
-		bool wDown = (GetAsyncKeyState('W') & 0x8000) != 0;
-		bool aDown = (GetAsyncKeyState('A') & 0x8000) != 0;
-		bool sDown = (GetAsyncKeyState('S') & 0x8000) != 0;
-		bool dDown = (GetAsyncKeyState('D') & 0x8000) != 0;
-		bool spaceDown = (GetAsyncKeyState(VK_SPACE) & 0x8000) != 0;
-		bool ctrlDown = (GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0;
-		IL2CPP::Object* cam = Camera::GetMain();
-		if (!cam) return;
-		IL2CPP::Object* camTransform = Component::GetTransform(cam);
-		if (!camTransform) return;
-		IL2CPP::Object* myPlrTransform = PlayerMoveC::GetTransform(gMyPlayerMoveC);
-		if (!myPlrTransform) return;
-		Vector3 myPos = Transform::GetPosition(myPlrTransform);
-		Vector3 movedirection(0.0f, 0.0f, 0.0f);
-		Vector3 camForward = Transform::GetFoward(camTransform);
+		bool isWDown = (GetAsyncKeyState('W') & 0x8000) != 0;
+		bool isADown = (GetAsyncKeyState('A') & 0x8000) != 0;
+		bool isSDown = (GetAsyncKeyState('S') & 0x8000) != 0;
+		bool isDDown = (GetAsyncKeyState('D') & 0x8000) != 0;
+		bool isSpaceDown = (GetAsyncKeyState(VK_SPACE) & 0x8000) != 0;
+		bool isCtrlDown = (GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0;
+
+		IL2CPP::Object* camera = Camera::GetMain();
+		if (!camera)
+			return;
+
+		IL2CPP::Object* cameraTransform = Component::GetTransform(camera);
+		if (!cameraTransform)
+			return;
+
+		IL2CPP::Object* playerTransform = PlayerMoveC::GetTransform(gMyPlayerMoveC);
+		if (!playerTransform)
+			return;
+
+		Vector3 playerPos = Transform::GetPosition(playerTransform);
+		Vector3 moveDirection(0.0f, 0.0f, 0.0f);
+
+		Vector3 cameraForward = Transform::GetFoward(cameraTransform);
 		Vector3 worldUp(0.0f, 1.0f, 0.0f);
-		Vector3 camRight = Vector3::Cross(camForward, worldUp);
-		camForward.Y = 0.0f;
-		camRight.Y = 0.0f;
-		camForward = Vector3::Normalized(camForward);
-		camRight = Vector3::Normalized(camRight);
-		if (wDown) movedirection = movedirection + camForward;
-		if (sDown) movedirection = movedirection - camForward;
-		if (dDown) movedirection = movedirection - camRight;
-		if (aDown) movedirection = movedirection + camRight;
-		if (spaceDown) movedirection.Y += 1.0f;
-		if (ctrlDown) movedirection.Y -= 1.0f;
-		if (wDown || aDown || sDown || dDown || spaceDown || ctrlDown)
+		Vector3 cameraRight = Vector3::Cross(cameraForward, worldUp);
+
+		cameraForward.Y = 0.0f;
+		cameraRight.Y = 0.0f;
+
+		cameraForward = Vector3::Normalized(cameraForward);
+		cameraRight = Vector3::Normalized(cameraRight);
+
+		if (isWDown) moveDirection = moveDirection + cameraForward;
+		if (isSDown) moveDirection = moveDirection - cameraForward;
+		if (isDDown) moveDirection = moveDirection - cameraRight;
+		if (isADown) moveDirection = moveDirection + cameraRight;
+		if (isSpaceDown) moveDirection.Y += 1.0f;
+		if (isCtrlDown) moveDirection.Y -= 1.0f;
+
+		if (isWDown || isADown || isSDown || isDDown || isSpaceDown || isCtrlDown)
 		{
-			if (movedirection.X != 0.0f || movedirection.Y != 0.0f || movedirection.Z != 0.0f)
-			{
-				movedirection = Vector3::Normalized(movedirection);
-			}
-			Vector3 newposition = myPos + movedirection * flySpeed;
-			Transform::SetPosition(myPlrTransform, newposition);
+			moveDirection = Vector3::Normalized(moveDirection);
+
+			Vector3 newPosition = playerPos + moveDirection * flySpeed;
+			Transform::SetPosition(playerTransform, newPosition);
 		}
 	}
+
 	$Hook(void, WeaponManager, (IL2CPP::Object* _this))
 	{
 		gMyPlayerMoveC = _this->GetFieldPtr<IL2CPP::Object*>("myPlayerMoveC");
@@ -394,9 +420,10 @@ namespace GameplayMain
 			{
 				HandleGotoPlayers();
 			}
+
 			if (General::Movement::Flyhack.value && gPlayerMoveCList != nullptr)
 			{
-				Flyhack();
+				HandleFlyhack();
 			}
 
 			if (gPhotonViewList != nullptr)
@@ -663,91 +690,36 @@ namespace GameplayMain
 			return $CallOrig(CreateRocket, weaponSounds, pos, rot, chargePower, smoke, whateverthisis);
 		}
 
-
-
 		if (General::Rocket::TextToRocket.value)
 		{
-			std::string text = Menu::Gameplay::General::Rocket::rocketTextInput.GetValue();
-			std::map<char, std::vector<std::pair<int, int>>> font = {
-				{'A', {{0,1},{0,2},{0,3},{0,4},{0,5},{0,6},{1,0},{2,0},{3,0},{4,1},{4,2},{4,3},{4,4},{4,5},{4,6},{1,3},{2,3},{3,3}}},
-				{'B', {{0,0},{0,1},{0,2},{0,3},{0,4},{0,5},{0,6},{1,0},{2,0},{3,0},{1,3},{2,3},{1,6},{2,6},{3,6},{4,1},{4,2},{4,4},{4,5}}},
-				{'C', {{1,0},{2,0},{3,0},{4,0},{0,1},{0,2},{0,3},{0,4},{0,5},{1,6},{2,6},{3,6},{4,6}}},
-				{'D', {{0,0},{0,1},{0,2},{0,3},{0,4},{0,5},{0,6},{1,0},{2,0},{3,0},{1,6},{2,6},{3,6},{4,1},{4,2},{4,3},{4,4},{4,5}}},
-				{'E', {{0,0},{0,1},{0,2},{0,3},{0,4},{0,5},{0,6},{1,0},{2,0},{3,0},{4,0},{1,3},{2,3},{3,3},{1,6},{2,6},{3,6},{4,6}}},
-				{'F', {{0,0},{0,1},{0,2},{0,3},{0,4},{0,5},{0,6},{1,0},{2,0},{3,0},{4,0},{1,3},{2,3},{3,3}}},
-				{'G', {{1,0},{2,0},{3,0},{4,0},{0,1},{0,2},{0,3},{0,4},{0,5},{1,6},{2,6},{3,6},{4,6},{4,3},{4,4},{4,5},{3,3}}},
-				{'H', {{0,0},{0,1},{0,2},{0,3},{0,4},{0,5},{0,6},{4,0},{4,1},{4,2},{4,3},{4,4},{4,5},{4,6},{1,3},{2,3},{3,3}}},
-				{'I', {{0,0},{1,0},{2,0},{3,0},{4,0},{2,1},{2,2},{2,3},{2,4},{2,5},{0,6},{1,6},{2,6},{3,6},{4,6}}},
-				{'J', {{0,0},{1,0},{2,0},{3,0},{4,0},{3,1},{3,2},{3,3},{3,4},{3,5},{0,5},{1,6},{2,6}}},
-				{'K', {{0,0},{0,1},{0,2},{0,3},{0,4},{0,5},{0,6},{1,3},{2,2},{3,1},{4,0},{2,4},{3,5},{4,6}}},
-				{'L', {{0,0},{0,1},{0,2},{0,3},{0,4},{0,5},{0,6},{1,6},{2,6},{3,6},{4,6}}},
-				{'M', {{0,0},{0,1},{0,2},{0,3},{0,4},{0,5},{0,6},{1,1},{2,2},{3,1},{4,0},{4,1},{4,2},{4,3},{4,4},{4,5},{4,6}}},
-				{'N', {{0,0},{0,1},{0,2},{0,3},{0,4},{0,5},{0,6},{1,1},{2,2},{3,3},{4,4},{4,0},{4,1},{4,2},{4,3},{4,4},{4,5},{4,6}}},
-				{'O', {{1,0},{2,0},{3,0},{0,1},{0,2},{0,3},{0,4},{0,5},{1,6},{2,6},{3,6},{4,1},{4,2},{4,3},{4,4},{4,5}}},
-				{'P', {{0,0},{0,1},{0,2},{0,3},{0,4},{0,5},{0,6},{1,0},{2,0},{3,0},{4,1},{4,2},{1,3},{2,3},{3,3}}},
-				{'Q', {{1,0},{2,0},{3,0},{0,1},{0,2},{0,3},{0,4},{0,5},{1,6},{2,6},{3,5},{4,1},{4,2},{4,3},{4,4},{3,4},{4,6}}},
-				{'R', {{0,0},{0,1},{0,2},{0,3},{0,4},{0,5},{0,6},{1,0},{2,0},{3,0},{4,1},{4,2},{1,3},{2,3},{3,3},{2,4},{3,5},{4,6}}},
-				{'S', {{0,1},{1,0},{2,0},{3,0},{4,1},{0,5},{1,6},{2,6},{3,6},{4,5},{0,2},{1,3},{2,3},{3,3},{4,4}}},
-				{'T', {{0,0},{1,0},{2,0},{3,0},{4,0},{2,1},{2,2},{2,3},{2,4},{2,5},{2,6}}},
-				{'U', {{0,0},{0,1},{0,2},{0,3},{0,4},{0,5},{1,6},{2,6},{3,6},{4,0},{4,1},{4,2},{4,3},{4,4},{4,5}}},
-				{'V', {{0,0},{0,1},{0,2},{0,3},{1,4},{1,5},{2,6},{3,5},{3,4},{4,0},{4,1},{4,2},{4,3}}},
-				{'W', {{0,0},{0,1},{0,2},{0,3},{0,4},{0,5},{0,6},{1,5},{2,4},{3,5},{4,0},{4,1},{4,2},{4,3},{4,4},{4,5},{4,6}}},
-				{'X', {{0,0},{0,1},{1,2},{2,3},{3,2},{4,1},{4,0},{0,5},{0,6},{1,4},{3,4},{4,5},{4,6}}},
-				{'Y', {{0,0},{0,1},{1,2},{2,3},{2,4},{2,5},{2,6},{3,2},{4,0},{4,1}}},
-				{'Z', {{0,0},{1,0},{2,0},{3,0},{4,0},{4,1},{3,2},{2,3},{1,4},{0,5},{0,6},{1,6},{2,6},{3,6},{4,6}}},
-				{'0', {{1,0},{2,0},{3,0},{0,1},{0,2},{0,3},{0,4},{0,5},{1,6},{2,6},{3,6},{4,1},{4,2},{4,3},{4,4},{4,5},{1,4},{2,3},{3,2}}},
-				{'1', {{1,1},{2,0},{2,1},{2,2},{2,3},{2,4},{2,5},{2,6},{1,6},{3,6}}},
-				{'2', {{0,1},{1,0},{2,0},{3,0},{4,1},{4,2},{3,3},{2,4},{1,5},{0,6},{1,6},{2,6},{3,6},{4,6}}},
-				{'3', {{0,1},{1,0},{2,0},{3,0},{4,1},{3,3},{2,3},{4,4},{4,5},{3,6},{2,6},{1,6},{0,5}}},
-				{'4', {{3,0},{2,1},{1,2},{0,3},{0,4},{1,4},{2,4},{3,4},{4,4},{3,1},{3,2},{3,3},{3,5},{3,6}}},
-				{'5', {{0,0},{1,0},{2,0},{3,0},{4,0},{0,1},{0,2},{0,3},{1,3},{2,3},{3,3},{4,4},{4,5},{3,6},{2,6},{1,6},{0,5}}},
-				{'6', {{3,0},{2,0},{1,0},{0,1},{0,2},{0,3},{0,4},{0,5},{1,6},{2,6},{3,6},{4,5},{4,4},{3,3},{2,3},{1,3}}},
-				{'7', {{0,0},{1,0},{2,0},{3,0},{4,0},{4,1},{3,2},{2,3},{2,4},{2,5},{2,6}}},
-				{'8', {{0,1},{1,0},{2,0},{3,0},{4,1},{4,2},{3,3},{2,3},{1,3},{0,4},{0,5},{1,6},{2,6},{3,6},{4,5},{4,4}}},
-				{'9', {{0,1},{1,0},{2,0},{3,0},{4,1},{4,2},{4,3},{4,4},{4,5},{3,6},{2,6},{1,6},{1,3},{2,3},{3,3}}},
-				{' ', {}},
-				{'!', {{2,0},{2,1},{2,2},{2,3},{2,4},{2,6}}},
-				{'?', {{1,0},{2,0},{3,0},{4,1},{4,2},{3,3},{2,3},{2,4},{2,6}}},
-				{'.', {{2,6}}},
-				{',', {{2,5},{2,6},{1,7}}},
-				{'-', {{1,3},{2,3},{3,3}}},
-				{'_', {{0,6},{1,6},{2,6},{3,6},{4,6}}},
-				{'+', {{2,1},{2,2},{2,3},{2,4},{2,5},{0,3},{1,3},{3,3},{4,3}}},
-				{'=', {{0,2},{1,2},{2,2},{3,2},{4,2},{0,4},{1,4},{2,4},{3,4},{4,4}}},
-				{':', {{2,1},{2,5}}},
-				{';', {{2,1},{2,5},{2,6},{1,7}}},
-				{'(', {{3,0},{2,1},{1,2},{1,3},{1,4},{1,5},{2,6},{3,7}}},
-				{')', {{1,0},{2,1},{3,2},{3,3},{3,4},{3,5},{2,6},{1,7}}},
-				{'[', {{2,0},{1,0},{1,1},{1,2},{1,3},{1,4},{1,5},{1,6},{1,7},{2,7}}},
-				{']', {{2,0},{3,0},{3,1},{3,2},{3,3},{3,4},{3,5},{3,6},{3,7},{2,7}}},
-				{'/', {{4,0},{4,1},{3,2},{3,3},{2,4},{1,5},{1,6},{0,7}}},
-				{'\\', {{0,0},{0,1},{1,2},{1,3},{2,4},{3,5},{3,6},{4,7}}},
-				{'*', {{0,1},{4,1},{1,2},{3,2},{2,3},{1,4},{3,4},{0,5},{4,5}}},
-				{'&', {{1,1},{2,0},{3,1},{1,2},{3,3},{0,4},{1,5},{3,5},{1,6},{2,6},{4,6}}},
-				{'@', {{1,0},{2,0},{3,0},{0,1},{0,2},{0,3},{0,4},{0,5},{1,6},{2,6},{3,6},{4,5},{4,4},{4,3},{3,3},{2,3},{2,4},{3,4}}},
-				{'🗣', {{0,2},{0,3},{0,4},{1,1},{1,5},{2,0},{2,1},{2,5},{2,6},{3,0},{3,1},{3,5},{3,6},{4,0},{4,1},{4,5},{4,6},{5,1},{5,2},{5,3},{5,4},{5,5},{6,3},{6,4},{6,5},{7,4},{7,5},{7,6}}}
-			};
+			std::string text = Menu::Gameplay::General::Rocket::RocketTextInput.GetValue();
+
 			const float size = 0.9f;
 			const float spacing = 5.3f;
 			const float mainY = 5.0f;
+
 			std::vector<Vector3> rocketPositions;
 			float twidth = text.size() * spacing;
 			float sX = -twidth / 2.0f;
+
 			for (int letterIndex = 0; letterIndex < text.size(); ++letterIndex)
 			{
 				char c = toupper(text[letterIndex]);
-				if (font.find(c) == font.end()) c = '?';
+				if (DumpsterFire::gTextVectorMap.find(c) == DumpsterFire::gTextVectorMap.end()) c = '?';
 
-				for (const auto& pt : font[c])
+				for (const auto& pt : DumpsterFire::gTextVectorMap[c])
 				{
 					float x = sX + pt.first * size + letterIndex * spacing;
 					float y = (7 - pt.second) * size + mainY;
 					float z = 0.0f;
+
 					rocketPositions.emplace_back(pos + Vector3(x, y, z));
 				}
 			}
+
 			int maxRockets = 1000;
 			int rocketCount = (rocketPositions.size() < maxRockets) ? rocketPositions.size() : maxRockets;
+
 			for (int i = 0; i < rocketCount; ++i)
 			{
 				const Vector3& moddedPos = rocketPositions[i];
@@ -759,31 +731,38 @@ namespace GameplayMain
 			return nullptr;
 		}
 
-
-
-		if (Menu::Gameplay::General::Rocket::thredeeboxrocket.value)
+		if (Menu::Gameplay::General::Rocket::Box3DRocket.value)
 		{
 			std::vector<Vector3> rocketPositions;
-			const float size = 2.5f;
-			const float mainY = 5.0f;
+
 			const int w = 12;
 			const int h = 12;
 			const int d = 12;
+			const float size = 2.5f;
+			const float mainY = 5.0f;
+
 			float sX = -15.0f;
 			float sY = mainY - (h * size) / 2.0f;
 			float sZ = -15.0f;
-			for (int x = 0; x < w; x++) {
-				for (int y = 0; y < h; y++) {
-					for (int z = 0; z < d; z++) {
+
+			for (int x = 0; x < w; x++) 
+			{
+				for (int y = 0; y < h; y++) 
+				{
+					for (int z = 0; z < d; z++) 
+					{
 						float posX = sX + x * size;
 						float posY = sY + y * size;
 						float posZ = sZ + z * size;
+
 						rocketPositions.emplace_back(pos + Vector3(posX, posY, posZ));
 					}
 				}
 			}
+
 			int maxRockets = 1000;
 			int rocketCount = (rocketPositions.size() < maxRockets) ? rocketPositions.size() : maxRockets;
+
 			for (int i = 0; i < rocketCount; ++i)
 			{
 				const Vector3& moddedPos = rocketPositions[i];
@@ -794,35 +773,23 @@ namespace GameplayMain
 			return nullptr;
 		}
 
-
-		if (Menu::Gameplay::General::Rocket::penis.value)
+		if (Menu::Gameplay::General::Rocket::PenisRocket.value)
 		{
-			std::vector<Vector3> dihh = {
-	Vector3(5, 11, 0), Vector3(6, 11, 0), Vector3(7, 10, 0), Vector3(4, 10, 0), Vector3(4, 11, 0),
-	Vector3(4, 19, 0), Vector3(4, 14, 0), Vector3(4, 13, 0), Vector3(4, 12, 0), Vector3(4, 18, 0),
-	Vector3(4, 17, 0), Vector3(4, 16, 0), Vector3(4, 15, 0), Vector3(3, 10, 0), Vector3(4, 8, 0),
-	Vector3(3, 8, 0), Vector3(3, 9, 0), Vector3(6, 8, 0), Vector3(7, 8, 0), Vector3(7, 9, 0),
-	Vector3(3, 16, 0), Vector3(3, 19, 0), Vector3(3, 20, 0), Vector3(0, 7, 0), Vector3(0, 8, 0),
-	Vector3(1, 8, 0), Vector3(1, 9, 0), Vector3(0, 10, 0), Vector3(0, 11, 0), Vector3(1, 10, 0),
-	Vector3(5, 7, 0), Vector3(4, 7, 0), Vector3(6, 7, 0), Vector3(0, 12, 0), Vector3(0, 13, 0),
-	Vector3(0, 14, 0), Vector3(0, 18, 0), Vector3(0, 19, 0), Vector3(0.9999998807907104, 16, 0),
-	Vector3(1.999999761581421, 16, 0), Vector3(0.9999998807907104, 19, 0), Vector3(1.9999998807907104, 20, 0),
-	Vector3(0.9999998807907104, 20, 0), Vector3(0, 17, 0), Vector3(0, 16, 0), Vector3(0, 15, 0),
-	Vector3(2, 9, 0), Vector3(-1, 7, 0), Vector3(-2, 7, 0), Vector3(-2, 8, 0), Vector3(-1, 11, 0),
-	Vector3(-2, 11, 0), Vector3(-3, 8, 0), Vector3(-3, 9, 0), Vector3(-3, 10, 0)
-			};
 			const float size = 1.9f;
 			const float mainY = 5.0f;
 			std::vector<Vector3> rocketPositions;
-			for (const auto& pt : dihh)
+
+			for (const auto& pt : DumpsterFire::gPenisVectorArray)
 			{
 				float x = pt.X * size;
-				float y = pt.Y* size + mainY;
+				float y = pt.Y * size + mainY;
 				float z = pt.Z;
 				rocketPositions.emplace_back(pos + Vector3(x, y, z));
 			}
+
 			int maxRockets = 1000;
 			int rocketCount = (rocketPositions.size() < maxRockets) ? rocketPositions.size() : maxRockets;
+
 			for (int i = 0; i < rocketCount; ++i)
 			{
 				const Vector3& moddedPos = rocketPositions[i];
@@ -830,10 +797,9 @@ namespace GameplayMain
 				float moddedPower = chargePower;
 				$CallOrig(CreateRocket, weaponSounds, moddedPos, moddedRot, moddedPower, smoke, whateverthisis);
 			}
+
 			return nullptr;
 		}
-
-
 
 		if (General::Rocket::RocketTower.value)
 		{

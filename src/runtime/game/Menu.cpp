@@ -16,7 +16,6 @@
 
 #include <obfuscator.h>
 #include <base64.h>
-
 #undef ERROR // DUMB WINDOWS MACRO :middle_finger:
 namespace Menu
 {
@@ -44,14 +43,12 @@ namespace Menu
 				Checkbox FirerateHack(&GROUP, "Hack Firerate (kickable)");
 				FloatSlider Firerate(&GROUP, "Firerate", "Player_firerate", 0, 50);
 				Checkbox NoFixedDelay(&GROUP, "No switch delay (must be enabled in lobby)");
-				Checkbox GotoPlayers(&GROUP, "Teleport kill");
-				FloatSlider GotoPlayersDistance(&GROUP, "Teleport kill distance", "Teleport_kill", 0, 10, 1.0f);
+				Checkbox GotoPlayers(&GROUP, "Goto Players");
 
 				#pragma region MenuFunctions
 				void Update()
 				{
 					TagService::ToggleTagVisibility("Player_firerate", FirerateHack.value);
-					TagService::ToggleTagVisibility("Teleport_kill", GotoPlayers.value);
 				}
 				#pragma endregion
 			}
@@ -80,6 +77,8 @@ namespace Menu
 			{
 				Group GROUP(&TAB, "Movement");
 
+				Checkbox Flyhack(&GROUP, "Flyhack");
+				FloatSlider Flyspeed(&GROUP, "FlySpeed", 0.0f, 10.0f, 1.0f);
 				Checkbox Speedhack(&GROUP, "Speedhack");
 				Checkbox AirJump(&GROUP, "Air jump (Double jump boots needed)");
 				FloatSlider GravityPower(&GROUP, "Gravity power", 0.0f, 2.0f, 1.0f);
@@ -97,6 +96,7 @@ namespace Menu
 				Checkbox Triggerbot(&GROUP, "Triggerbot");
 				Checkbox Aimbot(&GROUP, "Aimbot");
 				Checkbox SoftSilentAim(&GROUP, "Soft Silent Aim");
+				Checkbox SilentRocket(&GROUP, "Silent Rocket");
 
 				FloatSlider AimbotSmoothing(&GROUP, "Smoothing", "Aimbot_options", 0.0f, 1, 0.0);
 				FloatSlider AimbotFOV(&GROUP, "FOV", "Aimbot_options", 0.0f, 1000, 180);
@@ -107,7 +107,7 @@ namespace Menu
 				void Update()
 				{
 					TagService::ToggleTagVisibility("Killaura_optional", !InfKillauraRadius.value);
-					TagService::ToggleTagVisibility("Aimbot_options", Aimbot.value || SoftSilentAim.value);
+					TagService::ToggleTagVisibility("Aimbot_options", Aimbot.value + SoftSilentAim.value + SilentRocket.value);
 				}
 				#pragma endregion
 			}
@@ -123,6 +123,11 @@ namespace Menu
 				Checkbox NuclearExplosion(&GROUP, "Nuclear explosion");
 				Checkbox Gravity(&GROUP, "Gravity");
 				Checkbox Ricochet(&GROUP, "Ricochet");
+				Checkbox RainRocket(&GROUP, "RainRocket");
+				Checkbox thredeeboxrocket(&GROUP, "3D Box Rocket");
+				Checkbox penis(&GROUP, "Penis Rocket");
+				Checkbox TextToRocket(&GROUP, "Text To Rocket");
+				StringInput Menu::Gameplay::General::Rocket::rocketTextInput = StringInput(&GROUP, "Rocket Text", "NAZI MOD ON TOP", 64);
 			}
 
 			namespace Visual
@@ -323,7 +328,7 @@ namespace Menu
 			{
 				Group GROUP(&TAB, "Weapon Skin Unlocker");
 
-				Mode UnlockMode(&GROUP, "Unlock mode", { "Automatic", "Manual", "Misc" });
+				Mode UnlockMode(&GROUP, "Unlock mode", { "Automatic", "Manual", "Misc"});
 
 				IntSlider FromIndexInput(&GROUP, "From index ", "WepSkinUnlock_auto", 0, 1);
 				IntSlider ToIndexInput(&GROUP, "To index ", "WepSkinUnlock_auto", 0, 1);
@@ -365,7 +370,7 @@ namespace Menu
 
 					UnlockDlcButton.OnClick([&]
 					{
-						AccountCommands::UnlockDlcWeaponSkin();
+						AccountCommands::UnlockDlcWeaponSkin(); 
 						WebsocketCore::Reload();
 					});
 				}
@@ -475,7 +480,7 @@ namespace Menu
 			}
 
 			namespace RoyaleUnlocker
-			{
+			{	
 				Group GROUP(&TAB, "Royale Cosmetic Unlocker");
 
 				Text NOTE(&GROUP,
@@ -516,8 +521,8 @@ namespace Menu
 						else if (UnlockMode.index == 1)
 						{
 							ProgressUpdater::AddRoyale(
-								IL2CPP::String::Create(RoyalesBrowser.list[RoyalesBrowser.index]),
-								true,
+								IL2CPP::String::Create(RoyalesBrowser.list[RoyalesBrowser.index]), 
+								true, 
 								Global::offerwallParam
 							);
 						}
@@ -555,7 +560,7 @@ namespace Menu
 						ArmorBrowser.list.push_back(key->ToString());
 					});
 
-					UnlockAllArmors.OnClick([&]
+					UnlockAllArmors.OnClick([&] 
 					{
 						for (auto v : ArmorBrowser.list)
 						{
@@ -739,10 +744,10 @@ namespace Menu
 			{
 				Group GROUP(&TAB, "Currency Adder");
 
-				Browser CurrencyBrowser(&GROUP, "Currency browser", {
+				Browser CurrencyBrowser(&GROUP, "Currency browser", { 
 					"GemsCurrency_1", "Coins_1", "LotteryKey", "ClanSilver", "ClanLootBoxPoints",
 					"Coupons", "PixelPassCurrency"
-					});
+				});
 				IntInput CurrencyAmount(&GROUP, "Currency amount");
 				Button AddCurrency(&GROUP, "Add Currency");
 
@@ -785,7 +790,7 @@ namespace Menu
 			{
 				Group GROUP(&TAB, "Chest Adder");
 
-				Browser ChestBrowser(&GROUP, "Chest browser", { "novice chest", "medium chest", "winner chest", "war hero chest" });
+				Browser ChestBrowser(&GROUP, "Chest browser", {"novice chest", "medium chest", "winner chest", "war hero chest"});
 				IntInput ChestAmount(&GROUP, "Chest amount");
 				Button AddChest(&GROUP, "Add Chest");
 
@@ -1166,7 +1171,7 @@ namespace Menu
 						}
 					});
 
-					if (BypassChatFilter.value)
+					if(BypassChatFilter.value)
 						MemPatcher::ReturnFalse(ScanMatInWold_ptr);
 				}
 				#pragma endregion
@@ -1213,7 +1218,7 @@ namespace Menu
 				void Load()
 				{
 					ForceReload.OnClick(WebsocketCore::Reload);
-					SkipTutorial.OnClick([&]
+					SkipTutorial.OnClick([&] 
 					{
 						TutorialClass::Fill(TutorialClass::GetInstance());
 						TrainingController::FinishTraining();
@@ -1239,7 +1244,7 @@ namespace Menu
 				Group GROUP(&TAB, "Analytics");
 
 				//Checkbox AnalyticsBypass(&GROUP, "Analytics bypass", true);
-				Checkbox DeeperAnalyticsBypass(&GROUP, "Analytics bypass", true);
+				Checkbox DeeperAnalyticsBypass(&GROUP, "Analytics bypass");
 
 				#pragma region MenuFunctions
 				void Load()
@@ -1269,7 +1274,6 @@ namespace Menu
 		{
 			Tab TAB(&SECTION, "Skin importer & stealer");
 
-			#pragma region MenuFunctions
 			void ShowErrorMsgBox(const char* msg)
 			{
 				ShowWindow(GetActiveWindow(), SW_SHOWMINIMIZED);
@@ -1282,7 +1286,6 @@ namespace Menu
 
 				return;
 			}
-			#pragma endregion
 
 			namespace CustomSkinImporter
 			{
@@ -1360,7 +1363,7 @@ namespace Menu
 			namespace CustomCapeImporter
 			{
 				Group GROUP(&TAB, "Custom Cape Importer", UIComponents::GroupPlacementType::RIGHT);
-				Text NOTE(&GROUP, "Supported Cape Resolution: 12x16.");
+				Text NOTE(&GROUP,"Supported Cape Resolution: 12x16.");
 
 				Button ImportCape(&GROUP, "Import Cape");
 
@@ -1444,7 +1447,7 @@ namespace Menu
 					currentSavePath = pathOpt.value();
 					auto data = nlohmann::json::object({
 						{"player_id", std::to_string(TargetID.value)}
-						});
+					});
 					WebsocketCore::QueuePackage("get_progress", data, ParseSlotData);
 				}
 
@@ -1510,7 +1513,7 @@ namespace Menu
 				#pragma region MenuFunctions
 				void Load()
 				{
-					SetTheme.OnClick([&]
+					SetTheme.OnClick([&] 
 					{
 						UIFramework::Vars::gMenuColorScheme = colorSchemeList[Themes.index];
 					});
@@ -1560,7 +1563,7 @@ namespace Menu
 		{
 			Tab TAB(&SECTION, "Credits & info", UIComponents::GroupSplitType::NO_SPLIT);
 
-			Group GROUP(&TAB, "Credits & info", { -1, -1 });
+			Group GROUP(&TAB, "Credits & info", {-1, -1});
 			Text NOTE(&GROUP, OBF(
 				"Nazi Mod version: v5.2.3\n"
 				"\n"
@@ -1785,9 +1788,9 @@ namespace Menu
 
 	void OnUpdate()
 	{
+
 		static bool iUnderstand = false;
 		static bool errorShown = false;
-
 		auto background = ImGui::GetBackgroundDrawList();
 
 		if (ImGui::IsKeyPressed(ImGuiKey_F1) || ImGui::IsKeyPressed(ImGuiKey_RightCtrl) || ImGui::IsKeyPressed(ImGuiKey_RightAlt))
@@ -1795,8 +1798,7 @@ namespace Menu
 			Account::Unlocker::WeaponUnlocker::WeaponLevel.value = Global::gPlayerLevel;
 			gMenuShown = !gMenuShown;
 		}
-
-		if (Gameplay::General::Aim::Aimbot.value + Gameplay::General::Aim::SoftSilentAim.value && Gameplay::General::Aim::FOVCircle.value)
+		if (Gameplay::General::Aim::Aimbot.value + Gameplay::General::Aim::SoftSilentAim.value + Gameplay::General::Aim::SilentRocket.value && Gameplay::General::Aim::FOVCircle.value)
 		{
 			auto screenCenter = Vector2(Screen::GetWidth() / 2, Screen::GetHeight() / 2);
 			background->AddCircle(
@@ -1807,7 +1809,6 @@ namespace Menu
 				2.0f
 			);
 		}
-
 		auto watermarkText = OBF("Get Nazi Mod for free - discord.gg/Y3gj2Rszq6");
 		auto watermarkSize = ImGui::CalcTextSize(watermarkText);
 		ImVec2 padding = ImGui::GetStyle().WindowPadding;

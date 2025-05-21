@@ -1,4 +1,3 @@
-// Auto generated with ExternMenuComponents.py
 #include "../framework/UIFramework.hpp"
 
 namespace Menu
@@ -26,8 +25,6 @@ namespace Menu
 				extern FloatSlider Firerate;
 				extern Checkbox NoFixedDelay;
 				extern Checkbox GotoPlayers;
-				extern FloatSlider GotoPlayersDistance;
-
 				
 			}
 
@@ -55,10 +52,12 @@ namespace Menu
 			{
 				extern Group GROUP;
 
+				extern Checkbox Flyhack;
+				extern FloatSlider Flyspeed;
 				extern Checkbox Speedhack;
 				extern Checkbox AirJump;
 				extern FloatSlider GravityPower;
-				extern Checkbox GravityToggle;
+				extern Checkbox GravityToggle;				
 			}
 
 			namespace Aim
@@ -72,6 +71,7 @@ namespace Menu
 				extern Checkbox Triggerbot;
 				extern Checkbox Aimbot;
 				extern Checkbox SoftSilentAim;
+				extern Checkbox SilentRocket;
 
 				extern FloatSlider AimbotSmoothing;
 				extern FloatSlider AimbotFOV;
@@ -92,6 +92,11 @@ namespace Menu
 				extern Checkbox NuclearExplosion;
 				extern Checkbox Gravity;
 				extern Checkbox Ricochet;
+				extern Checkbox thredeeboxrocket;
+				extern Checkbox penis;
+				extern Checkbox TextToRocket;
+				extern StringInput rocketTextInput;
+
 			}
 
 			namespace Visual
@@ -240,7 +245,7 @@ namespace Menu
 			}
 
 			namespace RoyaleUnlocker
-			{
+			{	
 				extern Group GROUP;
 
 				extern Text NOTE;
@@ -505,25 +510,12 @@ namespace Menu
 		{
 			extern Tab TAB;
 
-			
-
 			namespace CustomSkinImporter
 			{
 				extern Group GROUP;
 				extern Text NOTE;
 
 				extern Button ImportSkin;
-
-				
-			}
-
-			namespace CustomCapeImporter
-			{
-				extern Group GROUP;
-				extern Text NOTE;
-
-				extern Button ImportCape;
-
 				
 			}
 

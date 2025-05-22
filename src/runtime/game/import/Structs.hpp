@@ -837,3 +837,10 @@ struct Strackframe : public IL2CPP::Object
 	int32_t columnNumber;
 	IL2CPP::String* internalMethodName;
 };
+
+struct PhotonMessageInfo
+{
+	int timeInt;
+	IL2CPP::Object* sender;
+	IL2CPP::Object* photonView;
+};

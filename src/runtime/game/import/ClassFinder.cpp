@@ -85,6 +85,8 @@ namespace ClassFinder
 		AddQueue("KillrateController", "");
 		AddQueue("AimCrosshairController", "");
 		AddQueue("NotificationController", "");
+		AddQueue("SmoothSyncMovement", "");
+		AddQueue("PlayerSynchStream", "");
 
 		AddQueue("ItemRecord", "");
 

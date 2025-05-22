@@ -138,6 +138,8 @@ namespace Menu
 
 				Checkbox Xray(&GROUP, "X-Ray vision");
 				Checkbox TPS(&GROUP, "Third-person view (must be enabled in lobby)");
+				Checkbox Spinbot(&GROUP, "Spinbot (only can be seen by other players");
+				FloatSlider SpinbotSpeed(&GROUP, "Spinbot speed", "Spinbot", 0, 1000, 200);
 			}
 		}
 

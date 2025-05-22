@@ -143,6 +143,11 @@ namespace Transform
 		"set_rotation"
 	);
 
+	Pointer<void(IL2CPP::Object* transform, Vector3, float angle)> Rotate(
+		"Transform",
+		0x26
+	);
+
 	Pointer<void(IL2CPP::Object* transform, Vector3 eulers)> SetRotationFromEulers(
 		"Transform",
 		0x21

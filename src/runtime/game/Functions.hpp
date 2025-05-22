@@ -5,7 +5,7 @@
 
 namespace PlayerMoveC
 {
-	IL2CPP::Object* GetTransform(IL2CPP::Object* player);
+	IL2CPP::Object* GetPlayerTransform(IL2CPP::Object* player);
 
 	Vector3 GetPosition(IL2CPP::Object* player);
 

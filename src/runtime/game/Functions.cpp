@@ -2,15 +2,21 @@
 
 namespace PlayerMoveC
 {
-	IL2CPP::Object* GetTransform(IL2CPP::Object* player)
+	IL2CPP::Object* GetPlayerTransform(IL2CPP::Object* player)
 	{
 		IL2CPP::Object* plrTrans = player->GetFieldRef<IL2CPP::Object*>("myPlayerTransform");
 		return Component::GetTransform(plrTrans);
 	}
 
+	IL2CPP::Object* GetTransform(IL2CPP::Object* player)
+	{
+		IL2CPP::Object* plrTrans = player->GetFieldRef<IL2CPP::Object*>("myTransform");
+		return Component::GetTransform(plrTrans);
+	}
+
 	Vector3 GetPosition(IL2CPP::Object* player)
 	{
-		return Transform::GetPosition(GetTransform(player));
+		return Transform::GetPosition(GetPlayerTransform(player));
 	}
 
 	IL2CPP::Object* GetSkinName(IL2CPP::Object* player)
@@ -32,7 +38,7 @@ namespace PlayerMoveC
 
 	void SetPosition(IL2CPP::Object* player, Vector3 pos)
 	{
-		IL2CPP::Object* trans = GetTransform(player);
+		IL2CPP::Object* trans = GetPlayerTransform(player);
 		Transform::SetPosition(trans, pos);
 	}
 

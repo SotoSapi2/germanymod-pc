@@ -76,6 +76,8 @@ namespace Transform
 
 	extern Pointer<void(IL2CPP::Object* transform, Quaternion rot)> SetRotation;
 
+	extern Pointer<void(IL2CPP::Object* transform, Vector3, float angle)> Rotate;
+
 	extern Pointer<void(IL2CPP::Object* transform, Vector3 eulers)> SetRotationFromEulers;
 
 	extern Pointer<Vector3(IL2CPP::Object* transform)> GetFoward;
@@ -389,6 +391,7 @@ namespace PointerFunctions
 		Transform::SetPosition.Define();
 		Transform::GetRotation.Define();
 		Transform::SetRotation.Define();
+		Transform::Rotate.Define();
 		Transform::SetRotationFromEulers.Define();
 		Transform::GetFoward.Define();
 		Transform::LookAt.Define();

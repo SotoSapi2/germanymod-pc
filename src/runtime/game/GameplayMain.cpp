@@ -40,7 +40,7 @@ namespace GameplayMain
 		IL2CPP::Object* cam = Camera::GetMain();
 		IL2CPP::Object* camTransform = Component::GetTransform(cam);
 
-		IL2CPP::Object* myPlrTransform = PlayerMoveC::GetTransform(gMyPlayerMoveC);
+		IL2CPP::Object* myPlrTransform = PlayerMoveC::GetPlayerTransform(gMyPlayerMoveC);
 		Vector3 myPos = Transform::GetPosition(myPlrTransform);
 
 		float minDistance = FLT_MAX;
@@ -74,7 +74,7 @@ namespace GameplayMain
 				if (info.collider == GameObject::GetInstanceID(bodyCollider))
 				{
 					minDistance = distance;
-					targetTransform = PlayerMoveC::GetTransform(player);
+					targetTransform = PlayerMoveC::GetPlayerTransform(player);
 				}
 			}
 		});
@@ -90,7 +90,7 @@ namespace GameplayMain
 	{
 		IL2CPP::Object* cam = Camera::GetMain();
 		IL2CPP::Object* camTransform = Component::GetTransform(cam);
-		IL2CPP::Object* myPlrTransform = PlayerMoveC::GetTransform(gMyPlayerMoveC);
+		IL2CPP::Object* myPlrTransform = PlayerMoveC::GetPlayerTransform(gMyPlayerMoveC);
 		bool lbuttonDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
 
 		Vector3 myPos = Transform::GetPosition(myPlrTransform);
@@ -111,7 +111,7 @@ namespace GameplayMain
 			if (distance < minDistance)
 			{
 				minDistance = distance;
-				targetTransform = PlayerMoveC::GetTransform(player);
+				targetTransform = PlayerMoveC::GetPlayerTransform(player);
 			}
 		});
 
@@ -133,41 +133,41 @@ namespace GameplayMain
 		IL2CPP::Object* camTransform = Component::GetTransform(cam);
 		Vector3 camPos = Transform::GetPosition(camTransform);
 
-		IL2CPP::Object* myPlrTransform = PlayerMoveC::GetTransform(gMyPlayerMoveC);
+		IL2CPP::Object* myPlrTransform = PlayerMoveC::GetPlayerTransform(gMyPlayerMoveC);
 		Vector3 myPos = Transform::GetPosition(myPlrTransform);
 
 		IL2CPP::Object* targetTransform = nullptr;
 		float minDistance = FLT_MAX;
 
 		gPlayerMoveCList->ForEach([&](IL2CPP::Object* player)
+		{
+			if (player == nullptr) return;
+			Vector3 pos = PlayerMoveC::GetPosition(player);
+			Vector3 plrScreenPos = Camera::WorldToScreenPoint(cam, pos);
+			IL2CPP::Object* bodyCollider = player->GetFieldRef<IL2CPP::Object*>("_bodyAimCollider");
+			IL2CPP::Object* headCollider = player->GetFieldRef<IL2CPP::Object*>("_headAimCollider");
+
+			float distance = Vector3::Distance(screenCenter, plrScreenPos);
+			bool isVisible = false;
+
+			Ray ray = {
+				myPos,
+				Vector3::Normalized(pos - myPos)
+			};
+
+			RaycastHit info;
+			if (Physics::Raycast(ray, &info, 100))
 			{
-				if (player == nullptr) return;
-				Vector3 pos = PlayerMoveC::GetPosition(player);
-				Vector3 plrScreenPos = Camera::WorldToScreenPoint(cam, pos);
-				IL2CPP::Object* bodyCollider = player->GetFieldRef<IL2CPP::Object*>("_bodyAimCollider");
-				IL2CPP::Object* headCollider = player->GetFieldRef<IL2CPP::Object*>("_headAimCollider");
+				isVisible = info.collider == GameObject::GetInstanceID(bodyCollider);
+			}
 
-				float distance = Vector3::Distance(screenCenter, plrScreenPos);
-				bool isVisible = false;
-
-				Ray ray = {
-					myPos,
-					Vector3::Normalized(pos - myPos)
-				};
-
-				RaycastHit info;
-				if (Physics::Raycast(ray, &info, 100))
-				{
-					isVisible = info.collider == GameObject::GetInstanceID(bodyCollider);
-				}
-
-				if (distance < minDistance && !PlayerMoveC::IsDead(player) && !PlayerMoveC::IsMine(player)
-					&& PlayerMoveC::IsEnemyTo(gMyPlayerMoveC, player) && plrScreenPos.Z > 0 && isVisible)
-				{
-					minDistance = distance;
-					targetTransform = PlayerMoveC::GetTransform(player);
-				}
-			});
+			if (distance < minDistance && !PlayerMoveC::IsDead(player) && !PlayerMoveC::IsMine(player)
+				&& PlayerMoveC::IsEnemyTo(gMyPlayerMoveC, player) && plrScreenPos.Z > 0 && isVisible)
+			{
+				minDistance = distance;
+				targetTransform = PlayerMoveC::GetPlayerTransform(player);
+			}
+		});
 
 		if (targetTransform != nullptr && minDistance < General::Aim::AimbotFOV.value)
 		{
@@ -309,7 +309,7 @@ namespace GameplayMain
 			IL2CPP::DefaultTypeClass::Object
 		);
 
-		dic.Add(IL2CPP::String::Create("w"), (IL2CPP::Object*) arr);
+		dic.Add(IL2CPP::String::Create("w"), (IL2CPP::Object*)arr);
 		dic.Add(IL2CPP::String::Create("av"), IL2CPP::String::Create("avatar_unknown"));
 		dic.Add(IL2CPP::String::Create("sn"), IL2CPP::String::Create("league_skin_steel"));
 		dic.Add(IL2CPP::String::Create("n"), IL2CPP::String::Create(botname));
@@ -322,10 +322,10 @@ namespace GameplayMain
 		settings->Set(0, dic.GetInstance());
 
 		auto gameObject = PhotonNetwork::InstantiatePrefab(
-			IL2CPP::String::Create("Bots/BotInstance"), 
+			IL2CPP::String::Create("Bots/BotInstance"),
 			Vector3::Zero(),
-			Quaternion::Identity(), 
-			(char)0, 
+			Quaternion::Identity(),
+			(char)0,
 			settings
 		);
 
@@ -350,7 +350,7 @@ namespace GameplayMain
 		if (!cameraTransform)
 			return;
 
-		IL2CPP::Object* playerTransform = PlayerMoveC::GetTransform(gMyPlayerMoveC);
+		IL2CPP::Object* playerTransform = PlayerMoveC::GetPlayerTransform(gMyPlayerMoveC);
 		if (!playerTransform)
 			return;
 
@@ -399,7 +399,6 @@ namespace GameplayMain
 		{
 			SpamProjectiles();
 		}
-
 
 		if (gMyPlayerMoveC != nullptr)
 		{
@@ -507,11 +506,11 @@ namespace GameplayMain
 
 		$CallOrig(WeaponManager, _this);
 	}
-	
+
 	$Hook(void, AimCrosshairController, (IL2CPP::Object* _this))
 	{
 		Color crosshairColor = _this->GetFieldRef<Color>(0x27);
-		if (gMyPlayerMoveC != nullptr && General::Aim::Triggerbot.value 
+		if (gMyPlayerMoveC != nullptr && General::Aim::Triggerbot.value
 			&& crosshairColor.r >= 0.5f && crosshairColor.g == 0.0f && crosshairColor.b == 0.0f)
 		{
 			PlayerMoveC::ShotPressed(gMyPlayerMoveC);
@@ -527,13 +526,13 @@ namespace GameplayMain
 
 		auto currentRoom = PhotonNetwork::GetCurrentRoom();
 		auto hashtable = RoomInfo::GetHashtable(currentRoom);
-		
+
 		if (General::Visual::TPS.value)
 		{
 			matchSettings.push_back({
 				{"type", "EnableTPCamera"},
 				{"bool", true}
-			});
+				});
 		}
 
 		if (General::Player::NoFixedDelay.value)
@@ -541,7 +540,7 @@ namespace GameplayMain
 			matchSettings.push_back({
 				{"type", "MovementScheme"},
 				{"custom", "Oldschool"}
-			});
+				});
 		}
 
 		if (General::Movement::GravityToggle.value)
@@ -549,14 +548,14 @@ namespace GameplayMain
 			matchSettings.push_back({
 				{"type", "Gravity"},
 				{"float", General::Movement::GravityPower.value}
-			});
+				});
 		}
 
 		if (!matchSettings.empty())
 		{
 			PhotonHashtable::Set(
 				hashtable,
-				IL2CPP::String::Create("privateCustomParams"), 
+				IL2CPP::String::Create("privateCustomParams"),
 				IL2CPP::String::Create(matchSettings.dump())
 			);
 		}
@@ -613,7 +612,7 @@ namespace GameplayMain
 			case 2: // Follow Crosshair
 				rocketSettings->GetFieldRef<int>("typeFly") = 4;
 				rocketSettings->GetFieldRef<float>("autoRocketForce") = 15.0f;
-				break; 
+				break;
 			default:
 				break;
 		}
@@ -642,7 +641,7 @@ namespace GameplayMain
 			Vector3 screenCenter(Screen::GetWidth() / 2.0f, Screen::GetHeight() / 2.0f, 0);
 
 
-			auto* myTransform = PlayerMoveC::GetTransform(gMyPlayerMoveC);
+			auto* myTransform = PlayerMoveC::GetPlayerTransform(gMyPlayerMoveC);
 			if (!myTransform)
 				return $CallOrig(CreateRocket, weaponSounds, pos, rot, chargePower, smoke, whateverthisis);
 
@@ -677,10 +676,10 @@ namespace GameplayMain
 
 					if (hit.collider == GameObject::GetInstanceID(bodyCollider)) {
 						closestDist = dist;
-						bestTarget = PlayerMoveC::GetTransform(plr);
+						bestTarget = PlayerMoveC::GetPlayerTransform(plr);
 					}
 				}
-				});
+			});
 
 			if (bestTarget && closestDist < fov) {
 				Vector3 aimPos = Transform::GetPosition(bestTarget);
@@ -745,11 +744,11 @@ namespace GameplayMain
 			float sY = mainY - (h * size) / 2.0f;
 			float sZ = -15.0f;
 
-			for (int x = 0; x < w; x++) 
+			for (int x = 0; x < w; x++)
 			{
-				for (int y = 0; y < h; y++) 
+				for (int y = 0; y < h; y++)
 				{
-					for (int z = 0; z < d; z++) 
+					for (int z = 0; z < d; z++)
 					{
 						float posX = sX + x * size;
 						float posY = sY + y * size;
@@ -919,17 +918,31 @@ namespace GameplayMain
 				$CallOrig(SendPlayerEffect, _this, player, source, i, 99999999999.0f, senderPixelID);
 			}
 		}
+
 		$CallOrig(SendPlayerEffect, _this, player, source, effectIndex, duration, senderPixelID);
 	}
 
-	$Hook(bool, isAvailable, (int filterMaps))
+	$Hook(void, PlayerSynchStream_OnPhotonSerializeView, (IL2CPP::Object* _this, IL2CPP::Object* stream, PhotonMessageInfo info))
 	{
-		if (Menu::Misc::Bypass::Armory::AllowSandbox.IsActive())
+		if (_this->GetFieldRef<bool>(0xf) && General::Visual::Spinbot.value)
 		{
-			return true;
-		}
+			static float angle = 1;
+			angle += General::Visual::SpinbotSpeed.value;
 
-		return false;
+			IL2CPP::Object* transform = Component::GetTransform(_this);
+
+			Quaternion rot = Transform::GetRotation(transform);
+
+			Transform::Rotate(transform, Vector3::Up(), angle);
+
+			$CallOrig(PlayerSynchStream_OnPhotonSerializeView, _this, stream, info);
+
+			Transform::SetRotation(transform, rot);
+		}
+		else
+		{
+			$CallOrig(PlayerSynchStream_OnPhotonSerializeView, _this, stream, info);
+		}
 	}
 
 	#pragma region PatchesHooks
@@ -955,7 +968,7 @@ namespace GameplayMain
 
 	$Hook(void, PhotonNetwork_Destroy, (IL2CPP::Object* obj))
 	{
-		if(dontDespawnBot && Stacktrace::New()->ToString()->Contains("PlayerBotsManager"))
+		if (dontDespawnBot && Stacktrace::New()->ToString()->Contains("PlayerBotsManager"))
 		{
 			return;
 		}
@@ -967,7 +980,7 @@ namespace GameplayMain
 	void INIT()
 	{
 		using namespace IL2CPP::ClassMapping;
-			
+
 		ServerMods::RPC::AttractEveryone.OnClick(AttractEveryone);
 		ServerMods::PrefabSpawner::SpawnBot.OnClick(SpawnBotPrefab);
 		ServerMods::RPC::CrashEveryone.OnClick([&]
@@ -1018,14 +1031,15 @@ namespace GameplayMain
 				MemPatcher::Restore(ptr);
 			}
 		});
+		
 
 		$RegisterHook(
-			WeaponManager, 
+			WeaponManager,
 			GetClass("WeaponManager")->GetMethod("Update"),
 		);
 
 		$RegisterHook(
-			AimCrosshairController, 
+			AimCrosshairController,
 			GetClass("AimCrosshairController")->GetMethod("LateUpdate")
 		);
 
@@ -1037,27 +1051,32 @@ namespace GameplayMain
 		$RegisterHook(
 			Rocket,
 			GetClass("Rocket")->GetMethodByPattern(
-				{"private", "Boolean", nullptr, {"RocketSettings"}}
+				{ "private", "Boolean", nullptr, {"RocketSettings"} }
 			),
-		);
+			);
 
 		$RegisterHook(
 			CreateRocket,
 			GetClass("Player_move_c")->GetMethodByPattern(
-				{"internal static", "Rocket", nullptr, {"WeaponSounds", "Vector3", "Quaternion", "Single", "Int32", "Int32"}}
+				{ "internal static", "Rocket", nullptr, {"WeaponSounds", "Vector3", "Quaternion", "Single", "Int32", "Int32"} }
 			),
-		);
+			);
 
 		$RegisterHook(
 			WeaponSounds,
 			GetClass("WeaponSounds")->GetMethod("Update"),
-		);
+			);
 
 		$RegisterHook(
 			SendPlayerEffect,
 			GetClass("Player_move_c")->GetMethodByPattern(
-				{"internal", "Void", nullptr, {nullptr, "String", "Int32", "Single", "Int32"}}
+				{ "internal", "Void", nullptr, {nullptr, "String", "Int32", "Single", "Int32"} }
 			)
+		);
+
+		$RegisterHook(
+			PlayerSynchStream_OnPhotonSerializeView,
+			GetClass("PlayerSynchStream")->GetMethod(0x6)
 		);
 
 		$RegisterHook(
@@ -1069,9 +1088,11 @@ namespace GameplayMain
 			get_SpeedModifier,
 			GetClass("ItemRecord")->GetMethod("get_SpeedModifier")
 		);
+
 		$RegisterHook(
 			PhotonNetwork_Destroy,
 			GetClass("PhotonNetwork")->GetMethod(0x7a)
 		);
+
 	}
 }

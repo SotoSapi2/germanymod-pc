@@ -108,6 +108,8 @@ namespace Menu
 
 				extern Checkbox Xray;
 				extern Checkbox TPS;
+				extern Checkbox Spinbot;
+				extern FloatSlider SpinbotSpeed;
 			}
 		}
 

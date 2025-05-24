@@ -19,6 +19,7 @@ namespace GameplayMain
 	IL2CPP::List<IL2CPP::Object*>* gPlayerMoveCList = nullptr;
 	IL2CPP::List<IL2CPP::Object*>* gPhotonViewList = nullptr;
 
+	IL2CPP::Object* networkTable;
 	bool processNoClipAll = false;
 	bool processCrashAll = false;
 	bool processProjectileSpawning = false;
@@ -321,7 +322,7 @@ namespace GameplayMain
 		auto settings = IL2CPP::Array<IL2CPP::Object*>::Create(IL2CPP::DefaultTypeClass::Object, 1);
 		settings->Set(0, dic.GetInstance());
 
-		auto gameObject = PhotonNetwork::InstantiatePrefab(
+		auto gameObject = PhotonNetwork::SceneInstantiatePrefab(
 			IL2CPP::String::Create("Bots/BotInstance"),
 			Vector3::Zero(),
 			Quaternion::Identity(),
@@ -383,6 +384,28 @@ namespace GameplayMain
 		}
 	}
 
+	void HandlePlayerSpawning()
+	{
+		auto otherPlayerList = PhotonNetwork::GetOtherPlayerList();
+
+		otherPlayerList->ForEach([&](IL2CPP::Object* player)
+		{
+			auto playerObj = PhotonNetwork::InstantiatePrefab(
+				IL2CPP::String::Create("NetworkTable"), 
+				Vector3::Zero(), 
+				Quaternion::Identity(), 
+				0
+			);
+
+			auto photonView = GameObject::GetComponent(
+				playerObj, 
+				IL2CPP::String::Create("PhotonView")
+			);
+
+			PhotonView::TransferOwnership(photonView, player);
+		});
+	}
+
 	$Hook(void, WeaponManager, (IL2CPP::Object* _this))
 	{
 		gMyPlayerMoveC = _this->GetFieldPtr<IL2CPP::Object*>("myPlayerMoveC");
@@ -411,10 +434,12 @@ namespace GameplayMain
 			{
 				HandleAimbot();
 			}
+
 			if (General::Aim::SoftSilentAim.value && gPlayerMoveCList != nullptr)
 			{
 				HandleSoftSilent();
 			}
+
 			if (General::Player::GotoPlayers.value && gPlayerMoveCList != nullptr)
 			{
 				HandleGotoPlayers();
@@ -532,7 +557,7 @@ namespace GameplayMain
 			matchSettings.push_back({
 				{"type", "EnableTPCamera"},
 				{"bool", true}
-				});
+			});
 		}
 
 		if (General::Player::NoFixedDelay.value)
@@ -540,7 +565,7 @@ namespace GameplayMain
 			matchSettings.push_back({
 				{"type", "MovementScheme"},
 				{"custom", "Oldschool"}
-				});
+			});
 		}
 
 		if (General::Movement::GravityToggle.value)
@@ -548,7 +573,7 @@ namespace GameplayMain
 			matchSettings.push_back({
 				{"type", "Gravity"},
 				{"float", General::Movement::GravityPower.value}
-				});
+			});
 		}
 
 		if (!matchSettings.empty())
@@ -924,13 +949,19 @@ namespace GameplayMain
 
 	$Hook(void, PlayerSynchStream_OnPhotonSerializeView, (IL2CPP::Object* _this, IL2CPP::Object* stream, PhotonMessageInfo info))
 	{
-		if (_this->GetFieldRef<bool>(0xf) && General::Visual::Spinbot.value)
+		IL2CPP::Object* playerMoveC = _this->GetFieldPtr<IL2CPP::Object*>(0x3);
+		IL2CPP::Object* gameObject = Component::GetGameObject(_this);
+		IL2CPP::Object* transform = Component::GetTransform(_this);
+		IL2CPP::Object* photonView = GameObject::GetComponent(gameObject, IL2CPP::String::Create("PhotonView"));
+
+		//bool isMine = PlayerMoveC::IsMine(playerMoveC);
+
+		if (playerMoveC == gMyPlayerMoveC && General::Visual::Spinbot.value)
 		{
 			static float angle = 1;
 			angle += General::Visual::SpinbotSpeed.value;
 
 			IL2CPP::Object* transform = Component::GetTransform(_this);
-
 			Quaternion rot = Transform::GetRotation(transform);
 
 			Transform::Rotate(transform, Vector3::Up(), angle);
@@ -938,11 +969,50 @@ namespace GameplayMain
 			$CallOrig(PlayerSynchStream_OnPhotonSerializeView, _this, stream, info);
 
 			Transform::SetRotation(transform, rot);
+			return;
 		}
-		else
+
+		if (playerMoveC != gMyPlayerMoveC && ServerMods::World::TpAllToCenter.value)
 		{
-			$CallOrig(PlayerSynchStream_OnPhotonSerializeView, _this, stream, info);
+			//if (networkTable)
+			//{
+			//	PhotonNetwork::Destroy(networkTable);
+			//}
+			//LOG_TEST();
+			_this->GetFieldRef<bool>(0xb) = true;
+			//_this->GetFieldRef<bool>(0x5) = false;
+			//_this->GetFieldRef<bool>(0xe) = true; 
+			//_this->GetFieldRef<bool>(0x10) = true;
+
+
+			PhotonView::TransferOwnership(photonView, PhotonNetwork::GetLocalPlayer());
+			Transform::SetPosition(transform, PlayerMoveC::GetPosition(gMyPlayerMoveC) + CameraUtils::GetMainCameraLookVector() * 7);
 		}
+
+		if (playerMoveC != gMyPlayerMoveC && gMyPlayerMoveC && ServerMods::World::CrashEveryone.value)
+		{
+			PhotonView::TransferOwnership(photonView, PhotonNetwork::GetLocalPlayer());
+			auto playerObj = Component::GetGameObject(photonView);
+			PhotonNetwork::Destroy(playerObj);
+		}
+
+		$CallOrig(PlayerSynchStream_OnPhotonSerializeView, _this, stream, info);
+	}
+
+	$Hook(void, BaseBot_OnPhotonSerializeView, (IL2CPP::Object* _this, IL2CPP::Object* stream, PhotonMessageInfo info))
+	{
+		if (gMyPlayerMoveC != nullptr && PhotonStream::IsWriting(stream) && ServerMods::World::GrabMonster.value)
+		{
+			IL2CPP::Object* botTransform = Component::GetTransform(_this);
+			IL2CPP::Object* localPlayerTransform = Component::GetTransform(gMyPlayerMoveC);
+
+			Transform::SetPosition(
+				botTransform, 
+				PlayerMoveC::GetPosition(gMyPlayerMoveC) + CameraUtils::GetMainCameraLookVector() * 7
+			);
+		}
+
+		$CallOrig(BaseBot_OnPhotonSerializeView, _this, stream, info);
 	}
 
 	#pragma region PatchesHooks
@@ -977,19 +1047,67 @@ namespace GameplayMain
 	}
 	#pragma endregion
 
+	$Hook(IL2CPP::Object*, InstantiatePrefab, (IL2CPP::String* prefab, Vector3 vec, Quaternion rot, char byte))//, IL2CPP::Array<IL2CPP::Object*> * settings))
+	{
+		//LOG_INFO("%s", prefab->ToString().c_str());
+
+		if (prefab->Equals("NetworkTable"))
+		{
+			auto out = $CallOrig(InstantiatePrefab, prefab, vec, rot, byte); //settings);
+			networkTable = out;
+			//PhotonNetwork::Destroy(out);
+			return out;
+		}
+
+
+		return $CallOrig(InstantiatePrefab, prefab, vec, rot, byte);
+	}
+
+	$Hook(void, PeerRPC, (IL2CPP::Object* _this, IL2CPP::Object* photonView, 
+						EventEnum eventEnum, PhotonTargets target, IL2CPP::Object* player, 
+						bool encrypted, IL2CPP::Array<IL2CPP::Object*>* parameters))
+	{
+		static std::vector<EventEnum> blockedEvent = {
+			EventEnum::PropertyRPC,
+			EventEnum::SetMySkin,
+			EventEnum::SetPixelBookID,
+			EventEnum::SetPlayerUniqID,
+			EventEnum::SetReadyRPC,
+			EventEnum::SynhCommandRPC,
+		};
+
+		if ((eventEnum == EventEnum::SetNickName || eventEnum == EventEnum::SynhNameRPC) && parameters)
+		{
+			parameters->Set(0, IL2CPP::String::Create("Skibidi"));
+		}
+		else
+		{
+			for (EventEnum _event : blockedEvent)
+			{
+				if (_event == eventEnum)
+				{
+					return;
+				}
+			}
+		}
+
+		LOG_INFO("eventenum %s %i %i", rpcEntries[(int) eventEnum], target, player != nullptr);
+		$CallOrig(PeerRPC, _this, photonView, eventEnum, target, player, encrypted, parameters);
+	}
+
 	void INIT()
 	{
 		using namespace IL2CPP::ClassMapping;
 
 		ServerMods::RPC::AttractEveryone.OnClick(AttractEveryone);
 		ServerMods::PrefabSpawner::SpawnBot.OnClick(SpawnBotPrefab);
-		ServerMods::RPC::CrashEveryone.OnClick([&]
-		{
-			Global::ExecuteOnGameThread([]
-			{
-				CrashEveryone();
-			});
-		});
+		//ServerMods::RPC::CrashEveryone.OnClick([&]
+		//{
+		//	Global::ExecuteOnGameThread([]
+		//	{
+		//		CrashEveryone();
+		//	});
+		//});
 
 		ServerMods::PrefabSpawner::SpawnProjectile.OnClick([&]
 		{
@@ -999,7 +1117,8 @@ namespace GameplayMain
 			});
 		});
 
-		ServerMods::RPC::NoClipEveryone.OnClick([&] { processNoClipAll = true; });
+		ServerMods::World::SpawnPlayer.OnClick(HandlePlayerSpawning);
+		ServerMods::World::NoClipEveryone.OnClick([&] { processNoClipAll = true; });
 
 		General::Player::Godmode.OnToggle([&](bool value)
 		{
@@ -1016,7 +1135,6 @@ namespace GameplayMain
 			}
 		});
 
-
 		ServerMods::Modifier::FriendlyFire.OnToggle([&](bool value)
 		{
 			static IL2CPP::SignaturePattern pattern{ "internal static", "Void", nullptr, {"Boolean"} };
@@ -1032,7 +1150,6 @@ namespace GameplayMain
 			}
 		});
 		
-
 		$RegisterHook(
 			WeaponManager,
 			GetClass("WeaponManager")->GetMethod("Update"),
@@ -1053,19 +1170,19 @@ namespace GameplayMain
 			GetClass("Rocket")->GetMethodByPattern(
 				{ "private", "Boolean", nullptr, {"RocketSettings"} }
 			),
-			);
+		);
 
 		$RegisterHook(
 			CreateRocket,
 			GetClass("Player_move_c")->GetMethodByPattern(
 				{ "internal static", "Rocket", nullptr, {"WeaponSounds", "Vector3", "Quaternion", "Single", "Int32", "Int32"} }
 			),
-			);
+		);
 
 		$RegisterHook(
 			WeaponSounds,
 			GetClass("WeaponSounds")->GetMethod("Update"),
-			);
+		);
 
 		$RegisterHook(
 			SendPlayerEffect,
@@ -1077,6 +1194,11 @@ namespace GameplayMain
 		$RegisterHook(
 			PlayerSynchStream_OnPhotonSerializeView,
 			GetClass("PlayerSynchStream")->GetMethod(0x6)
+		);
+
+		$RegisterHook(
+			BaseBot_OnPhotonSerializeView,
+			GetClass("BaseBot")->GetMethod(0xcd)
 		);
 
 		$RegisterHook(
@@ -1094,5 +1216,14 @@ namespace GameplayMain
 			GetClass("PhotonNetwork")->GetMethod(0x7a)
 		);
 
+		$RegisterHook(
+			InstantiatePrefab,
+			GetClass("PhotonNetwork")->GetMethod(0x71)
+		);
+
+		$RegisterHook(
+			PeerRPC,
+			GetClass("NetworkingPeer")->GetMethod(0x71)
+		);
 	}
 }

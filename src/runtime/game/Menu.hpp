@@ -143,8 +143,7 @@ namespace Menu
 				extern Checkbox SlowdownAll;
 
 				extern Button AttractEveryone;
-				extern Button NoClipEveryone;
-				extern Button CrashEveryone;
+				//extern Button CrashEveryone;
 			}
 
 			namespace PrefabSpawner
@@ -165,6 +164,17 @@ namespace Menu
 				extern Button SpawnBot;
 
 				
+			}
+
+			namespace World
+			{
+				extern Group GROUP;
+				extern Checkbox GrabMonster;
+				extern Checkbox CrashEveryone;
+				extern Checkbox TpAllToCenter;
+
+				extern Button NoClipEveryone;
+				extern Button SpawnPlayer;
 			}
 		}
 	}
@@ -505,7 +515,7 @@ namespace Menu
 				extern Group GROUP;
 
 				extern Checkbox AnalyticsBypass;
-				extern Checkbox DeeperAnalyticsBypass;
+				//extern Checkbox DeeperAnalyticsBypass;
 
 				
 			}

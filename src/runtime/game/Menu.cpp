@@ -173,14 +173,13 @@ namespace Menu
 				Checkbox SlowdownAll(&GROUP, "Slowdown all");
 
 				Button AttractEveryone(&GROUP, "Attract everyone");
-				Button NoClipEveryone(&GROUP, "No-clip everyone");
-				Button CrashEveryone(&GROUP, "Crash everyone (spam to trigger)");
+				//Button CrashEveryone(&GROUP, "Crash everyone (spam to trigger)");
 			}
 
 			namespace PrefabSpawner
 			{
 				Group GROUP(&TAB, "Prefab Spawner");
-				Mode PrefabType(&GROUP, "Prefab type", { "Projectile", "Bot" });
+				Mode PrefabType(&GROUP, "Prefab type", { "Projectile", "Bot (partially patched)" });
 
 				const std::vector<std::string> projectilePrefabs = {
 					"gadget_dragonwhistle",
@@ -209,6 +208,17 @@ namespace Menu
 					TagService::ToggleTagVisibility("Prefab_bot", PrefabType.index == 1);
 				}
 				#pragma endregion
+			}
+
+			namespace World
+			{
+				Group GROUP(&TAB, "World");
+				Checkbox GrabMonster(&GROUP, "Grab every monsters");
+				Checkbox CrashEveryone(&GROUP, "Crash everyone");
+				Checkbox TpAllToCenter(&GROUP, "Teleport everyone to center and bug them");
+
+				Button NoClipEveryone(&GROUP, "No-clip everyone");
+				Button SpawnPlayer(&GROUP, "Spawn player");
 			}
 		}
 	}
@@ -1248,17 +1258,17 @@ namespace Menu
 				Group GROUP(&TAB, "Analytics");
 
 				Checkbox AnalyticsBypass(&GROUP, "Analytics bypass", true);
-				Checkbox DeeperAnalyticsBypass(&GROUP, "Analytics bypass");
+				//Checkbox DeeperAnalyticsBypass(&GROUP, "Deeper Analytics bypass", true);
 
 				#pragma region MenuFunctions
 				void Load()
 				{
-					if (DeeperAnalyticsBypass.value)
+					if (AnalyticsBypass.value)
 					{
 						AntiAnalytics::NopAnalyticsMethods();
 					}
 
-					DeeperAnalyticsBypass.OnToggle([&](bool value)
+					AnalyticsBypass.OnToggle([&](bool value)
 					{
 						if (value)
 						{
@@ -1635,7 +1645,7 @@ namespace Menu
 			{
 				Group GROUP(&TAB, "Websocket");
 
-				Checkbox LogWs(&GROUP, "Log Websocket", true);
+				Checkbox LogWs(&GROUP, "Log Websocket");
 
 				void Update()
 				{

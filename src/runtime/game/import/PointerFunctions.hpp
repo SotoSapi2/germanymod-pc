@@ -63,6 +63,8 @@ namespace GameObject
 
 	extern Pointer<IL2CPP::String* (IL2CPP::Object* gameObject)> GetName;
 
+	extern Pointer<void(IL2CPP::Object* gameObject)> Destroy;
+
 	extern Pointer<int(IL2CPP::Object* gameObject)> GetInstanceID;
 }
 
@@ -255,6 +257,11 @@ namespace RoomInfo
 	extern Pointer<IL2CPP::Object* (IL2CPP::Object* room)> GetHashtable;
 }
 
+namespace PhotonStream
+{
+	extern Pointer<bool (IL2CPP::Object* PhotonStream)> IsWriting;
+}
+
 namespace PhotonHashtable
 {
 	extern Pointer<IL2CPP::Object* (IL2CPP::Object* hashtable)> Constructor;
@@ -274,7 +281,13 @@ namespace PhotonNetwork
 
 	extern Pointer<void(IL2CPP::Object* photonPlayer)> SetMasterClient;
 
-	extern Pointer<IL2CPP::Object* (IL2CPP::String* prefab, Vector3 vec, Quaternion rot, char byte, IL2CPP::Array<IL2CPP::Object*>* settings)> InstantiatePrefab;
+	extern Pointer<void(IL2CPP::Object* object)> Destroy;
+
+	extern Pointer<IL2CPP::Array<IL2CPP::Object*>* ()> GetOtherPlayerList;
+
+	extern Pointer<IL2CPP::Object* (IL2CPP::String* prefab, Vector3 vec, Quaternion rot, char byte)> InstantiatePrefab;
+
+	extern Pointer<IL2CPP::Object* (IL2CPP::String* prefab, Vector3 vec, Quaternion rot, char byte, IL2CPP::Array<IL2CPP::Object*>* settings)> SceneInstantiatePrefab;
 }
 
 namespace MatchSettings
@@ -303,6 +316,12 @@ namespace PhotonView
 	extern Pointer<void(IL2CPP::Object* instance, EventEnum eventEnum, PhotonTargets photonTarget, void* param)> RPC;
 
 	extern Pointer<bool(IL2CPP::Object* instance)> IsMine;
+
+	extern Pointer<IL2CPP::Object* (IL2CPP::Object* instance)> GetOwner;
+
+	extern Pointer<bool(IL2CPP::Object* instance, IL2CPP::Object* player)> TransferOwnership;
+
+	extern Pointer<int(IL2CPP::Object* instance)> GetViewID;
 }
 
 namespace PixelView
@@ -384,6 +403,7 @@ namespace PointerFunctions
 		GameObject::GetTransform.Define();
 		GameObject::SetName.Define();
 		GameObject::GetName.Define();
+		GameObject::Destroy.Define();
 		GameObject::GetInstanceID.Define();
 
 		// Transform
@@ -487,6 +507,9 @@ namespace PointerFunctions
 		// RoomInfo
 		RoomInfo::GetHashtable.Define();
 
+		// PhotonStream
+		PhotonStream::IsWriting.Define();
+
 		// PhotonHashtable
 		PhotonHashtable::Constructor.Define();
 		PhotonHashtable::Get.Define();
@@ -497,7 +520,10 @@ namespace PointerFunctions
 		PhotonNetwork::GetLocalPlayer.Define();
 		PhotonNetwork::IsMasterClient.Define();
 		PhotonNetwork::SetMasterClient.Define();
+		PhotonNetwork::Destroy.Define();
+		PhotonNetwork::GetOtherPlayerList.Define();
 		PhotonNetwork::InstantiatePrefab.Define();
+		PhotonNetwork::SceneInstantiatePrefab.Define();
 
 		// MatchSettings
 		MatchSettings::CreateSettings.Define();
@@ -514,6 +540,9 @@ namespace PointerFunctions
 		// PhotonView
 		PhotonView::RPC.Define();
 		PhotonView::IsMine.Define();
+		PhotonView::GetOwner.Define();
+		PhotonView::TransferOwnership.Define();
+		PhotonView::GetViewID.Define();
 
 		// PixelView
 		PixelView::GetViewID.Define();

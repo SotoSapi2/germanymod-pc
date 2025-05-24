@@ -24,6 +24,12 @@ namespace PlayerMoveC
 	bool IsEnemyTo(IL2CPP::Object* player, IL2CPP::Object* target);
 }
 
+
+namespace CameraUtils
+{
+	Vector3 GetMainCameraLookVector();
+}
+
 namespace Rocket
 {
 	void Create(const std::string& prefab, IL2CPP::Object* owner, IL2CPP::Object* ownerWepSounds, bool longLife, Vector3 pos);

@@ -58,6 +58,17 @@ namespace PlayerMoveC
 	}
 }
 
+namespace CameraUtils
+{
+	Vector3 GetMainCameraLookVector()
+	{
+		auto cam = Camera::GetMain();
+		auto transform = Component::GetTransform(cam);
+
+		return Transform::GetFoward(transform);
+	}
+}
+
 namespace Rocket
 {
 	void Create(const std::string& prefab, IL2CPP::Object* owner, IL2CPP::Object* ownerWepSounds, bool longLife, Vector3 pos)

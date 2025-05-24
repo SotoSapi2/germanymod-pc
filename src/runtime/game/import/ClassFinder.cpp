@@ -59,6 +59,7 @@ namespace FieldPatterns
 	FieldPattern KeyClass{ "Boolean", "Action`1", "Action`2", "Action`2", "Action`2", "Action`1", "Action`1", "Action" };
 	FieldPattern XPNiggaSex{ nullptr, "String", nullptr };
 	FieldPattern IdkBroClass{ "String", "String", nullptr, "Action`1", "Int32", "String" };
+	FieldPattern PhotonStream{ "Boolean", "Queue`1", "Object[]", "Byte" };
 }
 
 namespace ClassFinder
@@ -139,6 +140,7 @@ namespace ClassFinder
 		AddQueue("PhotonNetwork", "", &FieldPatterns::PhotonNetwork, 148);
 		AddQueue("WearClass", "", &FieldPatterns::WearClass);
 		AddQueue("IdkBroClass", "", &FieldPatterns::IdkBroClass);
+		AddQueue("PhotonStream", "", &FieldPatterns::PhotonStream);
 		#pragma endregion
 
 		#pragma region Progress
@@ -180,6 +182,9 @@ namespace ClassFinder
 		#pragma region PGCompany.GameModeEvents
 		AddQueue("MatchSettings", "PGCompany.GameModeEvents", &FieldPatterns::MatchSettings, 21);
 		#pragma endregion
+
+		AddQueue("BaseBot", "RilisoftBot");
+		AddQueue("NetworkingPeer", "", &FieldPatterns::NetworkingPeer);
 	}
 
 	void DoUnityCoreQueue()

@@ -115,6 +115,11 @@ namespace GameObject
 		"GetName"
 	);
 
+	Pointer<void(IL2CPP::Object* gameObject)> Destroy(
+		"Object",
+		0x14
+	);
+
 	Pointer<int(IL2CPP::Object* gameObject)> GetInstanceID(
 		"Object",
 		0x0
@@ -524,6 +529,14 @@ namespace RoomInfo
 	);
 }
 
+namespace PhotonStream
+{
+	Pointer<bool (IL2CPP::Object* PhotonStream)> IsWriting(
+		"PhotonStream",
+		0x3
+	);
+}
+
 namespace PhotonHashtable
 {
 	Pointer<IL2CPP::Object* (IL2CPP::Object* hashtable)> Constructor(
@@ -564,7 +577,22 @@ namespace PhotonNetwork
 		0x78
 	);
 
-	Pointer<IL2CPP::Object* (IL2CPP::String* prefab, Vector3 vec, Quaternion rot, char byte, IL2CPP::Array<IL2CPP::Object*>* settings)> InstantiatePrefab(
+	Pointer<void(IL2CPP::Object* object)> Destroy(
+		"PhotonNetwork",
+		0x7a
+	);
+
+	Pointer<IL2CPP::Array<IL2CPP::Object*>* ()> GetOtherPlayerList(
+		"PhotonNetwork",
+		0x13
+	);
+
+	Pointer<IL2CPP::Object* (IL2CPP::String* prefab, Vector3 vec, Quaternion rot, char byte)> InstantiatePrefab(
+		"PhotonNetwork",
+		{ "public static", "GameObject", nullptr, {"String", "Vector3", "Quaternion", "Byte"} }
+	);
+
+	Pointer<IL2CPP::Object* (IL2CPP::String* prefab, Vector3 vec, Quaternion rot, char byte, IL2CPP::Array<IL2CPP::Object*>* settings)> SceneInstantiatePrefab(
 		"PhotonNetwork",
 		{ "public static", "GameObject", nullptr, {"String", "Vector3", "Quaternion", "Byte"} },
 		2
@@ -623,6 +651,21 @@ namespace PhotonView
 	Pointer<bool(IL2CPP::Object* instance)> IsMine(
 		"PhotonView",
 		"get_isMine"
+	);
+
+	Pointer<IL2CPP::Object* (IL2CPP::Object* instance)> GetOwner(
+		"PhotonView",
+		"get_owner"
+	);
+
+	Pointer<bool(IL2CPP::Object* instance, IL2CPP::Object* player)> TransferOwnership(
+		"PhotonView",
+		"TransferOwnership"
+	);
+
+	Pointer<int(IL2CPP::Object* instance)> GetViewID(
+		"PhotonView",
+		"get_viewID"
 	);
 }
 

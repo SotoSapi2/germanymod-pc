@@ -1045,6 +1045,16 @@ namespace GameplayMain
 
 		$CallOrig(PhotonNetwork_Destroy, obj);
 	}
+
+	$Hook(bool, isAvailable, (IL2CPP::Object* _this, int filterMaps))
+	{
+		if (Menu::Misc::Bypass::Armory::AllowSandbox.IsActive())
+		{
+			return true;
+		}
+
+		return $CallOrig(isAvailable, _this, filterMaps);
+	}
 	#pragma endregion
 
 	$Hook(IL2CPP::Object*, InstantiatePrefab, (IL2CPP::String* prefab, Vector3 vec, Quaternion rot, char byte))//, IL2CPP::Array<IL2CPP::Object*> * settings))
@@ -1224,6 +1234,13 @@ namespace GameplayMain
 		$RegisterHook(
 			PeerRPC,
 			GetClass("NetworkingPeer")->GetMethod(0x71)
+		);
+
+		$RegisterHook(
+			isAvailable,
+			GetClass("ItemRecord")->GetMethodByPattern(
+				{ "public", "Boolean", nullptr, {"ENUM"} }
+			)
 		);
 	}
 }

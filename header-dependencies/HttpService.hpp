@@ -177,7 +177,7 @@ namespace HttpService
 
 		inline bool SendRequest(const std::string& data = "", const std::string& header = "")
 		{
-			return HttpSendRequest(this->hRequest, header.c_str(), header.size(), (void*)data.c_str(), data.size());
+			return HttpSendRequestA(this->hRequest, header.c_str(), header.size(), (void*)data.c_str(), data.size());
 		}
 
 		int GetStatusCode()
@@ -217,7 +217,7 @@ namespace HttpService
 		Client(const char* url)
 		{
 			hInternet = InternetOpen(
-				"HttpServive Client/1.0",
+				TEXT("HttpServive Client/1.0"),
 				INTERNET_OPEN_TYPE_DIRECT,
 				NULL,
 				NULL,
@@ -235,7 +235,7 @@ namespace HttpService
 		Client(const char* url, int port)
 		{
 			hInternet = InternetOpen(
-				"HttpServive Client/1.0",
+				TEXT("HttpServive Client/1.0"),
 				INTERNET_OPEN_TYPE_DIRECT,
 				NULL,
 				NULL,
@@ -254,7 +254,7 @@ namespace HttpService
 		Client()
 		{
 			hInternet = InternetOpen(
-				"HttpServive Client/1.0",
+				TEXT("HttpServive Client/1.0"),
 				INTERNET_OPEN_TYPE_DIRECT,
 				NULL,
 				NULL,

@@ -79,8 +79,10 @@ namespace Menu
 			{
 				Group GROUP(&TAB, "Movement");
 
+				#ifdef EXPERIMENTAL
 				Checkbox Flyhack(&GROUP, "Flyhack");
 				FloatSlider Flyspeed(&GROUP, "FlySpeed", 0.0f, 10.0f, 1.0f);
+				#endif
 				Checkbox Speedhack(&GROUP, "Speedhack");
 				Checkbox AirJump(&GROUP, "Air jump (Double jump boots needed)");
 				FloatSlider GravityPower(&GROUP, "Gravity power", 0.0f, 2.0f, 1.0f);
@@ -97,8 +99,10 @@ namespace Menu
 
 				Checkbox Triggerbot(&GROUP, "Triggerbot");
 				Checkbox Aimbot(&GROUP, "Aimbot");
+				#ifdef EXPERIMENTAL
 				Checkbox SoftSilentAim(&GROUP, "Soft Silent Aim");
 				Checkbox SilentRocket(&GROUP, "Silent Rocket");
+				#endif
 
 				FloatSlider AimbotSmoothing(&GROUP, "Smoothing", "Aimbot_options", 0.0f, 1, 0.0);
 				FloatSlider AimbotFOV(&GROUP, "FOV", "Aimbot_options", 0.0f, 1000, 180);
@@ -109,7 +113,13 @@ namespace Menu
 				void Update()
 				{
 					TagService::ToggleTagVisibility("Killaura_optional", !InfKillauraRadius.value);
+					#ifdef EXPERIMENTAL
 					TagService::ToggleTagVisibility("Aimbot_options", Aimbot.value || SoftSilentAim.value || SilentRocket.value);
+					#endif
+
+					#ifndef EXPERIMENTAL
+					TagService::ToggleTagVisibility("Aimbot_options", Aimbot.value);
+					#endif
 				}
 				#pragma endregion
 			}
@@ -125,16 +135,18 @@ namespace Menu
 				Checkbox NuclearExplosion(&GROUP, "Nuclear explosion");
 				Checkbox Gravity(&GROUP, "Gravity");
 				Checkbox Ricochet(&GROUP, "Ricochet");
-				Checkbox RainRocket(&GROUP, "RainRocket");
+				#ifdef EXPERIMENTAL
+				Checkbox RainRocket(&GROUP, "Rain Rocket");
 				Checkbox Box3DRocket(&GROUP, "3D Box Rocket");
 				Checkbox PenisRocket(&GROUP, "Penis Rocket");
 				Checkbox TextToRocket(&GROUP, "Text To Rocket");
 				StringInput RocketTextInput(&GROUP, "Rocket Text", "NAZI MOD ON TOP");
+				#endif
 			}
 
 			namespace Visual
 			{
-				Group GROUP(&TAB, "Visual", GroupPlacementType::LEFT);
+				Group GROUP(&TAB, "Visual", GroupPlacementType::RIGHT);
 
 				Checkbox Xray(&GROUP, "X-Ray vision");
 				Checkbox TPS(&GROUP, "Third-person view (must be enabled in lobby)");
@@ -213,12 +225,15 @@ namespace Menu
 			namespace World
 			{
 				Group GROUP(&TAB, "World");
+				
+				#ifdef EXPERIMENTAL
 				Checkbox GrabMonster(&GROUP, "Grab every monsters");
-				Checkbox CrashEveryone(&GROUP, "Crash everyone");
 				Checkbox TpAllToCenter(&GROUP, "Teleport everyone to center and bug them");
-
-				Button NoClipEveryone(&GROUP, "No-clip everyone");
 				Button SpawnPlayer(&GROUP, "Spawn player");
+				Button CrashEveryone(&GROUP, "Crash everyone");
+				#endif
+				Button CrashEveryone(&GROUP, "Crash everyone (spam to trigger)");
+				Button NoClipEveryone(&GROUP, "No-clip everyone");
 			}
 		}
 	}
@@ -417,11 +432,8 @@ namespace Menu
 				Mode UnlockMode(&GROUP, "Unlock mode", { "Automatic", "Manual" });
 
 				Browser GadgetBrowser(&GROUP, "Gadget browser", "GadgetUnlock_manual");
-
 				IntInput GadgetLevel(&GROUP, "Gadget level", 0);
-
 				Button UnlockButton(&GROUP, "Unlock Gadget", "GadgetUnlock_manual");
-
 				Button UnlockAllButton(&GROUP, "Unlock all Gadget", "GadgetUnlock_auto");
 
 				#pragma region MenuFunctions
@@ -647,7 +659,7 @@ namespace Menu
 
 				Button UnlockWearButton(&GROUP, "Unlock wears");
 				Button UnlockPets(&GROUP, "Unlock pets");
-				Button UnlockGraffiti(&GROUP, "Unlock graffitis");
+				Button UnlockGraffiti(&GROUP, "Unlock graffities");
 				Button UnlockLobbyItems(&GROUP, "Unlock lobby items");
 				Button GetAllParts(&GROUP, "Get all crafting parts");
 				Button GetVeteranBadge(&GROUP, "Get Veteran Badge");
@@ -994,7 +1006,7 @@ namespace Menu
 
 			namespace MonthlyMatch
 			{
-				Group GROUP(&TAB, "Montly match");
+				Group GROUP(&TAB, "Monthly match");
 
 				Checkbox MatchIsWin(&GROUP, "Set as winning match");
 				IntInput Amount(&GROUP, "Amount");
@@ -1071,8 +1083,6 @@ namespace Menu
 				}
 				#pragma endregion
 			}
-
-
 		}
 
 		namespace ClanStuff
@@ -1225,6 +1235,9 @@ namespace Menu
 				);
 
 				Checkbox SafeMode(&GROUP, "Safe Mode");
+				#ifdef EXPERIMENTAL
+				Checkbox AntiReport(&GROUP, "Anti ingame-report");
+				#endif
 				Button ForceReload(&GROUP, "Force reload", ButtonSizeType::WINDOW_SIZE);
 				Button SkipTutorial(&GROUP, "Skip tutorial", ButtonSizeType::WINDOW_SIZE);
 
@@ -1581,11 +1594,11 @@ namespace Menu
 
 			Group GROUP(&TAB, "Credits & info", {-1, -1});
 			Text NOTE(&GROUP, OBF(
-				"Nazi Mod version: v5.2.3\n"
+				"Nazi Mod version: v5.4.0\n"
 				"\n"
 
 				"Cheat developers:\n"
-				"- @soto_sapi2\n"
+				"- @soto_sapi1/@soto_sapi2\n"
 				"\n"
 
 				"Special credits:\n"
@@ -1635,7 +1648,7 @@ namespace Menu
 	#ifdef _DEBUG
 	namespace Debug
 	{
-		Section SECTION(&WINDOW, ICON_FA_DEBUG);
+		Section SECTION(&WINDOW, ICON_FA_FLASK);
 
 		namespace DebugTab
 		{
@@ -1814,7 +1827,12 @@ namespace Menu
 			Account::Unlocker::WeaponUnlocker::WeaponLevel.value = Global::gPlayerLevel;
 			gMenuShown = !gMenuShown;
 		}
-		if (Gameplay::General::Aim::Aimbot.value + Gameplay::General::Aim::SoftSilentAim.value + Gameplay::General::Aim::SilentRocket.value && Gameplay::General::Aim::FOVCircle.value)
+
+		#if defined(EXPERIMENTAL)
+		if((Gameplay::General::Aim::Aimbot.value || Gameplay::General::Aim::SoftSilentAim.value || Gameplay::General::Aim::SilentRocket.value) && Gameplay::General::Aim::FOVCircle.value)
+		#else
+		if(Gameplay::General::Aim::Aimbot.value && Gameplay::General::Aim::FOVCircle.value)
+		#endif // EXPERIMENTAl
 		{
 			auto screenCenter = Vector2(Screen::GetWidth() / 2, Screen::GetHeight() / 2);
 			background->AddCircle(

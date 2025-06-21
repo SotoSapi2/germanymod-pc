@@ -77,4 +77,47 @@ namespace DumpsterFire
 		Vector3(2, 9, 0), Vector3(-1, 7, 0), Vector3(-2, 7, 0), Vector3(-2, 8, 0), Vector3(-1, 11, 0),
 		Vector3(-2, 11, 0), Vector3(-3, 8, 0), Vector3(-3, 9, 0), Vector3(-3, 10, 0)
 	};
+
+
+	std::vector<const char*> gNameSpoofList = {
+		"scary haxxor",
+		"im hacker boss",
+		"7diddy",
+		"skibidi",
+		"Craze",
+		"xdCraze16",
+		"dist",
+		"dystw",
+		"fedesito",
+		"TonicBoomberKewl",
+		"clozzmane",
+		"Instant785",
+		"dsyq",
+		"soto_sapi1",
+		"minorvid",
+		"tllhsee"
+		"nullbit",
+		"hu.dari",
+		"tllhssee",
+		"xylophone2",
+		"_vox__",
+		"Jwud",
+		"LukeDaNuke",
+		"just_qstn.",
+		"troxxxy",
+		"N0ob_1te",
+		"Gubby",
+		"jasiah",
+		"ferrarif501997",
+		"meth",
+		"error_bot",
+		"exokinga",
+		"the clock is ticking",
+		"adolf hitler",
+		"josef stalin",
+		"wasdzy.",
+		"nigger",
+		"Fuck voidpg",
+		"0xDEADBEEF"
+	};
 }

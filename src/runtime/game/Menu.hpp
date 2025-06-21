@@ -55,8 +55,10 @@ namespace Menu
 			{
 				extern Group GROUP;
 
+				#ifdef EXPERIMENTAL
 				extern Checkbox Flyhack;
 				extern FloatSlider Flyspeed;
+				#endif
 				extern Checkbox Speedhack;
 				extern Checkbox AirJump;
 				extern FloatSlider GravityPower;
@@ -73,8 +75,10 @@ namespace Menu
 
 				extern Checkbox Triggerbot;
 				extern Checkbox Aimbot;
+				#ifdef EXPERIMENTAL
 				extern Checkbox SoftSilentAim;
 				extern Checkbox SilentRocket;
+				#endif
 
 				extern FloatSlider AimbotSmoothing;
 				extern FloatSlider AimbotFOV;
@@ -95,11 +99,13 @@ namespace Menu
 				extern Checkbox NuclearExplosion;
 				extern Checkbox Gravity;
 				extern Checkbox Ricochet;
+				#ifdef EXPERIMENTAL
 				extern Checkbox RainRocket;
 				extern Checkbox Box3DRocket;
 				extern Checkbox PenisRocket;
 				extern Checkbox TextToRocket;
 				extern StringInput RocketTextInput;
+				#endif
 			}
 
 			namespace Visual
@@ -169,12 +175,15 @@ namespace Menu
 			namespace World
 			{
 				extern Group GROUP;
+				
+				#ifdef EXPERIMENTAL
 				extern Checkbox GrabMonster;
-				extern Checkbox CrashEveryone;
 				extern Checkbox TpAllToCenter;
-
-				extern Button NoClipEveryone;
 				extern Button SpawnPlayer;
+				extern Button CrashEveryone;
+				#endif
+				extern Button CrashEveryone;
+				extern Button NoClipEveryone;
 			}
 		}
 	}
@@ -236,11 +245,8 @@ namespace Menu
 				extern Mode UnlockMode;
 
 				extern Browser GadgetBrowser;
-
 				extern IntInput GadgetLevel;
-
 				extern Button UnlockButton;
-
 				extern Button UnlockAllButton;
 
 				
@@ -429,8 +435,6 @@ namespace Menu
 
 				
 			}
-
-
 		}
 
 		namespace ClanStuff
@@ -504,6 +508,9 @@ namespace Menu
 				extern Text NOTE;
 
 				extern Checkbox SafeMode;
+				#ifdef EXPERIMENTAL
+				extern Checkbox AntiReport;
+				#endif
 				extern Button ForceReload;
 				extern Button SkipTutorial;
 

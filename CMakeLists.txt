@@ -22,7 +22,8 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(DISABLE_CHEAT_FEATURE OFF)
+set(DISABLE_CHEAT_FEATURE FALSE)
+set(EXPERIMENTAL_CHEAT_FEATURE FALSE)
 
 add_compile_definitions(
 	RUNTIME_DLL_FILENAME="${RUNTIME_NAME}.dll" 
@@ -37,8 +38,17 @@ add_compile_definitions(
     $<$<CONFIG:MinSizeRel>:OE_RELEASE>
 )
 
+if(MSVC)
+	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+endif()
+
 if(DISABLE_CHEAT_FEATURE)
 	add_compile_definitions(NO_FEATURE)
+endif()
+
+if(EXPERIMENTAL_CHEAT_FEATURE)
+	add_compile_definitions(EXPERIMENTAL)
 endif()
 
 add_custom_target(
@@ -68,7 +78,7 @@ file(
 	"${SRC}/loader/*.c"
 )
 
-add_executable(${INJECTOR_NAME} ${INJECTOR_GLOB} )
+add_executable(${INJECTOR_NAME} ${INJECTOR_GLOB})
 target_link_libraries(${INJECTOR_NAME} PRIVATE 
 	logger TulipHook
 )

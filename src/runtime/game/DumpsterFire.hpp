@@ -7,4 +7,5 @@ namespace DumpsterFire
 {
 	extern std::unordered_map<char, std::vector<std::pair<int, int>>> gTextVectorMap;
 	extern std::vector<Vector3> gPenisVectorArray;
+	extern std::vector<const char*> gNameSpoofList;
 }

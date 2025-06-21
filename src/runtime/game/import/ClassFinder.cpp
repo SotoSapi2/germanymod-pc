@@ -136,7 +136,7 @@ namespace ClassFinder
 		AddQueue("WeaponW", "", &FieldPatterns::WeaponW, 12);
 		AddQueue("KeyClass", "", &FieldPatterns::KeyClass, 41);
 		AddQueue("WeaponSkinManager", "", &FieldPatterns::WeaponSkinManager, 118);
-		AddQueue("PlayerListClass", "", &FieldPatterns::PlayerListClass, 31);
+		AddQueue("PlayerListClass", "", &FieldPatterns::PlayerListClass);
 		AddQueue("PhotonNetwork", "", &FieldPatterns::PhotonNetwork, 148);
 		AddQueue("WearClass", "", &FieldPatterns::WearClass);
 		AddQueue("IdkBroClass", "", &FieldPatterns::IdkBroClass);

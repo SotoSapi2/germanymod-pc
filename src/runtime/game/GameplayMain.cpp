@@ -203,7 +203,6 @@ namespace GameplayMain
 		}
 	}
 
-
 	void HandleSpamChat(IL2CPP::Object* photonView, const std::string& content)
 	{
 		auto args = IL2CPP::Array<IL2CPP::Object*>::Create(IL2CPP::DefaultTypeClass::Object, 2);
@@ -333,6 +332,7 @@ namespace GameplayMain
 		dontDespawnBot = true;
 	}
 
+	#ifdef EXPERIMENTAL
 	void HandleFlyhack()
 	{
 		float flySpeed = Menu::Gameplay::General::Movement::Flyspeed.value;
@@ -383,9 +383,11 @@ namespace GameplayMain
 			Transform::SetPosition(playerTransform, newPosition);
 		}
 	}
+	#endif
 
 	void HandlePlayerSpawning()
 	{
+		#ifdef EXPERIMENTAL
 		auto otherPlayerList = PhotonNetwork::GetOtherPlayerList();
 
 		otherPlayerList->ForEach([&](IL2CPP::Object* player)
@@ -404,6 +406,7 @@ namespace GameplayMain
 
 			PhotonView::TransferOwnership(photonView, player);
 		});
+		#endif
 	}
 
 	$Hook(void, WeaponManager, (IL2CPP::Object* _this))
@@ -435,20 +438,24 @@ namespace GameplayMain
 				HandleAimbot();
 			}
 
+			#ifdef EXPERIMENTAL
 			if (General::Aim::SoftSilentAim.value && gPlayerMoveCList != nullptr)
 			{
 				HandleSoftSilent();
 			}
+			#endif
 
 			if (General::Player::GotoPlayers.value && gPlayerMoveCList != nullptr)
 			{
 				HandleGotoPlayers();
 			}
 
+			#ifdef EXPERIMENTAL
 			if (General::Movement::Flyhack.value && gPlayerMoveCList != nullptr)
 			{
 				HandleFlyhack();
 			}
+			#endif
 
 			if (gPhotonViewList != nullptr)
 			{
@@ -646,7 +653,7 @@ namespace GameplayMain
 	}
 	$Hook(IL2CPP::Object*, CreateRocket, (IL2CPP::Object* weaponSounds, Vector3 pos, Quaternion rot, float chargePower, int smoke, int whateverthisis))
 	{
-
+		#ifdef EXPERIMENTAL
 		if (General::Aim::SilentRocket.value)
 		{
 			if (!gPlayerMoveCList || !gMyPlayerMoveC)
@@ -713,7 +720,6 @@ namespace GameplayMain
 
 			return $CallOrig(CreateRocket, weaponSounds, pos, rot, chargePower, smoke, whateverthisis);
 		}
-
 		if (General::Rocket::TextToRocket.value)
 		{
 			std::string text = Menu::Gameplay::General::Rocket::RocketTextInput.GetValue();
@@ -824,6 +830,7 @@ namespace GameplayMain
 
 			return nullptr;
 		}
+		#endif
 
 		if (General::Rocket::RocketTower.value)
 		{
@@ -972,6 +979,7 @@ namespace GameplayMain
 			return;
 		}
 
+		#ifdef EXPERIMENTAL
 		if (playerMoveC != gMyPlayerMoveC && ServerMods::World::TpAllToCenter.value)
 		{
 			//if (networkTable)
@@ -995,22 +1003,25 @@ namespace GameplayMain
 			auto playerObj = Component::GetGameObject(photonView);
 			PhotonNetwork::Destroy(playerObj);
 		}
+		#endif
 
 		$CallOrig(PlayerSynchStream_OnPhotonSerializeView, _this, stream, info);
 	}
 
 	$Hook(void, BaseBot_OnPhotonSerializeView, (IL2CPP::Object* _this, IL2CPP::Object* stream, PhotonMessageInfo info))
 	{
+		#ifdef EXPERIMENTAL
 		if (gMyPlayerMoveC != nullptr && PhotonStream::IsWriting(stream) && ServerMods::World::GrabMonster.value)
 		{
 			IL2CPP::Object* botTransform = Component::GetTransform(_this);
 			IL2CPP::Object* localPlayerTransform = Component::GetTransform(gMyPlayerMoveC);
 
 			Transform::SetPosition(
-				botTransform, 
+				botTransform,
 				PlayerMoveC::GetPosition(gMyPlayerMoveC) + CameraUtils::GetMainCameraLookVector() * 7
 			);
 		}
+		#endif
 
 		$CallOrig(BaseBot_OnPhotonSerializeView, _this, stream, info);
 	}
@@ -1051,6 +1062,7 @@ namespace GameplayMain
 	{
 		//LOG_INFO("%s", prefab->ToString().c_str());
 
+		#ifdef EXPRIMENTAL
 		if (prefab->Equals("NetworkTable"))
 		{
 			auto out = $CallOrig(InstantiatePrefab, prefab, vec, rot, byte); //settings);
@@ -1058,6 +1070,7 @@ namespace GameplayMain
 			//PhotonNetwork::Destroy(out);
 			return out;
 		}
+		#endif
 
 
 		return $CallOrig(InstantiatePrefab, prefab, vec, rot, byte);
@@ -1067,6 +1080,7 @@ namespace GameplayMain
 						EventEnum eventEnum, PhotonTargets target, IL2CPP::Object* player, 
 						bool encrypted, IL2CPP::Array<IL2CPP::Object*>* parameters))
 	{
+		#ifdef EXPRIMENTAL
 		static std::vector<EventEnum> blockedEvent = {
 			EventEnum::PropertyRPC,
 			EventEnum::SetMySkin,
@@ -1076,23 +1090,41 @@ namespace GameplayMain
 			EventEnum::SynhCommandRPC,
 		};
 
-		if ((eventEnum == EventEnum::SetNickName || eventEnum == EventEnum::SynhNameRPC) && parameters)
+		if (Menu::Misc::Bypass::Misc::AntiReport.value)
 		{
-			parameters->Set(0, IL2CPP::String::Create("Skibidi"));
-		}
-		else
-		{
-			for (EventEnum _event : blockedEvent)
+			if ((eventEnum == EventEnum::SetNickName || eventEnum == EventEnum::SynhNameRPC) && parameters)
 			{
-				if (_event == eventEnum)
+				parameters->Set(0, IL2CPP::String::Create(DumpsterFire::gNameSpoofList[rand() % DumpsterFire::gNameSpoofList.size()]));
+			}
+			else
+			{
+				for (EventEnum _event : blockedEvent)
 				{
-					return;
+					if (_event == eventEnum)
+					{
+						return;
+					}
 				}
 			}
 		}
+		#endif
 
-		LOG_INFO("eventenum %s %i %i", rpcEntries[(int) eventEnum], target, player != nullptr);
+		//LOG_INFO("eventenum %s %i %i", rpcEntries[(int) eventEnum], target, player != nullptr);
 		$CallOrig(PeerRPC, _this, photonView, eventEnum, target, player, encrypted, parameters);
+	}
+
+	$Hook(IL2CPP::String*, ProfileController_GetPlayerNameOrDefault, ())
+	{
+		auto gex = $CallOrig(ProfileController_GetPlayerNameOrDefault);
+
+		#ifdef EXPRIMENTAL
+		if (Menu::Misc::Bypass::Misc::AntiReport.value)
+		{
+			IL2CPP::String::Create(DumpsterFire::gNameSpoofList[rand() % DumpsterFire::gNameSpoofList.size()]);
+		}
+		#endif
+
+		return gex;
 	}
 
 	void INIT()
@@ -1101,13 +1133,16 @@ namespace GameplayMain
 
 		ServerMods::RPC::AttractEveryone.OnClick(AttractEveryone);
 		ServerMods::PrefabSpawner::SpawnBot.OnClick(SpawnBotPrefab);
-		//ServerMods::RPC::CrashEveryone.OnClick([&]
-		//{
-		//	Global::ExecuteOnGameThread([]
-		//	{
-		//		CrashEveryone();
-		//	});
-		//});
+
+		ServerMods::World::CrashEveryone.OnClick([&]
+		{
+			Global::ExecuteOnGameThread([]
+			{
+				#if !defined(EXPERIMENTAL)
+				CrashEveryone();
+				#endif
+			});
+		});
 
 		ServerMods::PrefabSpawner::SpawnProjectile.OnClick([&]
 		{
@@ -1117,7 +1152,9 @@ namespace GameplayMain
 			});
 		});
 
+		#ifdef EXPERIMENTAL
 		ServerMods::World::SpawnPlayer.OnClick(HandlePlayerSpawning);
+		#endif
 		ServerMods::World::NoClipEveryone.OnClick([&] { processNoClipAll = true; });
 
 		General::Player::Godmode.OnToggle([&](bool value)
@@ -1225,5 +1262,13 @@ namespace GameplayMain
 			PeerRPC,
 			GetClass("NetworkingPeer")->GetMethod(0x71)
 		);
+
+		$RegisterHook(
+			ProfileController_GetPlayerNameOrDefault,
+			GetClass("ProfileController")->GetMethod(0x33)
+		);
+
+		//auto gex = GetClass("NetworkStartTable")->GetMethod(0xc9)->GetPointer();
+		//MemPatcher::Nop(gex);
 	}
 }

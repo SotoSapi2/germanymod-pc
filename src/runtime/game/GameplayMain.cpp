@@ -1056,6 +1056,16 @@ namespace GameplayMain
 
 		$CallOrig(PhotonNetwork_Destroy, obj);
 	}
+
+	$Hook(bool, isAvailable, (IL2CPP::Object* _this, int filterMaps))
+	{
+		if (Menu::Misc::Bypass::Armory::AllowSandbox.IsActive())
+		{
+			return true;
+		}
+
+		return $CallOrig(isAvailable, _this, filterMaps);
+	}
 	#pragma endregion
 
 	$Hook(IL2CPP::Object*, InstantiatePrefab, (IL2CPP::String* prefab, Vector3 vec, Quaternion rot, char byte))//, IL2CPP::Array<IL2CPP::Object*> * settings))
@@ -1264,11 +1274,19 @@ namespace GameplayMain
 		);
 
 		$RegisterHook(
+<<<<<<< HEAD
 			ProfileController_GetPlayerNameOrDefault,
 			GetClass("ProfileController")->GetMethod(0x33)
 		);
 
 		//auto gex = GetClass("NetworkStartTable")->GetMethod(0xc9)->GetPointer();
 		//MemPatcher::Nop(gex);
+=======
+			isAvailable,
+			GetClass("ItemRecord")->GetMethodByPattern(
+				{ "public", "Boolean", nullptr, {"ENUM"} }
+			)
+		);
+>>>>>>> 12ed68177358c10671d4c24f63f2827acb3dadfa
 	}
 }

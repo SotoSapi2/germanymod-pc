@@ -15,14 +15,14 @@ set(RUNTIME_NAME "${PROJECT_NAME}-runtime")
 set(ASSETS_SOURCE_DIR "${CMAKE_SOURCE_DIR}/assets")
 set(ASSETS_DEST_DIR "${CMAKE_BINARY_DIR}/assets")
 
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDebug$<$<CONFIG:Debug>:Debug>")
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Release>:Release>")
+# set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDebug$<$<CONFIG:Debug>:Debug>")
+# set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Release>:Release>")
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(DISABLE_CHEAT_FEATURE FALSE)
+set(DISABLE_CHEAT_FEATURE TRUE)
 set(EXPERIMENTAL_CHEAT_FEATURE FALSE)
 
 add_compile_definitions(
@@ -37,11 +37,6 @@ add_compile_definitions(
     $<$<CONFIG:Release>:OE_RELEASE>
     $<$<CONFIG:MinSizeRel>:OE_RELEASE>
 )
-
-if(MSVC)
-	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
-endif()
 
 if(DISABLE_CHEAT_FEATURE)
 	add_compile_definitions(NO_FEATURE)

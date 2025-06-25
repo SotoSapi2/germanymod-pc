@@ -25,7 +25,7 @@ namespace Bootstrap
 			"Although still usable, some features may be unusable or crash on use. \n"
 			"\n"
 			"Please wait for an update for fixes.",
-			"Error!",
+			"Error! ",
 			MB_OK | MB_ICONERROR
 		);
 	}

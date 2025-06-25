@@ -1274,19 +1274,8 @@ namespace GameplayMain
 		);
 
 		$RegisterHook(
-<<<<<<< HEAD
 			ProfileController_GetPlayerNameOrDefault,
 			GetClass("ProfileController")->GetMethod(0x33)
 		);
-
-		//auto gex = GetClass("NetworkStartTable")->GetMethod(0xc9)->GetPointer();
-		//MemPatcher::Nop(gex);
-=======
-			isAvailable,
-			GetClass("ItemRecord")->GetMethodByPattern(
-				{ "public", "Boolean", nullptr, {"ENUM"} }
-			)
-		);
->>>>>>> 12ed68177358c10671d4c24f63f2827acb3dadfa
 	}
 }

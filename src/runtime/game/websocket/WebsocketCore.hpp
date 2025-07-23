@@ -40,6 +40,8 @@ namespace WebsocketCore
 
 		virtual void AddCommand(CommandID cmdId, const json& json_);
 
+		virtual void AddCommand(CommandID cmdId, int headerHexLength, const json& json_);
+
 		void SendPackage(const std::function<void(json& response)>& onRecieve = nullptr) override;
 	};
 }

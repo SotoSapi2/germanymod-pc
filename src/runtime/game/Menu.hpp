@@ -55,10 +55,9 @@ namespace Menu
 			{
 				extern Group GROUP;
 
-				#ifdef EXPERIMENTAL
 				extern Checkbox Flyhack;
 				extern FloatSlider Flyspeed;
-				#endif
+
 				extern Checkbox Speedhack;
 				extern Checkbox AirJump;
 				extern FloatSlider GravityPower;
@@ -99,13 +98,12 @@ namespace Menu
 				extern Checkbox NuclearExplosion;
 				extern Checkbox Gravity;
 				extern Checkbox Ricochet;
-				#ifdef EXPERIMENTAL
+
 				extern Checkbox RainRocket;
 				extern Checkbox Box3DRocket;
 				extern Checkbox PenisRocket;
 				extern Checkbox TextToRocket;
 				extern StringInput RocketTextInput;
-				#endif
 			}
 
 			namespace Visual
@@ -176,14 +174,13 @@ namespace Menu
 			{
 				extern Group GROUP;
 				
-				#ifdef EXPERIMENTAL
+				extern Checkbox CrashEveryone;
 				extern Checkbox GrabMonster;
 				extern Checkbox TpAllToCenter;
-				extern Button SpawnPlayer;
-				extern Button CrashEveryone;
-				#endif
-				extern Button CrashEveryone;
 				extern Button NoClipEveryone;
+				#ifdef EXPERIMENTAL
+				extern Button SpawnPlayer;
+				#endif
 			}
 		}
 	}
@@ -571,6 +568,37 @@ namespace Menu
 			//	extern IntInput TargetID;
 			//	extern Button Steal;
 			//}
+		}
+	}
+
+	namespace Guide
+	{
+		extern Section SECTION;
+		namespace BanGuide
+		{
+			extern Tab TAB;
+			namespace Guide
+			{
+				extern Group GROUP;
+
+				extern Text NOTE;
+			}
+		}
+
+		namespace ReportBug
+		{
+			extern Tab TAB;
+			namespace Guide
+			{
+				extern Group GROUP;
+
+				extern Text NOTE;
+
+				extern Button DiscordLink;
+				extern Button LocateCrash;
+
+				
+			}
 		}
 	}
 

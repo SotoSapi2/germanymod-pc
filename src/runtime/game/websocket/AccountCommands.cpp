@@ -466,8 +466,9 @@ namespace AccountCommands
 	{
 		WebsocketCore::ProgressUpdaterHelper helper;
 		helper.AddCommand(CommandID::UpdateCustomSkin, json::object({
-			{"i", -1},
-			{"c", base64}
+			{"i", "-1"},
+			{"c", base64},
+			{"h", json::object()}
 		}));
 		helper.SendPackage();
 	}

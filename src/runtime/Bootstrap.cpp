@@ -32,7 +32,7 @@ namespace Bootstrap
 
 	void INIT()
 	{
-		Sleep(1000);
+		Sleep(2500);
 
 		ConsoleManager::INIT();
 		GdiplusManager::INIT();

@@ -16,6 +16,7 @@
 
 #include <obfuscator.h>
 #include <base64.h>
+#include "GameplayMain.hpp"
 #undef ERROR // DUMB WINDOWS MACRO :middle_finger:
 namespace Menu
 {
@@ -79,10 +80,9 @@ namespace Menu
 			{
 				Group GROUP(&TAB, "Movement");
 
-				#ifdef EXPERIMENTAL
 				Checkbox Flyhack(&GROUP, "Flyhack");
 				FloatSlider Flyspeed(&GROUP, "FlySpeed", 0.0f, 10.0f, 1.0f);
-				#endif
+
 				Checkbox Speedhack(&GROUP, "Speedhack");
 				Checkbox AirJump(&GROUP, "Air jump (Double jump boots needed)");
 				FloatSlider GravityPower(&GROUP, "Gravity power", 0.0f, 2.0f, 1.0f);
@@ -135,18 +135,17 @@ namespace Menu
 				Checkbox NuclearExplosion(&GROUP, "Nuclear explosion");
 				Checkbox Gravity(&GROUP, "Gravity");
 				Checkbox Ricochet(&GROUP, "Ricochet");
-				#ifdef EXPERIMENTAL
-				Checkbox RainRocket(&GROUP, "Rain Rocket");
+
+				//Checkbox RainRocket(&GROUP, "Rocket Rain");
 				Checkbox Box3DRocket(&GROUP, "3D Box Rocket");
 				Checkbox PenisRocket(&GROUP, "Penis Rocket");
 				Checkbox TextToRocket(&GROUP, "Text To Rocket");
 				StringInput RocketTextInput(&GROUP, "Rocket Text", "NAZI MOD ON TOP");
-				#endif
 			}
 
 			namespace Visual
 			{
-				Group GROUP(&TAB, "Visual", GroupPlacementType::RIGHT);
+				Group GROUP(&TAB, "Visual", GroupPlacementType::LEFT);
 
 				Checkbox Xray(&GROUP, "X-Ray vision");
 				Checkbox TPS(&GROUP, "Third-person view (must be enabled in lobby)");
@@ -226,13 +225,13 @@ namespace Menu
 			{
 				Group GROUP(&TAB, "World");
 				
-				#ifdef EXPERIMENTAL
+				Checkbox CrashEveryone(&GROUP, "Crash everyone");
 				Checkbox GrabMonster(&GROUP, "Grab every monsters");
-				Checkbox TpAllToCenter(&GROUP, "Teleport everyone to center and bug them");
+				Checkbox TpAllToCenter(&GROUP, "Grab everyone or bug them");
+				Text TpAllNote(&GROUP, "To grab everyone. You have to turn on this before joining any match.");
+				#ifdef EXPERIMENTAL
 				Button SpawnPlayer(&GROUP, "Spawn player");
-				Button CrashEveryone(&GROUP, "Crash everyone");
 				#endif
-				Button CrashEveryone(&GROUP, "Crash everyone (spam to trigger)");
 				Button NoClipEveryone(&GROUP, "No-clip everyone");
 			}
 		}
@@ -1417,6 +1416,7 @@ namespace Menu
 						return;
 					}
 
+					GdiplusManager::ReadBitmapBytes(&textureBitmap, GdiplusManager::pngClsid, &outBuffer);
 					AccountCommands::CustomCape(base64_encode(outBuffer.data(), outBuffer.size()));
 					WebsocketCore::Reload();
 				}
@@ -1430,7 +1430,7 @@ namespace Menu
 
 			namespace SkinStealer
 			{
-				Group GROUP(&TAB, "Skin Stealer");
+				Group GROUP(&TAB, "Skin Stealer", UIComponents::GroupPlacementType::RIGHT);
 				Text NOTE(&GROUP,
 					"Stolen skins will be saved on the selected folder."
 				);
@@ -1445,11 +1445,22 @@ namespace Menu
 					if (!json.contains("status") || json.at("status") != "ok") return;
 					nlohmann::json skins = json["slots"]["12"];
 
+
+					int index = 0;
 					for (nlohmann::json& val : skins)
 					{
 						std::string skinName = val["n"];
 						std::string skinData = val["c"];
 						std::string base64Bytes = base64_decode(skinData);
+
+						if (skinName.empty())
+						{
+							skinName = std::to_string(TargetID.value) + "_" + std::to_string(index);
+						}
+						else
+						{
+							skinName = std::to_string(TargetID.value) + "_" + skinName;
+						}
 
 						auto savepath = std::filesystem::path(currentSavePath).append(skinName + ".png");
 
@@ -1464,6 +1475,7 @@ namespace Menu
 						image.Save(savepath.wstring().c_str(), &GdiplusManager::pngClsid);
 						pStream->Release();
 						GlobalFree(hMem);
+						index++;
 					}
 				}
 
@@ -1496,6 +1508,63 @@ namespace Menu
 			//	IntInput TargetID(&GROUP, "Target Clan ID");
 			//	Button Steal(&GROUP, "Steal clan icon");
 			//}
+		}
+	}
+
+	namespace Guide
+	{
+		Section SECTION(&WINDOW, ICON_FA_BOOK);
+		namespace BanGuide
+		{
+			Tab TAB(&SECTION, "Avoiding Ban", UIComponents::GroupSplitType::NO_SPLIT);
+			namespace Guide
+			{
+				Group GROUP(&TAB, "Avoiding Ban", { -1, -1 });
+
+				Text NOTE(&GROUP,
+					"1. Avoid adding level above 45.\n"
+					"2. Don't add too much stuff at short amount of time. for example, try to add weapon around a hundred a day.\n"
+					"3. If you only cares about modding account, It's better to not use any blatant gameplay mod to prevent chance of getting reported.\n"	
+					"4. Keep any currency you had as low as possible. My maximum recommendation is no more than 10k.\n"
+					"5. Leave right before the match ends to prevent getting logged on others player match history.\n"
+				);
+			}
+		}
+
+		namespace ReportBug
+		{
+			Tab TAB(&SECTION, "Reporting Bug", UIComponents::GroupSplitType::NO_SPLIT);
+			namespace Guide
+			{
+				Group GROUP(&TAB, "Reporting Bug", { -1, -1 });
+
+				Text NOTE(&GROUP,
+					"Report bugs on our discord server and send it to #bug-reports channel.\n"
+					"Make sure to include the bug description and steps to reproduce it.\n"
+					"Also if the bug cause the game to crash please include crash dump and log files. This would be very helpful for "
+					"me to debug the bug!\n\n"
+					"Click the \"Locate Crash dumps\" button to open the crash dump directory.\n"
+				);
+
+				Button DiscordLink(&GROUP, "Join our discord server");
+				Button LocateCrash(&GROUP, "Locate Crash dumps");
+
+				#pragma region MenuFunctions
+				void Load()
+				{
+					DiscordLink.OnClick([]
+					{
+						ShellExecuteW(nullptr, L"open", L"https://discord.gg/7d9c5a3f", nullptr, nullptr, SW_SHOWNORMAL);
+					});
+
+					LocateCrash.OnClick([]
+					{
+						std::string crashPath = std::string(std::getenv("USERPROFILE")) + "\\AppData\\Local\\Temp\\Pixel Gun Team\\Pixel Gun 3D\\Crashes";
+						ShellExecute(nullptr, "open", std::format("\"{0}\"", crashPath).c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+					});
+				}
+				#pragma endregion
+			}
 		}
 	}
 
@@ -1593,8 +1662,8 @@ namespace Menu
 			Tab TAB(&SECTION, "Credits & info", UIComponents::GroupSplitType::NO_SPLIT);
 
 			Group GROUP(&TAB, "Credits & info", {-1, -1});
-			Text NOTE(&GROUP, OBF(
-				"Nazi Mod version: v5.4.0\n"
+			Text NOTE(&GROUP, 
+				"Nazi Mod version: v5.5.0\n"
 				"\n"
 
 				"Cheat developers:\n"
@@ -1628,7 +1697,7 @@ namespace Menu
 				"Paste credits:\n"
 				"- ZygiskPG: https://github.com/fedes1to/ZygiskPG\n"
 				"- Stardust: https://github.com/fedes1to/Stardust-PG3D-Menu\n"
-			));
+			);
 
 			Button OpenDC(&GROUP, "Nazi Mod Discord server");
 
@@ -1637,7 +1706,7 @@ namespace Menu
 			{
 				OpenDC.OnClick([&]
 				{
-					ShellExecuteA(0, 0, OBF("https://discord.gg/Y3gj2Rszq6"), 0, 0, SW_SHOW);
+					ShellExecuteA(0, 0, "https://discord.gg/Y3gj2Rszq6", 0, 0, SW_SHOW);
 				});
 			}
 			#pragma endregion
@@ -1659,9 +1728,11 @@ namespace Menu
 				Group GROUP(&TAB, "Websocket");
 
 				Checkbox LogWs(&GROUP, "Log Websocket");
+				Checkbox LogRPC(&GROUP, "Log RPC");
 
 				void Update()
 				{
+					GameplayMain::gLogRPC = LogRPC.value;
 					WebsocketCore::logWebsocket = LogWs.value;
 				}
 			}
@@ -1843,7 +1914,8 @@ namespace Menu
 				2.0f
 			);
 		}
-		auto watermarkText = OBF("Get Nazi Mod for free - discord.gg/Y3gj2Rszq6");
+
+		auto watermarkText = "Get Nazi Mod for free - discord.gg/Y3gj2Rszq6";
 		auto watermarkSize = ImGui::CalcTextSize(watermarkText);
 		ImVec2 padding = ImGui::GetStyle().WindowPadding;
 		auto watermarkPos = ImVec2(padding.x, Screen::GetHeight() - watermarkSize.y - padding.y);
@@ -1922,6 +1994,7 @@ namespace Menu
 		Misc::Skin::CustomSkinImporter::Load();
 		Misc::Skin::CustomCapeImporter::Load();
 		Misc::Skin::SkinStealer::Load();
+		Guide::ReportBug::Guide::Load();
 		Settings::Menu::MenuCustomization::Load();
 		Settings::Menu::Config::Load();
 		Settings::Credit::Load();

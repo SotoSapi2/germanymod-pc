@@ -18,6 +18,7 @@ namespace GameplayMain
 	IL2CPP::Object* gCurrentWeaponSounds = nullptr;
 	IL2CPP::List<IL2CPP::Object*>* gPlayerMoveCList = nullptr;
 	IL2CPP::List<IL2CPP::Object*>* gPhotonViewList = nullptr;
+	bool gLogRPC = false;
 
 	IL2CPP::Object* networkTable;
 	bool processNoClipAll = false;
@@ -212,23 +213,23 @@ namespace GameplayMain
 		PhotonView::RPC(photonView, EventEnum::SendChatMessageWithIcon, PhotonTargets::All, args);
 	}
 
-	void CrashEveryone()
-	{
-		#include "CrashString.h"
+	//void CrashEveryone()
+	//{
+	//	#include "CrashString.h"
 
-		if (gPhotonViewList == nullptr) return;
+	//	if (gPhotonViewList == nullptr) return;
 
-		gPhotonViewList->ForEach([&](IL2CPP::Object* view)
-		{
-			if (!PhotonView::IsMine(view)) return;
+	//	gPhotonViewList->ForEach([&](IL2CPP::Object* view)
+	//	{
+	//		if (!PhotonView::IsMine(view)) return;
 
-			auto args = IL2CPP::Array<IL2CPP::Object*>::Create(IL2CPP::DefaultTypeClass::Object, 2);
-			args->Set(0, IL2CPP::String::Create(crashString));
-			args->Set(1, IL2CPP::String::Create(""));
+	//		auto args = IL2CPP::Array<IL2CPP::Object*>::Create(IL2CPP::DefaultTypeClass::Object, 2);
+	//		args->Set(0, IL2CPP::String::Create(crashString));
+	//		args->Set(1, IL2CPP::String::Create(""));
 
-			PhotonView::RPC(view, EventEnum::SendChatMessageWithIcon, PhotonTargets::Others, args);
-		});
-	}
+	//		PhotonView::RPC(view, EventEnum::SendChatMessageWithIcon, PhotonTargets::Others, args);
+	//	});
+	//}
 
 	void HandleSpeedhackRPC(IL2CPP::Object* photonView, float speed)
 	{
@@ -332,7 +333,6 @@ namespace GameplayMain
 		dontDespawnBot = true;
 	}
 
-	#ifdef EXPERIMENTAL
 	void HandleFlyhack()
 	{
 		float flySpeed = Menu::Gameplay::General::Movement::Flyspeed.value;
@@ -383,7 +383,6 @@ namespace GameplayMain
 			Transform::SetPosition(playerTransform, newPosition);
 		}
 	}
-	#endif
 
 	void HandlePlayerSpawning()
 	{
@@ -393,14 +392,14 @@ namespace GameplayMain
 		otherPlayerList->ForEach([&](IL2CPP::Object* player)
 		{
 			auto playerObj = PhotonNetwork::InstantiatePrefab(
-				IL2CPP::String::Create("NetworkTable"), 
-				Vector3::Zero(), 
-				Quaternion::Identity(), 
+				IL2CPP::String::Create("NetworkTable"),
+				Vector3::Zero(),
+				Quaternion::Identity(),
 				0
 			);
 
 			auto photonView = GameObject::GetComponent(
-				playerObj, 
+				playerObj,
 				IL2CPP::String::Create("PhotonView")
 			);
 
@@ -450,12 +449,10 @@ namespace GameplayMain
 				HandleGotoPlayers();
 			}
 
-			#ifdef EXPERIMENTAL
 			if (General::Movement::Flyhack.value && gPlayerMoveCList != nullptr)
 			{
 				HandleFlyhack();
 			}
-			#endif
 
 			if (gPhotonViewList != nullptr)
 			{
@@ -564,7 +561,7 @@ namespace GameplayMain
 			matchSettings.push_back({
 				{"type", "EnableTPCamera"},
 				{"bool", true}
-			});
+				});
 		}
 
 		if (General::Player::NoFixedDelay.value)
@@ -572,7 +569,7 @@ namespace GameplayMain
 			matchSettings.push_back({
 				{"type", "MovementScheme"},
 				{"custom", "Oldschool"}
-			});
+				});
 		}
 
 		if (General::Movement::GravityToggle.value)
@@ -580,7 +577,7 @@ namespace GameplayMain
 			matchSettings.push_back({
 				{"type", "Gravity"},
 				{"float", General::Movement::GravityPower.value}
-			});
+				});
 		}
 
 		if (!matchSettings.empty())
@@ -720,6 +717,8 @@ namespace GameplayMain
 
 			return $CallOrig(CreateRocket, weaponSounds, pos, rot, chargePower, smoke, whateverthisis);
 		}
+		#endif
+
 		if (General::Rocket::TextToRocket.value)
 		{
 			std::string text = Menu::Gameplay::General::Rocket::RocketTextInput.GetValue();
@@ -757,8 +756,6 @@ namespace GameplayMain
 				float moddedPower = chargePower;
 				$CallOrig(CreateRocket, weaponSounds, moddedPos, moddedRot, moddedPower, smoke, whateverthisis);
 			}
-
-			return nullptr;
 		}
 
 		if (Menu::Gameplay::General::Rocket::Box3DRocket.value)
@@ -800,7 +797,6 @@ namespace GameplayMain
 				float moddedPower = chargePower;
 				$CallOrig(CreateRocket, weaponSounds, moddedPos, moddedRot, moddedPower, smoke, whateverthisis);
 			}
-			return nullptr;
 		}
 
 		if (Menu::Gameplay::General::Rocket::PenisRocket.value)
@@ -830,7 +826,6 @@ namespace GameplayMain
 
 			return nullptr;
 		}
-		#endif
 
 		if (General::Rocket::RocketTower.value)
 		{
@@ -963,7 +958,7 @@ namespace GameplayMain
 
 		//bool isMine = PlayerMoveC::IsMine(playerMoveC);
 
-		if (playerMoveC == gMyPlayerMoveC && General::Visual::Spinbot.value)
+		if (gMyPlayerMoveC != nullptr && playerMoveC == gMyPlayerMoveC && General::Visual::Spinbot.value)
 		{
 			static float angle = 1;
 			angle += General::Visual::SpinbotSpeed.value;
@@ -979,38 +974,50 @@ namespace GameplayMain
 			return;
 		}
 
-		#ifdef EXPERIMENTAL
-		if (playerMoveC != gMyPlayerMoveC && ServerMods::World::TpAllToCenter.value)
+		if (ServerMods::World::TpAllToCenter.value && playerMoveC != gMyPlayerMoveC)
 		{
 			//if (networkTable)
 			//{
 			//	PhotonNetwork::Destroy(networkTable);
 			//}
 			//LOG_TEST();
-			_this->GetFieldRef<bool>(0xb) = true;
+			_this->GetFieldRef<bool>(0xa) = true;
 			//_this->GetFieldRef<bool>(0x5) = false;
 			//_this->GetFieldRef<bool>(0xe) = true; 
 			//_this->GetFieldRef<bool>(0x10) = true;
 
-
 			PhotonView::TransferOwnership(photonView, PhotonNetwork::GetLocalPlayer());
-			Transform::SetPosition(transform, PlayerMoveC::GetPosition(gMyPlayerMoveC) + CameraUtils::GetMainCameraLookVector() * 7);
+			if (gMyPlayerMoveC != nullptr)
+			{
+				Transform::SetPosition(transform, PlayerMoveC::GetPosition(gMyPlayerMoveC) + CameraUtils::GetMainCameraLookVector() * 7);
+			}
+			else
+			{
+				Transform::SetPosition(transform, Vector3::Zero());
+			}
 		}
 
-		if (playerMoveC != gMyPlayerMoveC && gMyPlayerMoveC && ServerMods::World::CrashEveryone.value)
+		//if (gMyPlayerMoveC == nullptr)
+		//{
+		//	PhotonView::TransferOwnership(photonView, PhotonNetwork::GetLocalPlayer());
+		//	auto args = IL2CPP::Array<IL2CPP::Object*>::Create(IL2CPP::DefaultTypeClass::Object, 1);
+		//	args->Set(0, IL2CPP::String::Create("avatar_spec_ops_boy"));
+
+		//	PhotonView::RPC(photonView, EventEnum::SetRoyaleAvatarRPC, PhotonTargets::AllBuffered, args);
+		//}
+
+		if (playerMoveC != gMyPlayerMoveC && ServerMods::World::CrashEveryone.value)
 		{
 			PhotonView::TransferOwnership(photonView, PhotonNetwork::GetLocalPlayer());
 			auto playerObj = Component::GetGameObject(photonView);
 			PhotonNetwork::Destroy(playerObj);
 		}
-		#endif
 
 		$CallOrig(PlayerSynchStream_OnPhotonSerializeView, _this, stream, info);
 	}
 
 	$Hook(void, BaseBot_OnPhotonSerializeView, (IL2CPP::Object* _this, IL2CPP::Object* stream, PhotonMessageInfo info))
 	{
-		#ifdef EXPERIMENTAL
 		if (gMyPlayerMoveC != nullptr && PhotonStream::IsWriting(stream) && ServerMods::World::GrabMonster.value)
 		{
 			IL2CPP::Object* botTransform = Component::GetTransform(_this);
@@ -1021,7 +1028,6 @@ namespace GameplayMain
 				PlayerMoveC::GetPosition(gMyPlayerMoveC) + CameraUtils::GetMainCameraLookVector() * 7
 			);
 		}
-		#endif
 
 		$CallOrig(BaseBot_OnPhotonSerializeView, _this, stream, info);
 	}
@@ -1072,23 +1078,23 @@ namespace GameplayMain
 	{
 		//LOG_INFO("%s", prefab->ToString().c_str());
 
-		#ifdef EXPRIMENTAL
-		if (prefab->Equals("NetworkTable"))
-		{
-			auto out = $CallOrig(InstantiatePrefab, prefab, vec, rot, byte); //settings);
-			networkTable = out;
-			//PhotonNetwork::Destroy(out);
-			return out;
-		}
-		#endif
+		//#ifdef EXPRIMENTAL
+		//if (prefab->Equals("NetworkTable"))
+		//{
+		//	auto out = $CallOrig(InstantiatePrefab, prefab, vec, rot, byte); //settings);
+		//	networkTable = out;
+		//	//PhotonNetwork::Destroy(out);
+		//	return out;
+		//}
+		//#endif
 
 
 		return $CallOrig(InstantiatePrefab, prefab, vec, rot, byte);
 	}
 
-	$Hook(void, PeerRPC, (IL2CPP::Object* _this, IL2CPP::Object* photonView, 
-						EventEnum eventEnum, PhotonTargets target, IL2CPP::Object* player, 
-						bool encrypted, IL2CPP::Array<IL2CPP::Object*>* parameters))
+	$Hook(void, PeerRPC, (IL2CPP::Object* _this, IL2CPP::Object* photonView,
+		EventEnum eventEnum, PhotonTargets target, IL2CPP::Object* player,
+		bool encrypted, IL2CPP::Array<IL2CPP::Object*>* parameters))
 	{
 		#ifdef EXPRIMENTAL
 		static std::vector<EventEnum> blockedEvent = {
@@ -1119,7 +1125,68 @@ namespace GameplayMain
 		}
 		#endif
 
-		//LOG_INFO("eventenum %s %i %i", rpcEntries[(int) eventEnum], target, player != nullptr);
+		if (!gLogRPC)
+		{
+			$CallOrig(PeerRPC, _this, photonView, eventEnum, target, player, encrypted, parameters);
+			return;
+		}
+
+		const char* rpcName = rpcEntries[(int)eventEnum];
+		LOG_INFO("===[PeerRPC]===");
+		LOG_INFO("[PeerRPC] eventEnum: %s", rpcName);
+
+		if (parameters == nullptr) {
+			LOG_INFO("[PeerRPC] (eventEnum: %s) parameters is null", rpcName);
+			$CallOrig(PeerRPC, _this, photonView, eventEnum, target, player, encrypted, parameters);
+			return;
+		}
+
+		if (player != nullptr)
+		{
+			LOG_INFO("[PeerRPC] (eventEnum: %s) targetPlayer is not null.", rpcName);
+		}
+		else
+		{
+			LOG_INFO("[PeerRPC] (eventEnum: %s) photonTargets: %i", rpcName, target);
+		}
+		for (int i = 0; i < parameters->GetLength(); ++i) {
+
+			if (parameters->GetVectorPointer()[i] == nullptr)
+			{
+				LOG_INFO("[PeerRPC] (eventEnum: %s) index %i is null", rpcName, i);
+			}
+			else
+			{
+				//const char *namespaceName = il2cpp_class_get_namespace(il2cpp_object_get_class((Il2CppObject *) parameters->vector[i]));
+				//const char *className = il2cpp_class_get_name(il2cpp_object_get_class((Il2CppObject *) parameters->vector[i]));
+				std::string typeName = parameters->Get(i)->GetClass()->GetFullName();//il2cpp_type_get_name(il2cpp_class_get_type(il2cpp_object_get_class((Il2CppObject*)parameters->vector[i])));
+
+				LOG_INFO("[PeerRPC] (eventEnum: %s) index: %i", rpcName, i);
+				LOG_INFO("[PeerRPC] (eventEnum: %s) typeName: %s", rpcName, typeName.c_str());
+
+				if (strcmp(typeName.c_str(), "System.Single") == 0)
+				{
+					LOG_INFO("[PeerRPC] (eventEnum: %s) value: %f", rpcName, parameters->Get(i)->Unbox<float>());
+				}
+				else if (strcmp(typeName.c_str(), "System.Int32") == 0)
+				{
+					LOG_INFO("[PeerRPC] (eventEnum: %s) value: %i", rpcName, parameters->Get(i)->Unbox<int>());
+				}
+				else if (strcmp(typeName.c_str(), "System.Double") == 0)
+				{
+					LOG_INFO("[PeerRPC] (eventEnum: %s) value: %f", rpcName, parameters->Get(i)->Unbox<double>());
+				}
+				else if (strcmp(typeName.c_str(), "System.Boolean") == 0)
+				{
+					LOG_INFO("[PeerRPC] (eventEnum: %s) value: %i", rpcName, parameters->Get(i)->Unbox<bool>());
+				}
+				else if (strcmp(typeName.c_str(), "System.String") == 0)
+				{
+					LOG_INFO("[PeerRPC] (eventEnum: %s) value: %s", rpcName, reinterpret_cast<IL2CPP::String*>(parameters->Get(i))->ToString().c_str());
+				}
+			}
+		}
+
 		$CallOrig(PeerRPC, _this, photonView, eventEnum, target, player, encrypted, parameters);
 	}
 
@@ -1144,15 +1211,15 @@ namespace GameplayMain
 		ServerMods::RPC::AttractEveryone.OnClick(AttractEveryone);
 		ServerMods::PrefabSpawner::SpawnBot.OnClick(SpawnBotPrefab);
 
-		ServerMods::World::CrashEveryone.OnClick([&]
-		{
-			Global::ExecuteOnGameThread([]
-			{
-				#if !defined(EXPERIMENTAL)
-				CrashEveryone();
-				#endif
-			});
-		});
+		//ServerMods::World::CrashEveryone.OnClick([&]
+		//{
+		//	Global::ExecuteOnGameThread([]
+		//	{
+		//		#if !defined(EXPERIMENTAL)
+		//		CrashEveryone();
+		//		#endif
+		//	});
+		//});
 
 		ServerMods::PrefabSpawner::SpawnProjectile.OnClick([&]
 		{
@@ -1196,11 +1263,11 @@ namespace GameplayMain
 				MemPatcher::Restore(ptr);
 			}
 		});
-		
+
 		$RegisterHook(
 			WeaponManager,
 			GetClass("WeaponManager")->GetMethod("Update"),
-		);
+			);
 
 		$RegisterHook(
 			AimCrosshairController,
@@ -1217,19 +1284,19 @@ namespace GameplayMain
 			GetClass("Rocket")->GetMethodByPattern(
 				{ "private", "Boolean", nullptr, {"RocketSettings"} }
 			),
-		);
+			);
 
 		$RegisterHook(
 			CreateRocket,
 			GetClass("Player_move_c")->GetMethodByPattern(
 				{ "internal static", "Rocket", nullptr, {"WeaponSounds", "Vector3", "Quaternion", "Single", "Int32", "Int32"} }
 			),
-		);
+			);
 
 		$RegisterHook(
 			WeaponSounds,
 			GetClass("WeaponSounds")->GetMethod("Update"),
-		);
+			);
 
 		$RegisterHook(
 			SendPlayerEffect,

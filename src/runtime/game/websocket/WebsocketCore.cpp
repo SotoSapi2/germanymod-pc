@@ -274,6 +274,11 @@ namespace WebsocketCore
 		this->package.push_back(MessageBuilder::BuildCommand(cmdId, json_));
 	}
 
+	void ProgressUpdaterHelper::AddCommand(CommandID cmdId, int headerHexLength, const json& json_)
+	{
+		this->package.push_back(MessageBuilder::BuildCommand(cmdId, headerHexLength, json_));
+	}
+
 	void ProgressUpdaterHelper::SendPackage(const std::function<void(json& response)>& onRecieve)
 	{
 		QueuePackage(this->eventType, MessageBuilder::BuildSnapshot(this->package), onRecieve);

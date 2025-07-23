@@ -877,7 +877,7 @@ namespace UIFramework
 
 			// ImGui::InputTextEx function was modified to disable label render cause you cant
 			// just paste the body here due to hardcoded used function accessibility.
-			bool value_changed = ImGui::InputTextEx(label, hint, buf, buf_size, size_arg, 0);
+			bool value_changed = ImGui::InputTextEx(label, hint, buf, buf_size, size_arg, ImGuiInputTextFlags_NoLabel);
 			ImGui::PopStyleColor();
 			ImGui::PopStyleVar();
 
@@ -1953,7 +1953,9 @@ namespace UIComponents
 
 	void Text::Render()
 	{
+		ImGui::PushTextWrapPos();
 		ImGui::TextUnformatted(text.c_str());
+		ImGui::PopTextWrapPos();
 	}
 
 	Checkbox::Checkbox(Group* parentGroup, const char* label, bool defaultValue) : IConfigurable()

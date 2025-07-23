@@ -10,4 +10,5 @@ namespace MessageBuilder
 	json BuildSnapshot(const json& arr);
 
 	json BuildCommand(CommandID cmdId, const json& body, const std::vector<int>& u = { 140, 6 });
+	json BuildCommand(CommandID cmdId, int hexLength, const json& body, const std::vector<int>& u = { 140, 6 });
 }

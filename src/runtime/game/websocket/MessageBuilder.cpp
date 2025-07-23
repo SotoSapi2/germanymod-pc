@@ -39,4 +39,17 @@ namespace MessageBuilder
 			{"u", u}
 		};
 	}
+
+	json BuildCommand(CommandID cmdId, int hexLength, const json& body, const std::vector<int>& u)
+	{
+		return
+		{
+			{"id", cmdId},
+			{"ci", RandHex()},
+			{"p", body},
+			{"h", RandHex(hexLength)},
+			{"v", version},
+			{"u", u}
+		};
+	}
 }

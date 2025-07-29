@@ -1987,7 +1987,7 @@ namespace Menu
 		Account::Stats::Winstreak::Load();
 		Account::ClanStuff::PlaceableUnlocker::Load();
 		Account::ClanStuff::Misc::Load();
-		Misc::Bypass::Chat::Load();
+		//Misc::Bypass::Chat::Load();
 		Misc::Bypass::Armory::Load();
 		Misc::Bypass::Misc::Load();
 		Misc::Bypass::Analytics::Load();

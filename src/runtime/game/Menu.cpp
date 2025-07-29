@@ -1169,36 +1169,36 @@ namespace Menu
 		{
 			Tab TAB(&SECTION, "Bypasses");
 
-			namespace Chat
-			{
-				Group GROUP(&TAB, "Chat");
+			//namespace Chat
+			//{
+			//	Group GROUP(&TAB, "Chat");
 
-				Checkbox BypassChatFilter(&GROUP, "Bypass Chat filter", true);
+			//	Checkbox BypassChatFilter(&GROUP, "Bypass Chat filter", true);
 
-				#pragma region MenuFunctions
-				void Load()
-				{
-					using namespace IL2CPP::ClassMapping;
-					static void* ScanMatInWold_ptr = GetClass("FilterBadWorld")->GetMethod(0x2)->GetPointer();
+			//	#pragma region MenuFunctions
+			//	void Load()
+			//	{
+			//		using namespace IL2CPP::ClassMapping;
+			//		static void* ScanMatInWold_ptr = GetClass("FilterBadWorld")->GetMethod(0x2)->GetPointer();
 
-					BypassChatFilter.OnToggle([&](bool value)
-					{
-						if (value)
-						{
-							MemPatcher::ReturnFalse(ScanMatInWold_ptr);
-						}
-						else
-						{
+			//		BypassChatFilter.OnToggle([&](bool value)
+			//		{
+			//			if (value)
+			//			{
+			//				MemPatcher::ReturnFalse(ScanMatInWold_ptr);
+			//			}
+			//			else
+			//			{
 
-							MemPatcher::Restore(ScanMatInWold_ptr);
-						}
-					});
+			//				MemPatcher::Restore(ScanMatInWold_ptr);
+			//			}
+			//		});
 
-					if(BypassChatFilter.value)
-						MemPatcher::ReturnFalse(ScanMatInWold_ptr);
-				}
-				#pragma endregion
-			}
+			//		if(BypassChatFilter.value)
+			//			MemPatcher::ReturnFalse(ScanMatInWold_ptr);
+			//	}
+			//	#pragma endregion
+			//}
 
 			namespace Armory
 			{

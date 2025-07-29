@@ -37,7 +37,7 @@ namespace Bootstrap
 		ConsoleManager::INIT();
 		GdiplusManager::INIT();
 		FileDialogService::INIT();
-		TaskScheduler::INIT();
+		//TaskScheduler::INIT();
 		IL2CPP::INIT();
 
 		bool errowShown = false;

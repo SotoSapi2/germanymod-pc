@@ -146,7 +146,7 @@ namespace Menu
 			namespace Visual
 			{
 				Group GROUP(&TAB, "Visual", GroupPlacementType::LEFT);
-
+				Checkbox EspBox(&GROUP, "Esp 2DBox");
 				Checkbox Xray(&GROUP, "X-Ray vision");
 				Checkbox TPS(&GROUP, "Third-person view (must be enabled in lobby)");
 				Checkbox Spinbot(&GROUP, "Spinbot (only can be seen by other players");
@@ -1886,6 +1886,51 @@ namespace Menu
 	}
 	#endif
 
+	inline Vector3 W2s(const Vector3& worldpos) {
+		IL2CPP::Object* mainCam = Camera::GetMain();
+		if (mainCam == nullptr)
+			return {};
+		Vector3 sPos = Camera::WorldToScreenPoint(mainCam, worldpos);
+		sPos.Y = (float)Screen::GetHeight() - sPos.Y;
+		return sPos;
+	}
+
+	void esp2d() {
+		auto players = IL2CPP::ClassMapping::GetClass("PlayerListClass")
+			->GetField(0x0)
+			->GetValue<IL2CPP::List<IL2CPP::Object*>*>(nullptr);
+		if (!players) return;
+		ImDrawList* drawList = ImGui::GetBackgroundDrawList();
+		players->ForEach([&](IL2CPP::Object* player) {
+			if (!player || PlayerMoveC::IsDead(player) || PlayerMoveC::IsMine(player))
+				return;
+			Vector3 worldpos = PlayerMoveC::GetPosition(player);
+			Vector3 headpos = worldpos;
+			headpos.Y += 1.2f;
+			Vector3 feetpos = worldpos;
+			feetpos.Y -= 1.0f;
+			Vector3 hScreen = W2s(headpos);
+			Vector3 fScreen = W2s(feetpos);
+			if (hScreen.Z <= 0 || fScreen.Z <= 0)
+				return;
+			float height = fScreen.Y - hScreen.Y;
+			float width = height * 0.5f;
+			float l = hScreen.X - width / 2;
+			float t = hScreen.Y;
+			float r = hScreen.X + width / 2;
+			float b = fScreen.Y;
+			ImU32 boxCol = IM_COL32(255, 0, 0, 255);
+			ImU32 outlineCol = IM_COL32(0, 0, 0, 255);
+			drawList->AddRect(ImVec2(l - 1, t - 1), ImVec2(r + 1, b + 1), outlineCol);
+			drawList->AddRect(ImVec2(l + 1, t + 1), ImVec2(r - 1, b - 1), outlineCol);
+			drawList->AddRect(ImVec2(l, t), ImVec2(r, b), boxCol);
+			});
+	}
+
+
+
+
+
 	void OnUpdate()
 	{
 
@@ -1915,7 +1960,12 @@ namespace Menu
 			);
 		}
 
-		auto watermarkText = "Get Nazi Mod for free - discord.gg/Y3gj2Rszq6";
+		if (Menu::Gameplay::General::Visual::EspBox.value)
+		{
+			esp2d();
+		}
+
+		auto watermarkText = "Get Nazi Mod for free - discord.gg/Y3gj2Rszq6             --- Skidded From Leminare";
 		auto watermarkSize = ImGui::CalcTextSize(watermarkText);
 		ImVec2 padding = ImGui::GetStyle().WindowPadding;
 		auto watermarkPos = ImVec2(padding.x, Screen::GetHeight() - watermarkSize.y - padding.y);
@@ -1936,7 +1986,6 @@ namespace Menu
 		);
 
 		ImGui::PopFont();
-
 		MouseFix::ShowMouse(gMenuShown);
 
 		if (!iUnderstand && gMenuShown)

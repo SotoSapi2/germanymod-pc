@@ -30,7 +30,7 @@ jobs:
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -G Ninja
+      run: cmake -B ${{github.workspace}}/build/ -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -G Ninja
 
     - name: Build
       # Build your program with the given configuration
@@ -46,7 +46,7 @@ jobs:
       run: "${{github.workspace}}/build/"
 
     - name: Create Artifact Archive
-      run: Compress-Archive -Path "${{github.workspace}}/build/" -DestinationPath "${{github.workspace}}/artifact.zip"
+      run: Compress-Archive -Path "${{github.workspace}}/build/nazimod-loader.exe", "${{github.workspace}}/build/nazimod-runtime.dll", "${{github.workspace}}/build/assets/" -DestinationPath "${{github.workspace}}/artifact.zip"
 
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v4

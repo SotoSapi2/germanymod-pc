@@ -1965,7 +1965,7 @@ namespace Menu
 			esp2d();
 		}
 
-		auto watermarkText = "Get Nazi Mod for free - discord.gg/Y3gj2Rszq6             --- Skidded From Leminare";
+		auto watermarkText = "Get Nazi Mod for free - discord.gg/Y3gj2Rszq6";
 		auto watermarkSize = ImGui::CalcTextSize(watermarkText);
 		ImVec2 padding = ImGui::GetStyle().WindowPadding;
 		auto watermarkPos = ImVec2(padding.x, Screen::GetHeight() - watermarkSize.y - padding.y);

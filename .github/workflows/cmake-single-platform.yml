@@ -11,6 +11,7 @@ on:
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
+  DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
 
 jobs:
   build:
@@ -37,3 +38,41 @@ jobs:
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ctest -C ${{env.BUILD_TYPE}}
 
+    - name: Create Artifact Archive
+      run: Compress-Archive -Path 
+           "build/${{env.BUILD_TYPE}}/nazimod-loader.exe", 
+           "build/${{env.BUILD_TYPE}}/nazimod-runtime-exe", 
+           "assets" 
+           -DestinationPath "artifact.zip"
+
+    - name: Send to Discord Webhook
+      run: |
+          # PowerShell script block to handle JSON and file upload.
+          # Get the full commit message from the GitHub event context.
+          $commit_message = "${{ github.event.head_commit.message }}"
+          $commit_url = "${{ github.event.head_commit.url }}"
+
+          # Split the message into a title (first line) and description (rest).
+          $message_lines = $commit_message.Split("`n")
+          $title = $message_lines[0]
+          $description = $message_lines[1..($message_lines.Count - 1)] -join "`n"
+
+          # Create the JSON payload for the Discord embed.
+          # We use a here-string to build the JSON.
+          $json_payload = @"
+          {
+            "content": "**Bleeding-edge build of a commit.**",
+            "embeds": [
+              {
+                "title": "$title",
+                "description": "$description",
+                "color": 3447003,
+                "url": "$commit_url"
+              }
+            ]
+          }
+          "@
+
+          curl -F "nazimodpc-${{github.sha}}.zip=@artifact.zip" `
+               -F "payload_json=$json_payload" `
+               $DISCORD_WEBHOOK_URL

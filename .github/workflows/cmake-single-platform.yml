@@ -45,6 +45,13 @@ jobs:
     - name: Create Artifact Archive
       run: Compress-Archive -Path "${{github.workspace}}/build/" -DestinationPath "${{github.workspace}}/artifact.zip"
 
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: my-app-build
+        path: "${{github.workspace}}/artifact.zip"
+        retention-days: 7
+
     - name: Send to Discord Webhook
       run: |
           # PowerShell script block to handle JSON and file upload.
@@ -75,4 +82,4 @@ jobs:
 
           curl -F "nazimodpc-${{github.sha}}.zip=@${{github.workspace}}/artifact.zip" `
                -F "payload_json=$json_payload" `
-               $DISCORD_WEBHOOK_URL
+               ${{env.DISCORD_WEBHOOK_URL}}

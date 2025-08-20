@@ -38,7 +38,7 @@ namespace ConsoleManager
 
 	void INIT()
 	{
-		#ifdef _DEBUG
+		#ifdef CONSOLE_ENABLED
 		AllocateConsole();
 		#endif
 		InitializeLogger();

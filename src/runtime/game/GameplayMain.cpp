@@ -1267,7 +1267,7 @@ namespace GameplayMain
 		$RegisterHook(
 			WeaponManager,
 			GetClass("WeaponManager")->GetMethod("Update"),
-			);
+		);
 
 		$RegisterHook(
 			AimCrosshairController,
@@ -1284,19 +1284,19 @@ namespace GameplayMain
 			GetClass("Rocket")->GetMethodByPattern(
 				{ "private", "Boolean", nullptr, {"RocketSettings"} }
 			),
-			);
+		);
 
 		$RegisterHook(
 			CreateRocket,
 			GetClass("Player_move_c")->GetMethodByPattern(
 				{ "internal static", "Rocket", nullptr, {"WeaponSounds", "Vector3", "Quaternion", "Single", "Int32", "Int32"} }
 			),
-			);
+		);
 
 		$RegisterHook(
 			WeaponSounds,
 			GetClass("WeaponSounds")->GetMethod("Update"),
-			);
+		);
 
 		$RegisterHook(
 			SendPlayerEffect,

@@ -171,7 +171,7 @@ namespace Menu
 			namespace ChatSpam
 			{
 				Group GROUP(&TAB, "Chat Spam");
-				StringInput message(&GROUP, "Spam message", "Nazi Mod - discord.gg/Y3gj2Rszq6", 255);
+				StringInput message(&GROUP, "Spam message", "Nazi Mod - discord.gg/GCphUP98Xh", 255);
 				Checkbox SpamChat(&GROUP, "Spam chat");
 			}
 
@@ -209,7 +209,7 @@ namespace Menu
 					"Prefab_bot"
 				);
 
-				StringInput BotName(&GROUP, "Bot nickname", "Prefab_bot", "Nazi Mod - discord.gg/Y3gj2Rszq6", 255);
+				StringInput BotName(&GROUP, "Bot nickname", "Prefab_bot", "Nazi Mod - discord.gg/GCphUP98Xh", 255);
 				Button SpawnBot(&GROUP, "Spawn Bot", "Prefab_bot");
 
 				#pragma region MenuFunctions
@@ -1554,7 +1554,7 @@ namespace Menu
 				{
 					DiscordLink.OnClick([]
 					{
-						ShellExecuteW(nullptr, L"open", L"https://discord.gg/7d9c5a3f", nullptr, nullptr, SW_SHOWNORMAL);
+						ShellExecuteW(nullptr, L"open", L"discord.gg/GCphUP98Xh", nullptr, nullptr, SW_SHOWNORMAL);
 					});
 
 					LocateCrash.OnClick([]
@@ -1706,7 +1706,7 @@ namespace Menu
 			{
 				OpenDC.OnClick([&]
 				{
-					ShellExecuteA(0, 0, "https://discord.gg/Y3gj2Rszq6", 0, 0, SW_SHOW);
+					ShellExecuteA(0, 0, "https://discord.gg/GCphUP98Xh", 0, 0, SW_SHOW);
 				});
 			}
 			#pragma endregion
@@ -1965,7 +1965,7 @@ namespace Menu
 			esp2d();
 		}
 
-		auto watermarkText = "Get Nazi Mod for free - discord.gg/Y3gj2Rszq6";
+		auto watermarkText = "Get Nazi Mod for free - discord.gg/GCphUP98Xh";
 		auto watermarkSize = ImGui::CalcTextSize(watermarkText);
 		ImVec2 padding = ImGui::GetStyle().WindowPadding;
 		auto watermarkPos = ImVec2(padding.x, Screen::GetHeight() - watermarkSize.y - padding.y);

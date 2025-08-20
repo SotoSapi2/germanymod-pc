@@ -43,9 +43,7 @@ jobs:
       run: ctest -C ${{env.BUILD_TYPE}}
 
     - name: Create Artifact Archive
-      run: Compress-Archive -Path 
-           "${{github.workspace}}/build/", 
-           -DestinationPath "${{github.workspace}}/artifact.zip"
+      run: Compress-Archive -Path "${{github.workspace}}/build/" -DestinationPath "${{github.workspace}}/artifact.zip"
 
     - name: Send to Discord Webhook
       run: |

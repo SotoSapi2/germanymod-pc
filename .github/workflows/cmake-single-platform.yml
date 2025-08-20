@@ -46,7 +46,7 @@ jobs:
       run: dir "${{github.workspace}}/build/"
 
     - name: Create Artifact Archive
-      run: Compress-Archive -Path "${{github.workspace}}/build/nazimod-loader.exe", "${{github.workspace}}/build/nazimod-runtime.dll", "${{github.workspace}}/build/assets/" -DestinationPath "${{github.workspace}}/artifact.zip"
+      run: Compress-Archive -Path "${{github.workspace}}/build/nazimod-loader.exe", "${{github.workspace}}/build/nazimod-runtime.dll", "${{github.workspace}}/build/assets/" -DestinationPath "${{github.workspace}}/nazimodpc-${{github.sha}}.zip"
 
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
@@ -83,6 +83,6 @@ jobs:
           }
           "@
 
-          curl -F "nazimodpc-${{github.sha}}.zip=@${{github.workspace}}/artifact.zip" `
+          curl -F "file1=@${{github.workspace}}/nazimodpc-${{github.sha}}.zip" `
                -F "payload_json=$json_payload" `
                ${{env.DISCORD_WEBHOOK_URL}}

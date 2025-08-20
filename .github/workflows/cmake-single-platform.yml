@@ -70,7 +70,7 @@ jobs:
           # We use a here-string to build the JSON.
           $json_payload = @"
           {
-            "content": "**Bleeding-edge build of a commit.**",
+            "content": "✅ **Bleeding-edge build of a commit.**",
             "embeds": [
               {
                 "title": "$title",
@@ -86,3 +86,37 @@ jobs:
                -F "file2=@${{github.workspace}}/nazimodpc-experimental-${{github.sha}}.zip" `
                -F "payload_json=$json_payload" `
                ${{env.DISCORD_WEBHOOK_URL}}
+
+  notify-on-failure:
+    name: Notify on Build Failure
+    runs-on: windows-latest
+    needs: [build]
+    if: failure()
+
+    steps:
+    - name: "Send build failure to discord webhook"
+      run: | 
+        $commit_message = "${{ github.event.head_commit.message }}"
+        $commit_url = "${{ github.event.head_commit.url }}"
+
+        $message_lines = $commit_message.Split("`n")
+        $title = $message_lines[0]
+        $description = $message_lines[1..($message_lines.Count - 1)] -join "`n"
+
+        $json_payload = @"
+          {
+            "content": "❌ **Commit failed to build.**",
+            "embeds": [
+              {
+                "title": "$title",
+                "description": "$description",
+                "color": 16711680,
+                "url": "$commit_url"
+              }
+            ]
+          }
+          "@
+
+          curl -F "payload_json=$json_payload" `
+               ${{env.DISCORD_WEBHOOK_URL}}
+

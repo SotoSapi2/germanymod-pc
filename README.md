@@ -3,6 +3,8 @@ Cool ass Pixel Gun 3D pasteware! 🔥🔥 <br />
 Just in keep in mind the codebase is a literal shithole. I don't really know c++ at the time I'm creating this.
 
 Hopefully, this will be useful for others who wants to learn Unity Modding.
+### Links
+- Discord: https://discord.gg/GCphUP98Xh
 
 ## Working with the project
 ### Building:

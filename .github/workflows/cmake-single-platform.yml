@@ -43,7 +43,7 @@ jobs:
       run: ctest -C ${{env.BUILD_TYPE}}
 
     - name: List Build directory
-      run: "${{github.workspace}}/build/"
+      run: dir "${{github.workspace}}/build/"
 
     - name: Create Artifact Archive
       run: Compress-Archive -Path "${{github.workspace}}/build/nazimod-loader.exe", "${{github.workspace}}/build/nazimod-runtime.dll", "${{github.workspace}}/build/assets/" -DestinationPath "${{github.workspace}}/artifact.zip"

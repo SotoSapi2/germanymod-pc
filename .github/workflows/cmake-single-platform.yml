@@ -44,9 +44,9 @@ jobs:
 
     - name: Create Artifact Archive
       run: Compress-Archive -Path 
-           "${{github.workspace}}/build/${{env.BUILD_TYPE}}/nazimod-loader.exe", 
-           "${{github.workspace}}/build/${{env.BUILD_TYPE}}/nazimod-runtime-exe", 
-           "${{github.workspace}}/build/${{env.BUILD_TYPE}}/assets" 
+           "${{github.workspace}}/build/nazimod-loader.exe", 
+           "${{github.workspace}}/build/nazimod-runtime-exe", 
+           "${{github.workspace}}/build/assets" 
            -DestinationPath "${{github.workspace}}/artifact.zip"
 
     - name: Send to Discord Webhook

@@ -22,9 +22,9 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(ENABLE_CONSOLE FALSE)
-set(DISABLE_CHEAT_FEATURE FALSE)
-set(EXPERIMENTAL_CHEAT_FEATURE FALSE)
+option(ENABLE_CONSOLE FALSE)
+option(DISABLE_CHEAT_FEATURE FALSE)
+option(EXPERIMENTAL_CHEAT_FEATURE FALSE)
 
 add_compile_definitions(
 	RUNTIME_DLL_FILENAME="${RUNTIME_NAME}.dll" 
@@ -41,14 +41,17 @@ add_compile_definitions(
 )
 
 if(DISABLE_CHEAT_FEATURE)
+	message("Cheat feature disabled")
 	add_compile_definitions(NO_FEATURE)
 endif()
 
 if(EXPERIMENTAL_CHEAT_FEATURE)
+	message("Experimental cheat enabled")
 	add_compile_definitions(EXPERIMENTAL)
 endif()
 
 if(ENABLE_CONSOLE OR ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+	message("Console enabled")
 	add_compile_definitions(CONSOLE_ENABLED)
 endif()
 

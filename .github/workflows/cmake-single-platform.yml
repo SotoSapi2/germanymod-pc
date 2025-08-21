@@ -28,13 +28,6 @@ jobs:
     - uses: ilammy/msvc-dev-cmd@v1
       with:
         arch: ${{env.TARGET_ARCH}}
-
-    - name: Configuring Short Commit Hash Variable
-      run: |
-        $env:COMMIT_HASH=$(echo "${{ github.sha }}" | cut -c1-7)
-        echo $env:COMMIT_HASH
-    
-
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
@@ -50,8 +43,9 @@ jobs:
 
     - name: Create Artifact Archive
       run: |
-          Compress-Archive -Path "${{env.BUILD_PATH}}/nazimod-loader.exe", "${{env.BUILD_PATH}}/nazimod-runtime.dll", "${{env.BUILD_PATH}}/assets/" -DestinationPath "${{github.workspace}}/nazimodpc-$env:COMMIT_HASH.zip"
-          Compress-Archive -Path "${{env.EXPERIMENTAL_BUILD_PATH}}/nazimod-loader.exe", "${{env.EXPERIMENTAL_BUILD_PATH}}/nazimod-runtime.dll", "${{env.EXPERIMENTAL_BUILD_PATH}}/assets/" -DestinationPath "${{github.workspace}}/nazimodpc-experimental-$env:COMMIT_HASH.zip"
+          $commit_hash=$(echo "${{ github.sha }}" | cut -c1-7)
+          Compress-Archive -Path "${{env.BUILD_PATH}}/nazimod-loader.exe", "${{env.BUILD_PATH}}/nazimod-runtime.dll", "${{env.BUILD_PATH}}/assets/" -DestinationPath "${{github.workspace}}/nazimodpc-$commit_hash.zip"
+          Compress-Archive -Path "${{env.EXPERIMENTAL_BUILD_PATH}}/nazimod-loader.exe", "${{env.EXPERIMENTAL_BUILD_PATH}}/nazimod-runtime.dll", "${{env.EXPERIMENTAL_BUILD_PATH}}/assets/" -DestinationPath "${{github.workspace}}/nazimodpc-experimental-$commit_hash.zip"
 
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
@@ -64,6 +58,7 @@ jobs:
       run: |
           # PowerShell script block to handle JSON and file upload.
           # Get the full commit message from the GitHub event context.
+          $commit_hash=$(echo "${{ github.sha }}" | cut -c1-7)
           $commit_message = "${{ github.event.head_commit.message }}"
           $commit_url = "${{ github.event.head_commit.url }}"
 
@@ -88,8 +83,8 @@ jobs:
           }
           "@
 
-          curl -F "file1=@${{github.workspace}}/nazimodpc-$env:COMMIT_HASH.zip" `
-               -F "file2=@${{github.workspace}}/nazimodpc-experimental-$env:COMMIT_HASH.zip" `
+          curl -F "file1=@${{github.workspace}}/nazimodpc-$commit_hash.zip" `
+               -F "file2=@${{github.workspace}}/nazimodpc-experimental-$commit_hash.zip" `
                -F "payload_json=$json_payload" `
                ${{env.DISCORD_WEBHOOK_URL}}
 

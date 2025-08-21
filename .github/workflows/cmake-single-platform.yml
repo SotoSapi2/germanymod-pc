@@ -29,6 +29,11 @@ jobs:
       with:
         arch: ${{env.TARGET_ARCH}}
 
+    - name: Configuring Short Commit Hash Variable
+      run: |
+        $COMMIT_HASH=$(echo "${{ github.sha }}" | cut -c1-7)
+    
+
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
@@ -44,8 +49,8 @@ jobs:
 
     - name: Create Artifact Archive
       run: |
-          Compress-Archive -Path "${{env.BUILD_PATH}}/nazimod-loader.exe", "${{env.BUILD_PATH}}/nazimod-runtime.dll", "${{env.BUILD_PATH}}/assets/" -DestinationPath "${{github.workspace}}/nazimodpc-${{github.sha::7}}.zip"
-          Compress-Archive -Path "${{env.EXPERIMENTAL_BUILD_PATH}}/nazimod-loader.exe", "${{env.EXPERIMENTAL_BUILD_PATH}}/nazimod-runtime.dll", "${{env.EXPERIMENTAL_BUILD_PATH}}/assets/" -DestinationPath "${{github.workspace}}/nazimodpc-experimental-${{github.sha::7}}.zip"
+          Compress-Archive -Path "${{env.BUILD_PATH}}/nazimod-loader.exe", "${{env.BUILD_PATH}}/nazimod-runtime.dll", "${{env.BUILD_PATH}}/assets/" -DestinationPath "${{github.workspace}}/nazimodpc-$COMMIT_HASH.zip"
+          Compress-Archive -Path "${{env.EXPERIMENTAL_BUILD_PATH}}/nazimod-loader.exe", "${{env.EXPERIMENTAL_BUILD_PATH}}/nazimod-runtime.dll", "${{env.EXPERIMENTAL_BUILD_PATH}}/assets/" -DestinationPath "${{github.workspace}}/nazimodpc-experimental-$COMMIT_HASH.zip"
 
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
@@ -82,8 +87,8 @@ jobs:
           }
           "@
 
-          curl -F "file1=@${{github.workspace}}/nazimodpc-${{github.sha::7}}.zip" `
-               -F "file2=@${{github.workspace}}/nazimodpc-experimental-${{github.sha::7}}.zip" `
+          curl -F "file1=@${{github.workspace}}/nazimodpc-$COMMIT_HASH.zip" `
+               -F "file2=@${{github.workspace}}/nazimodpc-experimental-$COMMIT_HASH.zip" `
                -F "payload_json=$json_payload" `
                ${{env.DISCORD_WEBHOOK_URL}}
 

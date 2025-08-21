@@ -1672,7 +1672,7 @@ namespace UIFramework
 					"Thank you for your understanding!"
 				);
 
-				if (Widgets::Button("Nazi Mod Discord server (.gg/GCphUP98Xh)", UIComponents::ButtonSizeType::FLEXIBLE)
+				if (Widgets::Button("Nazi Mod Discord server (.gg/GCphUP98Xh)", UIComponents::ButtonSizeType::FLEXIBLE))
 				{
 					ShellExecuteA(0, 0, "https://discord.gg/GCphUP98Xh", 0, 0, SW_SHOW);
 				}

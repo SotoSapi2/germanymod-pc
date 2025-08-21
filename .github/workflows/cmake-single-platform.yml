@@ -106,19 +106,19 @@ jobs:
         $description = $message_lines[1..($message_lines.Count - 1)] -join "`n"
 
         $json_payload = @"
-          {
-            "content": "❌ ┃ **Commit failed to build.**",
-            "embeds": [
-              {
-                "title": "$title",
-                "description": "$description",
-                "color": 16711680,
-                "url": "$commit_url"
-              }
-            ]
-          }
-          "@
+        {
+          "content": "❌ ┃ **Commit failed to build.**",
+          "embeds": [
+            {
+              "title": "$title",
+              "description": "$description",
+              "color": 16711680,
+              "url": "$commit_url"
+            }
+          ]
+        }
+        "@
 
-          curl -F "payload_json=$json_payload" `
-               ${{env.DISCORD_WEBHOOK_URL}}
+        curl -F "payload_json=$json_payload" `
+             ${{env.DISCORD_WEBHOOK_URL}}
 

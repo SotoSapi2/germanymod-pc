@@ -31,7 +31,8 @@ jobs:
 
     - name: Configuring Short Commit Hash Variable
       run: |
-        $COMMIT_HASH=$(echo "${{ github.sha }}" | cut -c1-7)
+        COMMIT_HASH=$(echo "${{ github.sha }}" | cut -c1-7)
+        echo $COMMIT_HASH
     
 
     - name: Configure CMake
@@ -75,7 +76,7 @@ jobs:
           # We use a here-string to build the JSON.
           $json_payload = @"
           {
-            "content": "✅ - **Bleeding-edge build of a commit.**",
+            "content": "✅ ┃ **Bleeding-edge build of a commit.**",
             "embeds": [
               {
                 "title": "$title",
@@ -110,7 +111,7 @@ jobs:
 
         $json_payload = @"
           {
-            "content": "❌ - **Commit failed to build.**",
+            "content": "❌ ┃ **Commit failed to build.**",
             "embeds": [
               {
                 "title": "$title",

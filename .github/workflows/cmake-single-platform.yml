@@ -15,7 +15,6 @@ env:
   TARGET_ARCH: amd64
   BUILD_PATH: ${{github.workspace}}/build
   EXPERIMENTAL_BUILD_PATH: ${{github.workspace}}/experimental-build
-  COMMIT_ID: ${{github.sha}:0:7}
 
 jobs:
   build:
@@ -45,8 +44,8 @@ jobs:
 
     - name: Create Artifact Archive
       run: |
-          Compress-Archive -Path "${{env.BUILD_PATH}}/nazimod-loader.exe", "${{env.BUILD_PATH}}/nazimod-runtime.dll", "${{env.BUILD_PATH}}/assets/" -DestinationPath "${{github.workspace}}/nazimodpc-${{env.COMMIT_ID}}.zip"
-          Compress-Archive -Path "${{env.EXPERIMENTAL_BUILD_PATH}}/nazimod-loader.exe", "${{env.EXPERIMENTAL_BUILD_PATH}}/nazimod-runtime.dll", "${{env.EXPERIMENTAL_BUILD_PATH}}/assets/" -DestinationPath "${{github.workspace}}/nazimodpc-experimental-${{env.COMMIT_ID}}.zip"
+          Compress-Archive -Path "${{env.BUILD_PATH}}/nazimod-loader.exe", "${{env.BUILD_PATH}}/nazimod-runtime.dll", "${{env.BUILD_PATH}}/assets/" -DestinationPath "${{github.workspace}}/nazimodpc-${{github.sha::7}}.zip"
+          Compress-Archive -Path "${{env.EXPERIMENTAL_BUILD_PATH}}/nazimod-loader.exe", "${{env.EXPERIMENTAL_BUILD_PATH}}/nazimod-runtime.dll", "${{env.EXPERIMENTAL_BUILD_PATH}}/assets/" -DestinationPath "${{github.workspace}}/nazimodpc-experimental-${{github.sha::7}}.zip"
 
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
@@ -71,7 +70,7 @@ jobs:
           # We use a here-string to build the JSON.
           $json_payload = @"
           {
-            "content": "✅ **Bleeding-edge build of a commit.**",
+            "content": "✅ - **Bleeding-edge build of a commit.**",
             "embeds": [
               {
                 "title": "$title",
@@ -83,8 +82,8 @@ jobs:
           }
           "@
 
-          curl -F "file1=@${{github.workspace}}/nazimodpc-${{env.COMMIT_ID}}.zip" `
-               -F "file2=@${{github.workspace}}/nazimodpc-experimental-${{env.COMMIT_ID}}.zip" `
+          curl -F "file1=@${{github.workspace}}/nazimodpc-${{github.sha::7}}.zip" `
+               -F "file2=@${{github.workspace}}/nazimodpc-experimental-${{github.sha::7}}.zip" `
                -F "payload_json=$json_payload" `
                ${{env.DISCORD_WEBHOOK_URL}}
 
@@ -106,7 +105,7 @@ jobs:
 
         $json_payload = @"
           {
-            "content": "❌ **Commit failed to build.**",
+            "content": "❌ - **Commit failed to build.**",
             "embeds": [
               {
                 "title": "$title",

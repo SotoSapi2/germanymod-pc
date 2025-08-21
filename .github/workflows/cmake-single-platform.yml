@@ -15,6 +15,7 @@ env:
   TARGET_ARCH: amd64
   BUILD_PATH: ${{github.workspace}}/build
   EXPERIMENTAL_BUILD_PATH: ${{github.workspace}}/experimental-build
+  COMMIT_ID: ${{github.sha}:0:7}
 
 jobs:
   build:
@@ -44,8 +45,8 @@ jobs:
 
     - name: Create Artifact Archive
       run: |
-          Compress-Archive -Path "${{env.BUILD_PATH}}/nazimod-loader.exe", "${{env.BUILD_PATH}}/nazimod-runtime.dll", "${{env.BUILD_PATH}}/assets/" -DestinationPath "${{github.workspace}}/nazimodpc-${{github.sha}}.zip"
-          Compress-Archive -Path "${{env.EXPERIMENTAL_BUILD_PATH}}/nazimod-loader.exe", "${{env.EXPERIMENTAL_BUILD_PATH}}/nazimod-runtime.dll", "${{env.EXPERIMENTAL_BUILD_PATH}}/assets/" -DestinationPath "${{github.workspace}}/nazimodpc-experimental-${{github.sha}}.zip"
+          Compress-Archive -Path "${{env.BUILD_PATH}}/nazimod-loader.exe", "${{env.BUILD_PATH}}/nazimod-runtime.dll", "${{env.BUILD_PATH}}/assets/" -DestinationPath "${{github.workspace}}/nazimodpc-${{env.COMMIT_ID}}.zip"
+          Compress-Archive -Path "${{env.EXPERIMENTAL_BUILD_PATH}}/nazimod-loader.exe", "${{env.EXPERIMENTAL_BUILD_PATH}}/nazimod-runtime.dll", "${{env.EXPERIMENTAL_BUILD_PATH}}/assets/" -DestinationPath "${{github.workspace}}/nazimodpc-experimental-${{env.COMMIT_ID}}.zip"
 
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
@@ -82,8 +83,8 @@ jobs:
           }
           "@
 
-          curl -F "file1=@${{github.workspace}}/nazimodpc-${{github.sha}}.zip" `
-               -F "file2=@${{github.workspace}}/nazimodpc-experimental-${{github.sha}}.zip" `
+          curl -F "file1=@${{github.workspace}}/nazimodpc-${{env.COMMIT_ID}}.zip" `
+               -F "file2=@${{github.workspace}}/nazimodpc-experimental-${{env.COMMIT_ID}}.zip" `
                -F "payload_json=$json_payload" `
                ${{env.DISCORD_WEBHOOK_URL}}
 

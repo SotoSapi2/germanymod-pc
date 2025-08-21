@@ -1654,7 +1654,7 @@ namespace UIFramework
 				ImGui::PopFont();
 				ImGui::Separator();
 
-				ImGui::TextUnformatted(OBF(
+				ImGui::TextUnformatted(
 					"Please, read carefuly!\n\n"
 
 					"Our cheat (Nazi Mod) is provided to you completely free of charge.\n"
@@ -1670,13 +1670,13 @@ namespace UIFramework
 					"If you find Nazi Mod from any source other than our Discord server, it might be a malware or virus.\n\n"
 
 					"Thank you for your understanding!"
-				));
+				);
 
-				if (Widgets::Button(OBF("Nazi Mod Discord server (.gg/Y3gj2Rszq6)"), UIComponents::ButtonSizeType::FLEXIBLE))
+				if (Widgets::Button("Nazi Mod Discord server (.gg/GCphUP98Xh)", UIComponents::ButtonSizeType::FLEXIBLE)
 				{
-					ShellExecuteA(0, 0, OBF("https://discord.gg/Y3gj2Rszq6"), 0, 0, SW_SHOW);
+					ShellExecuteA(0, 0, "https://discord.gg/GCphUP98Xh", 0, 0, SW_SHOW);
 				}
-				if (Widgets::Button(OBF("I understand."), UIComponents::ButtonSizeType::FLEXIBLE))
+				if (Widgets::Button("I understand.", UIComponents::ButtonSizeType::FLEXIBLE))
 				{
 					onClose();
 				}

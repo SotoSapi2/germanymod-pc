@@ -31,7 +31,7 @@ jobs:
 
     - name: Configuring Short Commit Hash Variable
       run: |
-        COMMIT_HASH=$(echo "${{ github.sha }}" | cut -c1-7)
+        $COMMIT_HASH=$(echo "${{ github.sha }}" | cut -c1-7)
         echo $COMMIT_HASH
     
 

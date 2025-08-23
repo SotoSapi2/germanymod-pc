@@ -74,6 +74,7 @@ namespace Menu
 				Checkbox KillSpeedboost(&GROUP, "Kill Speedboost");
 				Checkbox Lifesteal(&GROUP, "Lifesteal");
 				Checkbox HeadMagnifier(&GROUP, "Head Magnifier");
+				Checkbox AlwaysCritical(&GROUP, "Always Critical Hit");
 			}
 
 			namespace Movement

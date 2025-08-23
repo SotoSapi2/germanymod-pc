@@ -378,6 +378,12 @@ namespace IL2CPP
 
 		void StartDumper(const std::string& dumpDirectoryPath, bool generatePattern)
 		{
+			DWORD pathAttribute = GetFileAttributesA(dumpDirectoryPath.c_str());
+			if (pathAttribute == INVALID_FILE_ATTRIBUTES || (pathAttribute & FILE_ATTRIBUTE_DIRECTORY) == 0)
+			{
+				CreateDirectoryA(dumpDirectoryPath.c_str(), NULL);
+			}
+
 			for (Image* image : IL2CPP::CurrentDomain()->OpenEveryAssembly())
 			{
 				auto outPath = std::string(dumpDirectoryPath).append("\\").append(image->GetName()).append(".cs");

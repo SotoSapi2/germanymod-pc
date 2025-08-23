@@ -49,6 +49,7 @@ namespace Menu
 				extern Checkbox KillSpeedboost;
 				extern Checkbox Lifesteal;
 				extern Checkbox HeadMagnifier;
+				extern Checkbox AlwaysCritical;
 			}
 
 			namespace Movement

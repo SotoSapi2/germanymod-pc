@@ -932,6 +932,11 @@ namespace GameplayMain
 			_this->GetFieldRef<float>("harpoonMinDistance") = 99999999.0f;
 		}
 
+		if (General::Effects::AlwaysCritical.value)
+		{
+			_this->GetFieldRef<int>("criticalHitChance") = 100;
+		}
+
 		$CallOrig(WeaponSounds, _this);
 	}
 
@@ -1248,6 +1253,19 @@ namespace GameplayMain
 				MemPatcher::Restore(ptr);
 			}
 		});
+
+		//General::Effects::AlwaysCritical.OnToggle([&](bool value)
+		//{
+		//	static auto NextHitCritical_ptr = GetClass("WeaponSounds")->GetMethod("NextHitCritical")->GetPointer();
+		//	if (value)
+		//	{
+		//		MemPatcher::ReturnTrue(NextHitCritical_ptr);
+		//	}
+		//	else
+		//	{
+		//		MemPatcher::Restore(NextHitCritical_ptr);
+		//	}
+		//});
 
 		ServerMods::Modifier::FriendlyFire.OnToggle([&](bool value)
 		{

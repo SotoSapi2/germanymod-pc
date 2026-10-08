@@ -24,9 +24,8 @@ Build binaries will be generated in **out/build/{Build Configuration}**
 - Start the project without debugging or hit up **CTRL + F5**.
 - Once Just-in-time debugger window appears, select the current Visual Studio workspace or whatever you wanna call it.
 
-
 ## Updating pattern to keep up with the game update
-*TODO Guide*
+You can open [PATTERN.md](./PATTERN.md) to learn how to update pattern used to find classes, functions and other stuff, as well as knowing how the pattern matching works in the project. Though the guide is vibewritten and it's primarily used for AI to help update broken pattern (lol).
 
 ## Licensing
 This project is licensed under the [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html). 

@@ -62,8 +62,6 @@ namespace FieldPatterns
 	FieldPattern PhotonStream{ "Boolean", "Queue`1", "Object[]", "Byte" };
 	FieldPattern PurchaseCore { "Boolean", "String", "String", "Boolean", "Boolean", "Nullable`1", "Boolean", "Nullable`1" };
 	FieldPattern PurchaseCore_OverlayTask{ "Int32", "AsyncUniTaskVoidMethodBuilder", nullptr, "ProductDefinition", nullptr, "String", "String", "String", "String", "Int32", nullptr, "Callback`1", "Callback`1", nullptr, "Awaiter", "Awaiter" };
-
-
 }
 
 namespace ClassFinder

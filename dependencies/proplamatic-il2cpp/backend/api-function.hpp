@@ -1,10 +1,10 @@
 #include "types.hpp"
 #include "tabledefs.hpp"
-#include <iostream>
+#include <basetsd.h>
 
-#if defined(DO_API_DEFINE)
+#if defined(DO_API_DECLARE)
 	#define DO_API(r, n, p) r (*n) p
-#elif defined(DO_API_DECLARE)
+#elif defined(DO_API_DEFINE)
 	#define DO_API(r, n, p)																	\
 	{																						\
 		void* ptr = GetProcAddress(gameAssemblyHandle, #n);									\
@@ -13,8 +13,7 @@
 		{																					\
 			std::printf("[ERROR] Couldn't resolve '%s' api function export.\n", #n);		\
 		}																					\
-	}																						\
-
+	}																						
 #else
 	#define DO_API(r, n, p) extern r (*n) p
 #endif
@@ -23,18 +22,18 @@
 #define DO_API_NO_RETURN(r, n, p) DO_API(r,n,p)
 #endif
 
-#ifndef DO_API_DECLARE
+
+#ifdef DO_API_DEFINE
+#include "api/import.h"
+#else
 namespace IL2CPP
 {
 	namespace IMPORT
 	{
-		#include "api-import-list.hpp"
+		#include "api/import.h"
+		void INIT_API_FUNCTIONS(HMODULE gameAssemblyHandle);
 	}
-
-	void INIT_API_FUNCTIONS(HMODULE gameAssemblyHandle);
 }
-#else
-	using namespace IL2CPP::IMPORT;
-	#include "api-import-list.hpp"
 #endif
+
 #undef DO_API

@@ -1,10 +1,12 @@
 #include <Windows.h>
+#include <string>
+#include <cstdio>
 
-#define DO_API_DEFINE
+#define DO_API_DECLARE
 #include "api-function.hpp"
-#undef DO_API_DEFINE
+#undef DO_API_DECLARE
 
-namespace IL2CPP
+namespace IL2CPP::IMPORT
 {
     // pasted from https://github.com/Sxitxma/Windows-IL2CPP-Runtime-Dumper/blob/master/src/il2cpp_dump.cpp
 	std::string GetProtectedExportName(HMODULE pe_base)
@@ -51,9 +53,9 @@ namespace IL2CPP
 
 	void import_api(HMODULE gameAssemblyHandle)
 	{
-		#define DO_API_DECLARE
+		#define DO_API_DEFINE
 		#include "api-function.hpp"
-		#undef DO_API_DECLARE
+		#undef DO_API_DEFINE
 	}
 
 	void INIT_API_FUNCTIONS(HMODULE gameAssemblyHandle)

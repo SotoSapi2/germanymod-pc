@@ -1,16 +1,11 @@
 #pragma once
+#include <windows.h>
 #include "types.hpp"
-#include "../Main.hpp"
 
-namespace IL2CPP
+namespace IL2CPP::VM_FUNCTIONS
 {
-	namespace VM_FUNCTIONS
-	{
-		namespace Class
-		{
-			extern bool (*Init)(IMPORT::Il2CppClass* klass);
-		}
-
-		void INIT();
-	}
+	using namespace IL2CPP::IMPORT;
+	#define IL2CPP_DECLARE_VM_FUNCTIONS
+	#include "vm-functions/import.h"
+	#undef IL2CPP_DECLARE_VM_FUNCTIONS
 }

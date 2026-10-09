@@ -28,8 +28,8 @@ namespace IL2CPP
 
 		GameAssembly_handle = GetModuleHandleA("GameAssembly.dll");
 
-		INIT_API_FUNCTIONS(GameAssembly_handle);
-		VM_FUNCTIONS::INIT();
+		IMPORT::INIT_API_FUNCTIONS(GameAssembly_handle);
+		VM_FUNCTIONS::INIT(GameAssembly_handle);
 		AttachCurrentThread();
 		CommonCShrap::INIT();
 

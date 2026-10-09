@@ -12,7 +12,7 @@ Before doing anything, enable the `DISABLE_CHEAT_FEATURE` CMake flag. This preve
 
 1. In Visual Studio, open `CMakeSettings.json` (or go to **Project > CMake Settings**).
 2. Add or toggle the `DISABLE_CHEAT_FEATURE` flag in your debug configuration (`x64-Debug`).
-3. Save the file and let CMake finish cache generation, then rebuild the project (**Ctrl + Shift + B**).
+3. Save the CMakeLists.txt file and let CMake finish cache generation, then rebuild the project (**Ctrl + Shift + B**).
 
 > [!TIP]
 > With cheat features disabled, you can safely inject the mod, inspect the console log to see which patterns failed, and run the built-in assembly dumper.

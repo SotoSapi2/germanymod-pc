@@ -56,8 +56,7 @@ namespace Global
 		using namespace IL2CPP::ClassMapping;
 		gGlobalTick++;
 
-		static auto expControllerInstance = GetClass("ExperienceController")->GetField(0x1b)->GetValue<IL2CPP::Object*>(nullptr);
-		gPlayerLevel = ExperienceController::GetCurrentLevel(expControllerInstance);
+		gPlayerLevel = ExperienceController::GetCurrentLevel();
 
 		for (auto& func : updateList)
 		{

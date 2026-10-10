@@ -847,9 +847,7 @@ namespace Menu
 								break;
 							case 3:
 							{
-								IL2CPP::Object* sex = IL2CPP::Class::Create(GetClass("InventoryItemType"));
 								IL2CPP::Object* type = InventoryItemType::GetType(
-									sex,
 									OfferItemType::ClanLootBox,
 									IL2CPP::String::Create("wargift_small"),
 									amount

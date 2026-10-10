@@ -1,6 +1,6 @@
 #include "PointerFunctions.hpp"
 
-namespace Application 
+namespace Application
 {
 	Pointer<bool()> IsFocused(
 		"Application",
@@ -38,7 +38,7 @@ namespace Physics
 {
 	Pointer<bool(Ray ray, RaycastHit* info, float maxDistance)> Raycast(
 		"Physics",
-		0x15
+		{ "public static", "Boolean", "Raycast", {"Ray", "RaycastHit", "Single"} }
 	);
 }
 
@@ -69,7 +69,7 @@ namespace Camera
 
 	Pointer<Vector3(IL2CPP::Object* camera, Vector3 vec)> WorldToScreenPoint(
 		"Camera",
-		0x38
+		"WorldToScreenPoint"
 	);
 }
 
@@ -77,17 +77,17 @@ namespace GameObject
 {
 	Pointer<IL2CPP::Array<IL2CPP::Object*>* (void* type)> FindObjectsOfType(
 		"Object",
-		0x17
+		{ "public static", "Object[]", "FindObjectsOfType", {"Type"} }
 	);
 
 	Pointer<IL2CPP::Object* (IL2CPP::Object* obj, IL2CPP::String* componentname)> GetComponent(
 		"GameObject",
-		0x5
+		{ "public", "Component", "GetComponent", {"String"} }
 	);
 
 	Pointer<IL2CPP::Array<IL2CPP::Object*>* (IL2CPP::Object* obj, void* type)> GetComponentsInChildren(
 		"GameObject",
-		0x10
+		{ "public", "Component[]", "GetComponentsInChildren", {"Type"} }
 	);
 
 	Pointer<IL2CPP::String* (IL2CPP::Object* gameObject)> GetTag(
@@ -107,22 +107,22 @@ namespace GameObject
 
 	Pointer<void(IL2CPP::Object* gameObject, IL2CPP::String* name)> SetName(
 		"Object",
-		"SetName"
+		"set_name"
 	);
 
 	Pointer<IL2CPP::String* (IL2CPP::Object* gameObject)> GetName(
 		"Object",
-		"GetName"
+		"get_name"
 	);
 
 	Pointer<void(IL2CPP::Object* gameObject)> Destroy(
 		"Object",
-		0x14
+		{ "public static", "Void", "Destroy", {"Object"} }
 	);
 
 	Pointer<int(IL2CPP::Object* gameObject)> GetInstanceID(
 		"Object",
-		0x0
+		"GetInstanceID"
 	);
 }
 
@@ -150,12 +150,12 @@ namespace Transform
 
 	Pointer<void(IL2CPP::Object* transform, Vector3, float angle)> Rotate(
 		"Transform",
-		0x26
+		{ "public", "Void", "Rotate", {"Vector3", "Single"} }
 	);
 
 	Pointer<void(IL2CPP::Object* transform, Vector3 eulers)> SetRotationFromEulers(
 		"Transform",
-		0x21
+		"set_eulerAngles"
 	);
 
 	Pointer<Vector3(IL2CPP::Object* transform)> GetFoward(
@@ -165,17 +165,17 @@ namespace Transform
 
 	Pointer<void(IL2CPP::Object* transform, IL2CPP::Object* target)> LookAt(
 		"Transform",
-		"LookAt"
+		{ "public", "Void", "LookAt", {"Transform"} }
 	);
 
 	Pointer<void(IL2CPP::Object* transform, Vector3 pos)> LookAtVec(
 		"Transform",
-		0x2a
+		{ "public", "Void", "LookAt", {"Vector3"} }
 	);
 
 	Pointer<IL2CPP::Object* (IL2CPP::Object* transform)> GetParent(
 		"Transform",
-		0x14
+		"get_parent"
 	);
 }
 
@@ -204,32 +204,32 @@ namespace WeaponMenager
 
 	Pointer<IL2CPP::List<IL2CPP::Object*>* ()> GetItemRecordList(
 		"ItemDb",
-		0x6
+		{ "public static", "List`1", nullptr, {} }
 	);
 }
 
-namespace NetworkStartTable 
+namespace NetworkStartTable
 {
 	Pointer<bool()> IsInMatch(
 		"IdkBroClass",
-		0xc
+		0xd
 	);
 
 }
 
 namespace InventoryItemType
 {
-	Pointer<IL2CPP::Object* (IL2CPP::Object* item, int index)> GetTypeFromIndex(
+	Pointer<IL2CPP::Object* (int index)> GetTypeFromIndex(
 		"InventoryItemType",
 		0x0
 	);
 
-	Pointer<IL2CPP::Object* (IL2CPP::Object* item, OfferItemType offerItemType, IL2CPP::String* str)> GetTypeNoAmount(
+	Pointer<IL2CPP::Object* (OfferItemType offerItemType, IL2CPP::String* str)> GetTypeNoAmount(
 		"InventoryItemType",
 		0x2
 	);
 
-	Pointer<IL2CPP::Object* (IL2CPP::Object* item, OfferItemType offerItemType, IL2CPP::String* str, int amount)> GetType(
+	Pointer<IL2CPP::Object* (OfferItemType offerItemType, IL2CPP::String* str, int amount)> GetType(
 		"InventoryItemType",
 		0x5
 	);
@@ -241,12 +241,12 @@ namespace InventoryItemType
 
 	Pointer<IL2CPP::String* (IL2CPP::Object* type)> GetKey(
 		"InventoryItemType",
-		0x9
+		{ "internal", "String", nullptr, {} }
 	);
 
 	Pointer<OfferItemType(IL2CPP::Object* type)> GetOfferItemType(
 		"InventoryItemType",
-		0x8
+		{ "internal", "OfferItemType", nullptr, {} }
 	);
 }
 
@@ -261,12 +261,12 @@ namespace WebSocketManager
 	// UNSAFE!!! CAN TRHOW EXCEPTION! DO NOT USE.
 	Pointer<int(IL2CPP::Object* instance, IL2CPP::String* msgType, IL2CPP::Object* jsonMsg)> Send(
 		"WebSocketManager",
-		0x16
+		{ "internal", "Int32", nullptr, {"String", "Dictionary`2"} }
 	);
 
 	Pointer<int(IL2CPP::Object* instance, IL2CPP::String* msgType)> SendEvent(
 		"WebSocketManager",
-		0x15
+		{ "internal", "Int32", nullptr, {"String"} }
 	);
 }
 
@@ -320,29 +320,9 @@ namespace ProgressUpdater
 		//OBFINT(0x173)
 	);
 
-	Pointer<void(IL2CPP::Object* webInstance, IL2CPP::Object* jsonDictionary)> SaveProgress2(
-		"ProgressUpdater",
-		0x176
-	);
-
-	Pointer<void(IL2CPP::Object* webInstance, CommandID cmdId, IL2CPP::Object* jsonDictionary, IL2CPP::Object* idfk, IL2CPP::Object* nullable) > SaveSnapshot(
-		"ProgressUpdater",
-		0x71
-	);
-
 	Pointer<void(IL2CPP::String* petString, int idfk)> AddPet(
 		"NiggerObfuscatedClass",
 		{ "internal static", "Void", nullptr, {"String", "Int32"} }
-	);
-
-	Pointer<void* (void* ptr, int offerItemType, IL2CPP::String* str, int index)> GetInvetoryItemType(
-		"InventoryItemType",
-		0x5
-	);
-
-	Pointer<void* (void* ptr, int offerItemType, IL2CPP::String* str)> GetInvetoryItemTypeNoIndex(
-		"InventoryItemType",
-		0x2
 	);
 
 	Pointer<bool(IL2CPP::Object* webInstance, void* inventoryItem, AnalyticsParamater sex)> AddInventoryItemType(
@@ -457,30 +437,30 @@ namespace ContentKeyRegister
 {
 	Pointer<IL2CPP::Object* ()> GetInstance(
 		"ContentKeyRegister",
-		0x4a
+		{ "public static", nullptr, nullptr, {} }
 	);
 
 	Pointer<IL2CPP::List<IL2CPP::String*>* (IL2CPP::Object* instance, OfferItemType type)> GetRegisterList(
 		"ContentKeyRegister",
-		0x57
+		{ "internal", "List`1", nullptr, {"ENUM"} }
 	);
 
 	Pointer<int(IL2CPP::Object* instance, OfferItemType type, IL2CPP::String* key)> GetItemIndex(
 		"ContentKeyRegister",
-		0x52
+		{ "public", "Int32", nullptr, {"ENUM", "String"} }
 	);
 }
 
 namespace ExperienceController
 {
-	Pointer<int(IL2CPP::Object* experienceController)> GetCurrentLevel(
+	Pointer<int()> GetCurrentLevel(
 		"ExperienceController",
 		0x7
 	);
 
 	Pointer<void(IL2CPP::Object* experienceController, int value, ExpObtainCause reason, IL2CPP::Object* dictionary, IL2CPP::Object* sex)> AddExperience(
 		"ExperienceController",
-		{"internal", "Void", nullptr, {"Int32", "ENUM", "Dictionary`2", nullptr}}
+		{ "internal", "Void", nullptr, {"Int32", "ENUM", "Dictionary`2", nullptr} }
 	);
 }
 
@@ -504,7 +484,7 @@ namespace GadgetManager
 {
 	Pointer<void(IL2CPP::String* name, int num)> ProvideGadget(
 		"GadgetManager",
-		{"internal static", "Void", nullptr, {"String", "Int32"}}
+		{ "internal static", "Void", nullptr, {"String", "Int32"} }
 	);
 }
 
@@ -512,7 +492,7 @@ namespace WearClass
 {
 	Pointer<void* (CategoryNames categoryName, IL2CPP::String* str)> AddWear(
 		"WearClass",
-		{"internal static", "Void", nullptr, {"ENUM", "String"}}
+		{ "internal static", "Void", nullptr, {"ENUM", "String"} }
 	);
 
 	Pointer<int(IL2CPP::String* id)> WearIndex(
@@ -531,7 +511,7 @@ namespace RoomInfo
 
 namespace PhotonStream
 {
-	Pointer<bool (IL2CPP::Object* PhotonStream)> IsWriting(
+	Pointer<bool(IL2CPP::Object* PhotonStream)> IsWriting(
 		"PhotonStream",
 		0x3
 	);
@@ -541,17 +521,17 @@ namespace PhotonHashtable
 {
 	Pointer<IL2CPP::Object* (IL2CPP::Object* hashtable)> Constructor(
 		"Hashtable",
-		0x0
+		".ctor"
 	);
 
 	Pointer<IL2CPP::Object* (IL2CPP::Object* hashtable, IL2CPP::Object* key)> Get(
 		"Hashtable",
-		0x2
+		"get_Item"
 	);
 
 	Pointer<IL2CPP::Object* (IL2CPP::Object* hashtable, IL2CPP::Object* key, IL2CPP::Object* val)> Set(
 		"Hashtable",
-		0x3
+		"set_Item"
 	);
 };
 
@@ -579,7 +559,7 @@ namespace PhotonNetwork
 
 	Pointer<void(IL2CPP::Object* object)> Destroy(
 		"PhotonNetwork",
-		0x7a
+		{ "public static", "Void", "Destroy", {"GameObject"} }
 	);
 
 	Pointer<IL2CPP::Array<IL2CPP::Object*>* ()> GetOtherPlayerList(
@@ -603,7 +583,7 @@ namespace MatchSettings
 {
 	Pointer<IL2CPP::Array<IL2CPP::Object*>* (IL2CPP::String* json)> CreateSettings(
 		"MatchSettings",
-		0x8
+		{ "internal static", "List`1", nullptr, {"String"} }
 	);
 }
 
@@ -611,12 +591,12 @@ namespace PlayerMoveC
 {
 	Pointer<void(IL2CPP::Object* plrMoveC, bool active)> SetXrayShader(
 		"Player_move_c",
-		0x184
+		0x1ea
 		//{"internal", "Void", nullptr, {"Boolean", "ENUM"}},
 		//2)
 	);
 
-	Pointer<void(IL2CPP::Object* plrMoveC)> ShotPressed(
+	Pointer<void(IL2CPP::Object* plrMoveC, bool unknown)> ShotPressed(
 		"Player_move_c",
 		{ "private", "IEnumerator", nullptr, {"Int32", "Animation", nullptr} },
 		-2
@@ -681,7 +661,7 @@ namespace TutorialClass
 {
 	Pointer<IL2CPP::Object* ()> GetInstance(
 		"TutorialClass",
-		0x0
+		{ "internal static", nullptr, nullptr, {} }
 	);
 
 	Pointer<void(IL2CPP::Object* instance)> Fill(
@@ -707,7 +687,7 @@ namespace Encoding
 
 	Pointer<IL2CPP::Array<char>* (IL2CPP::Object* encoder, IL2CPP::String* string)> GetBytes(
 		"Encoding",
-		{"public virtual", "Byte[]", "GetBytes", {"String"}}
+		{ "public virtual", "Byte[]", "GetBytes", {"String"} }
 	);
 }
 
@@ -715,17 +695,17 @@ namespace Type
 {
 	Pointer<IL2CPP::Object* (IL2CPP::Object* type, IL2CPP::String* name)> GetMethod(
 		"Type",
-		0x60
+		{ "public", "MethodInfo", "GetMethod", {"String"} }
 	);
 
 	Pointer<IL2CPP::Object* (IL2CPP::String* typeName)> GetType(
 		"Type",
-		0x94
+		{ "public static", "Type", "GetType", {"String"} }
 	);
 
 	Pointer<IL2CPP::Object* (IL2CPP::Object* base, IL2CPP::Array<IL2CPP::Object*>* generics)> MakeGenericType(
 		"RuntimeType",
-		0x6c
+		{ "private static", "Type", "MakeGenericType", {"Type", "Type[]"} }
 	);
 }
 
@@ -733,7 +713,7 @@ namespace Activator
 {
 	Pointer<IL2CPP::Object* (IL2CPP::Object* type)> CreateInstance(
 		"Activator",
-		0x4
+		{ "public static", "Object", "CreateInstance", {"Type"} }
 	);
 }
 
@@ -741,6 +721,6 @@ namespace MethodBase
 {
 	Pointer<IL2CPP::Object* (IL2CPP::Object* info, IL2CPP::Object* instance, IL2CPP::Array<IL2CPP::Object*>* args)> Invoke(
 		"MethodBase",
-		0x14
+		"Invoke"
 	);
 }

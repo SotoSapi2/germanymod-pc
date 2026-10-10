@@ -5,7 +5,7 @@
 #include "../structures/PointerWrapper.hpp"
 
 
-namespace Application 
+namespace Application
 {
 	extern Pointer<bool()> IsFocused;
 }
@@ -104,7 +104,7 @@ namespace WeaponMenager
 	extern Pointer<IL2CPP::List<IL2CPP::Object*>* ()> GetItemRecordList;
 }
 
-namespace NetworkStartTable 
+namespace NetworkStartTable
 {
 	extern Pointer<bool()> IsInMatch;
 
@@ -112,11 +112,11 @@ namespace NetworkStartTable
 
 namespace InventoryItemType
 {
-	extern Pointer<IL2CPP::Object* (IL2CPP::Object* item, int index)> GetTypeFromIndex;
+	extern Pointer<IL2CPP::Object* (int index)> GetTypeFromIndex;
 
-	extern Pointer<IL2CPP::Object* (IL2CPP::Object* item, OfferItemType offerItemType, IL2CPP::String* str)> GetTypeNoAmount;
+	extern Pointer<IL2CPP::Object* (OfferItemType offerItemType, IL2CPP::String* str)> GetTypeNoAmount;
 
-	extern Pointer<IL2CPP::Object* (IL2CPP::Object* item, OfferItemType offerItemType, IL2CPP::String* str, int amount)> GetType;
+	extern Pointer<IL2CPP::Object* (OfferItemType offerItemType, IL2CPP::String* str, int amount)> GetType;
 
 	extern Pointer<int(IL2CPP::Object* type)> GetIndex;
 
@@ -158,15 +158,7 @@ namespace ProgressUpdater
 
 	extern Pointer<void(IL2CPP::Object* webInstance, IL2CPP::Object* jsonDictionary)> SaveProgress;
 
-	extern Pointer<void(IL2CPP::Object* webInstance, IL2CPP::Object* jsonDictionary)> SaveProgress2;
-
-	extern Pointer<void(IL2CPP::Object* webInstance, CommandID cmdId, IL2CPP::Object* jsonDictionary, IL2CPP::Object* idfk, IL2CPP::Object* nullable) > SaveSnapshot;
-
 	extern Pointer<void(IL2CPP::String* petString, int idfk)> AddPet;
-
-	extern Pointer<void* (void* ptr, int offerItemType, IL2CPP::String* str, int index)> GetInvetoryItemType;
-
-	extern Pointer<void* (void* ptr, int offerItemType, IL2CPP::String* str)> GetInvetoryItemTypeNoIndex;
 
 	extern Pointer<bool(IL2CPP::Object* webInstance, void* inventoryItem, AnalyticsParamater sex)> AddInventoryItemType;
 
@@ -225,7 +217,7 @@ namespace ContentKeyRegister
 
 namespace ExperienceController
 {
-	extern Pointer<int(IL2CPP::Object* experienceController)> GetCurrentLevel;
+	extern Pointer<int()> GetCurrentLevel;
 
 	extern Pointer<void(IL2CPP::Object* experienceController, int value, ExpObtainCause reason, IL2CPP::Object* dictionary, IL2CPP::Object* sex)> AddExperience;
 }
@@ -259,7 +251,7 @@ namespace RoomInfo
 
 namespace PhotonStream
 {
-	extern Pointer<bool (IL2CPP::Object* PhotonStream)> IsWriting;
+	extern Pointer<bool(IL2CPP::Object* PhotonStream)> IsWriting;
 }
 
 namespace PhotonHashtable
@@ -299,7 +291,7 @@ namespace PlayerMoveC
 {
 	extern Pointer<void(IL2CPP::Object* plrMoveC, bool active)> SetXrayShader;
 
-	extern Pointer<void(IL2CPP::Object* plrMoveC)> ShotPressed;
+	extern Pointer<void(IL2CPP::Object* plrMoveC, bool unknown)> ShotPressed;
 
 	extern Pointer<void(IL2CPP::Object* plrMoveC, IL2CPP::String* message, bool isClan, IL2CPP::String* icon)> SendChat;
 }
@@ -452,11 +444,7 @@ namespace PointerFunctions
 		ProgressUpdater::AddEventCurrency.Define();
 		ProgressUpdater::UpdateSnaphot.Define();
 		ProgressUpdater::SaveProgress.Define();
-		ProgressUpdater::SaveProgress2.Define();
-		ProgressUpdater::SaveSnapshot.Define();
 		ProgressUpdater::AddPet.Define();
-		ProgressUpdater::GetInvetoryItemType.Define();
-		ProgressUpdater::GetInvetoryItemTypeNoIndex.Define();
 		ProgressUpdater::AddInventoryItemType.Define();
 		ProgressUpdater::UpgradeModule.Define();
 		ProgressUpdater::AddRoyale.Define();

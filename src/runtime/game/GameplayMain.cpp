@@ -83,7 +83,6 @@ namespace GameplayMain
     	}
     }
  
-
 	void HandleGotoPlayers()
 	{
 		IL2CPP::Object* cam = Camera::GetMain();
@@ -159,8 +158,11 @@ namespace GameplayMain
 				isVisible = info.collider == GameObject::GetInstanceID(bodyCollider);
 			}
 
-			if (distance < minDistance && !PlayerMoveC::IsDead(player) && !PlayerMoveC::IsMine(player)
-				&& PlayerMoveC::IsEnemyTo(gMyPlayerMoveC, player) && plrScreenPos.Z > 0 && isVisible)
+			bool isEnemy = PlayerMoveC::IsEnemyTo(gMyPlayerMoveC, player);
+			bool isDead = PlayerMoveC::IsDead(player);
+			bool isMine = PlayerMoveC::IsMine(player);
+
+			if (distance < minDistance && !isDead && isEnemy && !isMine && plrScreenPos.Z > 0 && isVisible)
 			{
 				minDistance = distance;
 				targetTransform = PlayerMoveC::GetPlayerTransform(player);
@@ -534,11 +536,11 @@ namespace GameplayMain
 
 	$Hook(void, AimCrosshairController, (IL2CPP::Object* _this))
 	{
-		Color crosshairColor = _this->GetFieldRef<Color>(0x27);
+		Color crosshairColor = _this->GetFieldRef<Color>(0x2e);
 		if (gMyPlayerMoveC != nullptr && General::Aim::Triggerbot.value
 			&& crosshairColor.r >= 0.5f && crosshairColor.g == 0.0f && crosshairColor.b == 0.0f)
 		{
-			PlayerMoveC::ShotPressed(gMyPlayerMoveC);
+			PlayerMoveC::ShotPressed(gMyPlayerMoveC, false);
 		}
 
 		$CallOrig(AimCrosshairController, _this);
@@ -557,7 +559,7 @@ namespace GameplayMain
 			matchSettings.push_back({
 				{"type", "EnableTPCamera"},
 				{"bool", true}
-				});
+			});
 		}
 
 		if (General::Player::NoFixedDelay.value)
@@ -565,7 +567,7 @@ namespace GameplayMain
 			matchSettings.push_back({
 				{"type", "MovementScheme"},
 				{"custom", "Oldschool"}
-				});
+			});
 		}
 
 		if (General::Movement::GravityToggle.value)
@@ -573,7 +575,7 @@ namespace GameplayMain
 			matchSettings.push_back({
 				{"type", "Gravity"},
 				{"float", General::Movement::GravityPower.value}
-				});
+			});
 		}
 
 		if (!matchSettings.empty())

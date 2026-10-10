@@ -10,7 +10,7 @@ on:
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
-  BUILD_TYPE: Release
+  BUILD_TYPE: RelWithDebInfo
   DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
   TARGET_ARCH: amd64
   BUILD_PATH: ${{github.workspace}}/build
@@ -46,6 +46,8 @@ jobs:
           $commit_hash=$(echo "${{ github.sha }}" | cut -c1-7)
           Compress-Archive -Path "${{env.BUILD_PATH}}/nazimod-loader.exe", "${{env.BUILD_PATH}}/nazimod-runtime.dll", "${{env.BUILD_PATH}}/assets/" -DestinationPath "${{github.workspace}}/nazimodpc-$commit_hash.zip"
           Compress-Archive -Path "${{env.EXPERIMENTAL_BUILD_PATH}}/nazimod-loader.exe", "${{env.EXPERIMENTAL_BUILD_PATH}}/nazimod-runtime.dll", "${{env.EXPERIMENTAL_BUILD_PATH}}/assets/" -DestinationPath "${{github.workspace}}/nazimodpc-experimental-$commit_hash.zip"
+          Compress-Archive -Path "${{env.BUILD_PATH}}/nazimod-loader.pdb", "${{env.BUILD_PATH}}/nazimod-runtime.pdb" -DestinationPath "${{github.workspace}}/nazimodpc-symbols-$commit_hash.zip"
+          Compress-Archive -Path "${{env.EXPERIMENTAL_BUILD_PATH}}/nazimod-loader.pdb", "${{env.EXPERIMENTAL_BUILD_PATH}}/nazimod-runtime.pdb" -DestinationPath "${{github.workspace}}/nazimodpc-experimental-symbols-$commit_hash.zip"
 
     - name: Upload Build Artifacts
       uses: actions/upload-artifact@v4

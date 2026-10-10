@@ -1,0 +1,79 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 20,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "installDir": "${sourceDir}/out/install/${presetName}",
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      }
+    },
+    {
+      "name": "x64-Debug",
+      "displayName": "x64 Debug",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "ENABLE_CONSOLE": true,
+        "DISABLE_CHEAT_FEATURE": false,
+        "EXPERIMENTAL_CHEAT_FEATURE": true
+      }
+    },
+    {
+      "name": "x64-Debug-NoFeature",
+      "displayName": "x64 Debug NoFeature",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "ENABLE_CONSOLE": true,
+        "DISABLE_CHEAT_FEATURE": true,
+        "EXPERIMENTAL_CHEAT_FEATURE": true
+      }
+    },
+    {
+      "name": "x64-Release",
+      "displayName": "x64 Release",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "ENABLE_CONSOLE": false,
+        "DISABLE_CHEAT_FEATURE": false,
+        "EXPERIMENTAL_CHEAT_FEATURE": false
+      }
+    },
+    {
+      "name": "x64-Release-WithDebInfo",
+      "displayName": "x64 RelWithDebInfo",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "ENABLE_CONSOLE": false,
+        "DISABLE_CHEAT_FEATURE": false,
+        "EXPERIMENTAL_CHEAT_FEATURE": false
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "x64-Debug",
+      "configurePreset": "x64-Debug"
+    },
+    {
+      "name": "x64-Release",
+      "configurePreset": "x64-Release"
+    },
+    {
+      "name": "x64-Release-WithDebInfo",
+      "configurePreset": "x64-Release-WithDebInfo"
+    }
+  ]
+}

@@ -8,14 +8,13 @@ While some broken patterns will display an error message on the console during s
 
 ## 1. Preparing for Debugging
 
-Before doing anything, enable the `DISABLE_CHEAT_FEATURE` CMake flag. This prevents Nazi Mod from executing cheat features that rely on broken pointers, allowing the game and the mod's logger to run cleanly without crashing:
+Before doing anything, switch your CMake configuration / preset to **`x64-Debug-NoFeature`**. This builds Nazi Mod with cheat features disabled (`DISABLE_CHEAT_FEATURE=ON`), preventing execution of code paths that rely on broken pointers while keeping the console and logger active:
 
-1. In Visual Studio, open `CMakeSettings.json` (or go to **Project > CMake Settings**).
-2. Add or toggle the `DISABLE_CHEAT_FEATURE` flag in your debug configuration (`x64-Debug`).
-3. Save the CMakeLists.txt file and let CMake finish cache generation, then rebuild the project (**Ctrl + Shift + B**).
+1. In Visual Studio, select the **`x64-Debug-NoFeature`** preset from the configuration dropdown (or configure with `cmake --preset x64-Debug-NoFeature`).
+2. Build the project (**Ctrl + Shift + B** or `cmake --build --preset x64-Debug-NoFeature`).
 
 > [!TIP]
-> With cheat features disabled, you can safely inject the mod, inspect the console log to see which patterns failed, and run the built-in assembly dumper.
+> With cheat features disabled via `x64-Debug-NoFeature`, you can safely inject the mod, inspect the console log to see which patterns failed, and run the built-in assembly dumper.
 
 ---
 
@@ -43,11 +42,11 @@ Once a class is resolved, Nazi Mod locates methods using one of three strategies
 
 Nazi Mod includes an integrated dumper that extracts class structures, fields, and method signatures directly into readable C#-like files.
 
-1. Build and run Nazi Mod using the **x64-Debug** configuration.
+1. Build and run Nazi Mod using the **x64-Debug-NoFeature** (or **x64-Debug**) configuration.
 2. In-game, open the Nazi Mod menu (default key: `Insert`).
 3. Navigate to the **Debug** tab (the flask icon).
 4. Click the **Run Dumper** button.
-5. The dump files will be generated in `out\build\x64-Debug\dumps` (relative to the project root, or in `dumps` next to your loader executable file).
+5. The dump files will be generated in `out\build\<preset>\dumps` (e.g. `out\build\x64-Debug-NoFeature\dumps` or `out\build\x64-Debug\dumps` relative to the project root, or in `dumps` next to your loader executable file).
 6. **Optional:** Open the `dumps` folder in Visual Studio Code for fast multi-file search (`Ctrl + Shift + F`).
 
 ---
@@ -219,9 +218,6 @@ namespace Physics
 
 ---
 
-
----
-
 ## 7. Updating Fields
 
 In C#, classes contain member variables (fields) such as `isShotGun`, `_bodyAimCollider`, or `lifeTime`. In Nazi Mod, we don't always create full C++ class definitions for every game structure. Instead, we dynamically read and write fields on objects at runtime using helper functions provided by `IL2CPP::Object*`.
@@ -328,13 +324,13 @@ If a relative offset was used (e.g. `GetFieldPtr("myPlayerMoveC", 10)`):
 
 Always make sure the C++ template type `<T>` matches the field type in the dump:
 
-| C# Dump Type | C++ Template Type `<T>` | Example |
-| :--- | :--- | :--- |
-| `bool` | `bool` | `obj->GetFieldRef<bool>("isEnabled")` |
-| `int` / `Int32` | `int` | `obj->GetFieldRef<int>(0x4)` |
-| `float` / `Single` | `float` | `obj->GetFieldRef<float>("lifeTime")` |
-| `string` / `String` | `IL2CPP::String*` | `obj->GetFieldRef<IL2CPP::String*>("name")` |
-| Class instance / reference | `IL2CPP::Object*` | `obj->GetFieldRef<IL2CPP::Object*>("myPlayerMoveC")` |
-| `List<T>` | `IL2CPP::List<IL2CPP::Object*>*` | `obj->GetFieldRef<IL2CPP::List<IL2CPP::Object*>*>(0x0)` |
-| `Vector3` | `Vector3` | `obj->GetFieldRef<Vector3>("position")` |
-| `Color` | `Color` | `obj->GetFieldRef<Color>(0x27)` |
+| C# Dump Type               | C++ Template Type `<T>`          | Example                                                 |
+| :------------------------- | :------------------------------- | :------------------------------------------------------ |
+| `bool`                     | `bool`                           | `obj->GetFieldRef<bool>("isEnabled")`                   |
+| `int` / `Int32`            | `int`                            | `obj->GetFieldRef<int>(0x4)`                            |
+| `float` / `Single`         | `float`                          | `obj->GetFieldRef<float>("lifeTime")`                   |
+| `string` / `String`        | `IL2CPP::String*`                | `obj->GetFieldRef<IL2CPP::String*>("name")`             |
+| Class instance / reference | `IL2CPP::Object*`                | `obj->GetFieldRef<IL2CPP::Object*>("myPlayerMoveC")`    |
+| `List<T>`                  | `IL2CPP::List<IL2CPP::Object*>*` | `obj->GetFieldRef<IL2CPP::List<IL2CPP::Object*>*>(0x0)` |
+| `Vector3`                  | `Vector3`                        | `obj->GetFieldRef<Vector3>("position")`                 |
+| `Color`                    | `Color`                          | `obj->GetFieldRef<Color>(0x27)`                         |

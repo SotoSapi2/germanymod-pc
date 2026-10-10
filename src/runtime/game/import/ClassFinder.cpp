@@ -28,7 +28,7 @@ namespace FieldPatterns
 	FieldPattern PlayerListClass{ "List`1", "List`1", "List`1", "List`1", "List`1", "List`1", "List`1", "List`1", "Dictionary`2", "Dictionary`2", "Dictionary`2", "Dictionary`2", "Dictionary`2", "List`1", "Dictionary`2", "List`1", "Dictionary`2", "HashSet`1" };
 	FieldPattern NiggerObfuscatedClass{ "String", "String", nullptr, "Action`1", "Int32", "String" };
 	FieldPattern RaiseEventOptions{ nullptr, "EventCaching", "Byte", "Int32[]", "ReceiverGroup", "Byte", "Boolean", "Boolean" };
-	FieldPattern ContentKeyRegister{ "Int32", "Int32", "Dictionary`2", nullptr, nullptr, nullptr, "Dictionary`2", "Dictionary`2" };
+	FieldPattern ContentKeyRegister{ "Int32", "Int32", "Dictionary`2", nullptr, nullptr, nullptr, "Dictionary`2", "Dictionary`2", "HashSet`1" };
 	FieldPattern ContentKey{ "IDictionary`2" };
 	FieldPattern SaltedInt{ "Int32", "Int32" };
 	FieldPattern Storager{ "String", "HashSet`1", "Dictionary`2", "Dictionary`2", "Dictionary`2", "Boolean", "HashSet`1", "IDictionary`2", "String[]" };
@@ -136,7 +136,7 @@ namespace ClassFinder
 		AddQueue("ItemDb", "", &FieldPatterns::ItemDb, 46);
 		AddQueue("WeaponUpgradeV8", "", &FieldPatterns::WeaponUpgradeV8, 13);
 		AddQueue("WeaponW", "", &FieldPatterns::WeaponW, 12);
-		AddQueue("KeyClass", "", &FieldPatterns::KeyClass, 41);
+		AddQueue("KeyClass", "", &FieldPatterns::KeyClass, 42);
 		AddQueue("WeaponSkinManager", "", &FieldPatterns::WeaponSkinManager, 118);
 		AddQueue("PlayerListClass", "", &FieldPatterns::PlayerListClass);
 		AddQueue("PhotonNetwork", "", &FieldPatterns::PhotonNetwork, 148);
@@ -166,7 +166,7 @@ namespace ClassFinder
 
 		#pragma region PGCompany
 		AddQueue("ItemModule", "PGCompany", &FieldPatterns::ItemModule, 47);
-		AddQueue("ContentKeyRegister", "PGCompany", &FieldPatterns::ContentKeyRegister, 95);
+		AddQueue("ContentKeyRegister", "PGCompany", &FieldPatterns::ContentKeyRegister, 96);
 		AddQueue("ContentKey", "PGCompany", &FieldPatterns::ContentKey, 21);
 		AddQueue("InventoryItemType", "PGCompany", &FieldPatterns::InventoryItemType, 29);
 		AddQueue("ModuleData", "PGCompany", &FieldPatterns::ModuleData, 47);

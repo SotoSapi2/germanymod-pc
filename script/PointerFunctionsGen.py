@@ -23,13 +23,13 @@ def generate_extra_header_body(input_code):
     return header_code + output
 
 def generate_extern_pointer_fields(input_code):
-    pattern = r"Pointer<(.*?)>+\s(.+)*(\([\s\S]*?\));";
-    replacement = r"extern Pointer<\1> \2;";
-    return re.sub(pattern, replacement, input_code);
+    pattern = r"Pointer<((?:[^<>]|<(?:[^<>]|<[^<>]*>)*>)+)>\s+([A-Za-z0-9_]+)\s*\([\s\S]*?\);"
+    replacement = r"extern Pointer<\1> \2;"
+    return re.sub(pattern, replacement, input_code)
 
 def generate_pointer_definator(input_code):
     namespace_pattern = r"namespace\s+(.*?)\s*\{([^}]*)\}"
-    pointer_pattern = r"Pointer<.*?>+\s(.+)[;| ]"
+    pointer_pattern = r"extern Pointer<((?:[^<>]|<(?:[^<>]|<[^<>]*>)*>)+)>\s+([A-Za-z0-9_]+);"
 
     output = "\n\nnamespace PointerFunctions\n{\n\tstatic void INIT()\n\t{\n"
 
@@ -38,7 +38,7 @@ def generate_pointer_definator(input_code):
             continue
         
         output += f"\t\t// {namespace}\n"
-        for field_name in re.findall(pointer_pattern, body):
+        for sig, field_name in re.findall(pointer_pattern, body):
             output += f"\t\t{namespace}::{field_name}.Define();\n"
         
         output += "\n"

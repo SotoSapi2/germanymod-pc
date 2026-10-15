@@ -1,5 +1,5 @@
 # DISCONTINUED
-New Pixel Gun 3D update seems to have patched almost every exploits all of the exploits Nazi had. I'm also getting tired of maintaining this project and working anything related to this game, so don't expect any update for this project.
+New Pixel Gun 3D update seems to have patched almost all of the exploits Nazi had. I'm also getting tired of maintaining this project and working anything related to this game, so don't expect any update for this project.
 
 # Nazi Mod PC
 Cool ass Pixel Gun 3D pasteware! 🔥🔥 <br />
